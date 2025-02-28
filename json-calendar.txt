@@ -1,0 +1,173 @@
+{
+  "date": "2025-02-15",
+  "coaches": [
+    { "id": "coachA", "name": "Coach A" },
+    { "id": "coachB", "name": "Coach B" },
+    { "id": "coachC", "name": "Coach C" },
+    { "id": "coachD", "name": "Coach D" },
+    { "id": "coachE", "name": "Coach E" },
+    { "id": "coachF", "name": "Coach F" },
+    { "id": "coachG", "name": "Coach G" },
+    { "id": "coachH", "name": "Coach H" },
+    { "id": "coachI", "name": "Coach I" },
+    { "id": "coachJ", "name": "Coach J" }
+  ],
+  "timeSlots": {
+    "7:00 AM": [
+      {
+        "id": "slot1",
+        "coach": "coachA",
+        "room": "Studio 1",
+        "duration": 30,
+        "endTime": "7:30 AM",
+        "type": "Cover",
+        "program": "Yoga Flow",
+        "currentMembers": 5,
+        "maxMembers": 10
+      },
+      {
+        "id": "slot2",
+        "coach": "coachB",
+        "room": "Studio 2",
+        "duration": 15,
+        "endTime": "7:15 AM",
+        "type": "Personal Trainer",
+        "program": "Core Workout",
+        "currentMembers": 3,
+        "maxMembers": 8
+      }
+    ],
+    "8:00 AM": [
+      {
+        "id": "slot3",
+        "coach": "coachC",
+        "room": "Studio 3",
+        "duration": 45,
+        "endTime": "8:45 AM",
+        "type": "Assignment",
+        "program": "Cardio Boost",
+        "currentMembers": 10,
+        "maxMembers": 15
+      }
+    ],
+    "9:00 AM": [
+      {
+        "id": "slot4",
+        "coach": "coachD",
+        "room": "Studio 4",
+        "duration": 60,
+        "endTime": "10:00 AM",
+        "type": "Cover",
+        "program": "Dance Fit",
+        "currentMembers": 12,
+        "maxMembers": 20
+      }
+    ],
+    "10:00 AM": [
+      {
+        "id": "slot5",
+        "coach": "coachE",
+        "room": "Gym Hall",
+        "duration": 50,
+        "endTime": "10:50 AM",
+        "type": "Personal Trainer",
+        "program": "Strength Training",
+        "currentMembers": 8,
+        "maxMembers": 12
+      }
+    ],
+    "11:00 AM": [
+      {
+        "id": "slot6",
+        "coach": "coachF",
+        "room": "Studio 5",
+        "duration": 40,
+        "endTime": "11:40 AM",
+        "type": "Assignment",
+        "program": "Interval Training",
+        "currentMembers": 6,
+        "maxMembers": 10
+      }
+    ],
+    "12:00 PM": [
+      {
+        "id": "slot7",
+        "coach": "coachG",
+        "room": "Room 1",
+        "duration": 30,
+        "endTime": "12:30 PM",
+        "type": "Cover",
+        "program": "Mindfulness",
+        "currentMembers": 7,
+        "maxMembers": 10
+      }
+    ],
+    "1:00 PM": [
+      {
+        "id": "slot8",
+        "coach": "coachH",
+        "room": "Studio 6",
+        "duration": 45,
+        "endTime": "1:45 PM",
+        "type": "Personal Trainer",
+        "program": "Self Defense",
+        "currentMembers": 9,
+        "maxMembers": 15
+      }
+    ],
+    "2:00 PM": [
+      {
+        "id": "slot9",
+        "coach": "coachI",
+        "room": "Gym Hall",
+        "duration": 50,
+        "endTime": "2:50 PM",
+        "type": "Assignment",
+        "program": "Strength Endurance",
+        "currentMembers": 5,
+        "maxMembers": 12
+      }
+    ],
+    "3:00 PM": [
+      {
+        "id": "slot10",
+        "coach": "coachJ",
+        "room": "Studio 7",
+        "duration": 35,
+        "endTime": "3:35 PM",
+        "type": "Cover",
+        "program": "Intense Cardio",
+        "currentMembers": 8,
+        "maxMembers": 10
+      }
+    ]
+  }
+}
+
+----------------------------------------------------------
+
+api/schedule/2025-02-15
+
+هيك شكل ال ديت و ازا بدك تبعت ال id رقم احكيلي بغيرها  
+
+
+{
+  "id": "slot1",
+  "coach": "coachA",
+  "room": "Studio 1",
+  "duration": 30,
+  "endTime": "7:30 AM",
+  "type": "Cover",
+  "program": "Yoga Flow",
+  "currentMembers": 5,
+  "maxMembers": 10
+}
+
+put
+api/schedule/{date}/cell/{id}  نفس شكل الديت الي فوق 
+update 
+
+--------------------------------------------------------------------
+delete 
+
+api/schedule/{date}/cell/{id}
