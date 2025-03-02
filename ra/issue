@@ -1,81 +1,82 @@
-Error Page
-Back to Home
-Message:
-Technical description for the problem:
-Type of the exception: java.lang.NullPointerException:Throwable instance: java.lang.NullPointerExceptionException message: Stack trace: java.lang.NullPointerException
-at com.app.dev.cmon.controllers.MB_Main.calculateLastDate(MB_Main.java:1008)
-at com.app.dev.cmon.controllers.MB_Main.getWeekBox(MB_Main.java:995)
-at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-at java.lang.reflect.Method.invoke(Method.java:498)
-at javax.el.BeanELResolver.invoke(BeanELResolver.java:158)
-at javax.el.CompositeELResolver.invoke(CompositeELResolver.java:79)
-at org.apache.el.parser.AstValue.getValue(AstValue.java:159)
-at org.apache.el.ValueExpressionImpl.getValue(ValueExpressionImpl.java:190)
-at com.sun.faces.facelets.el.ELText$ELTextVariable.writeText(ELText.java:238)
-at com.sun.faces.facelets.el.ELText$ELTextComposite.writeText(ELText.java:154)
-at com.sun.faces.facelets.compiler.TextInstruction.write(TextInstruction.java:85)
-at com.sun.faces.facelets.compiler.UIInstructions.encodeBegin(UIInstructions.java:82)
-at com.sun.faces.facelets.compiler.UILeaf.encodeAll(UILeaf.java:183)
-at com.sun.faces.facelets.component.RepeatRenderer.encodeChildren(RepeatRenderer.java:104)
-at com.sun.faces.facelets.component.UIRepeat.process(UIRepeat.java:562)
-at com.sun.faces.facelets.component.UIRepeat.encodeChildren(UIRepeat.java:1057)
-at org.primefaces.renderkit.CoreRenderer.renderChild(CoreRenderer.java:82)
-at org.primefaces.renderkit.CoreRenderer.renderChildren(CoreRenderer.java:69)
-at org.primefaces.renderkit.CoreRenderer.renderChild(CoreRenderer.java:85)
-at org.primefaces.renderkit.CoreRenderer.renderChildren(CoreRenderer.java:69)
-at org.primefaces.renderkit.CoreRenderer.renderChild(CoreRenderer.java:85)
-at org.primefaces.renderkit.CoreRenderer.renderChildren(CoreRenderer.java:69)
-at org.primefaces.renderkit.CoreRenderer.renderChild(CoreRenderer.java:85)
-at org.primefaces.renderkit.CoreRenderer.renderChildren(CoreRenderer.java:69)
-at org.primefaces.component.outputpanel.OutputPanelRenderer.encodeMarkup(OutputPanelRenderer.java:74)
-at org.primefaces.component.outputpanel.OutputPanelRenderer.encodeEnd(OutputPanelRenderer.java:48)
-at javax.faces.component.UIComponentBase.encodeEnd(UIComponentBase.java:920)
-at javax.faces.component.UIComponent.encodeAll(UIComponent.java:1863)
-at javax.faces.render.Renderer.encodeChildren(Renderer.java:176)
-at com.jk.web.faces.renderers.JKFormRenderer.encodeChildren(JKFormRenderer.java:36)
-at javax.faces.component.UIComponentBase.encodeChildren(UIComponentBase.java:890)
-at com.sun.faces.renderkit.html_basic.HtmlBasicRenderer.encodeRecursive(HtmlBasicRenderer.java:304)
-at com.sun.faces.renderkit.html_basic.HtmlBasicRenderer.encodeRecursive(HtmlBasicRenderer.java:309)
-at com.sun.faces.renderkit.html_basic.GroupRenderer.encodeChildren(GroupRenderer.java:114)
-at javax.faces.component.UIComponentBase.encodeChildren(UIComponentBase.java:890)
-at javax.faces.component.UIComponent.encodeAll(UIComponent.java:1856)
-at com.sun.faces.renderkit.html_basic.CompositeRenderer.encodeChildren(CompositeRenderer.java:78)
-at javax.faces.component.UIComponentBase.encodeChildren(UIComponentBase.java:890)
-at javax.faces.component.UIComponent.encodeAll(UIComponent.java:1856)
-at javax.faces.component.UIComponent.encodeAll(UIComponent.java:1859)
-at com.sun.faces.application.view.FaceletViewHandlingStrategy.renderView(FaceletViewHandlingStrategy.java:456)
-at com.sun.faces.application.view.MultiViewHandler.renderView(MultiViewHandler.java:134)
-at javax.faces.application.ViewHandlerWrapper.renderView(ViewHandlerWrapper.java:337)
-at com.sun.faces.lifecycle.RenderResponsePhase.execute(RenderResponsePhase.java:120)
-at com.sun.faces.lifecycle.Phase.doPhase(Phase.java:101)
-at com.sun.faces.lifecycle.LifecycleImpl.render(LifecycleImpl.java:219)
-at javax.faces.webapp.FacesServlet.service(FacesServlet.java:659)
-at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)
-at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
-at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
-at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
-at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
-at com.jk.web.filters.JKDefaultFilter.doFilter(JKDefaultFilter.java:95)
-at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
-at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
-at com.jk.web.filters.SetCharacterEncodingFilter.doFilter(SetCharacterEncodingFilter.java:81)
-at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
-at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
-at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:199)
-at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)
-at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:493)
-at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:137)
-at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:81)
-at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:87)
-at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:343)
-at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:798)
-at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:66)
-at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:808)
-at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1498)
-at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
-at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
-at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
-at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
-at java.lang.Thread.run(Thread.java:750)
+// In MB_Main.java
+
+// Field "now" should be initialized in init() or elsewhere. For safety, we use a fallback.
+private LocalDate now;
+
+// Calculates a date by subtracting an interval (months, weeks, or days) from the base date (now).
+private LocalDate calculateLastDate(long end, String periodType) {
+    // Use now if available, otherwise fallback to LocalDate.now()
+    LocalDate baseDate = (now != null) ? now : LocalDate.now();
+    // If periodType is null, default to subtracting days
+    if (periodType == null) {
+        // Optionally log a warning here
+        return baseDate.minusDays(end);
+    }
+    if (periodType.contains("month")) {
+        return baseDate.minusMonths(end);
+    } else if (periodType.contains("week")) {
+        return baseDate.minusWeeks(end);
+    } else {
+        return baseDate.minusDays(end);
+    }
+}
+
+// Helper method to compute week number given a day of month.
+private int getWeekNum(int dayOfMonth) {
+    return (dayOfMonth - 1) / 7 + 1;
+}
+
+// Returns a code when the week number parameter equals ">" (i.e. greater than a certain week)
+private String getCodeForGreaterThanWeek(LocalDate lastDate) {
+    LocalDate baseDate = (now != null) ? now : LocalDate.now();
+    long daysBetween = Math.abs(ChronoUnit.DAYS.between(lastDate, baseDate));
+    // For example, subtract days to compute a reference date (adjust the formula as needed)
+    LocalDate date = baseDate.minusDays(daysBetween - (4 * 7) + 1);
+    int weekNumber = getWeekNum(date.getDayOfMonth());
+    String month = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+    return ">" + " " + month;
+}
+
+// Returns a code based on a specific week number.
+private String getCodeForSpecificWeek(LocalDate lastDate, String weeknum, String weekCode) {
+    LocalDate baseDate = (now != null) ? now : LocalDate.now();
+    // Assuming weeknum is like "W1", "W2", etc.
+    int week = Integer.parseInt(weeknum.substring(1));
+    long daysBetween = Math.abs(ChronoUnit.DAYS.between(lastDate, baseDate));
+    LocalDate date = baseDate.minusDays(daysBetween - (week * 7) + 1);
+    int weekNumber = getWeekNum(date.getDayOfMonth());
+    String month = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+    return month + " " + weekCode + weekNumber;
+}
+
+// The method that builds a week box string based on input parameters.
+public String getWeekBox(String weeknum, String type) {
+    long end = 0;
+    String weekCode = "W";
+    String code = "";
+    String periodType = "";
+    LocalDate lastDate = null;
+    
+    // Sample logic: based on the 'type' value, choose appropriate values.
+    // (In your actual code, these values come from objects such as greenExist, etc.)
+    if ("Green-Exist".equalsIgnoreCase(type)) {
+        end = 2; // e.g., 2 months
+        periodType = "month";
+    } else if ("SomeOtherType".equalsIgnoreCase(type)) {
+        end = 3; // e.g., 3 weeks
+        periodType = "week";
+    } else {
+        end = 1; // default value
+        periodType = "day";
+    }
+    
+    // Compute the base date using our safe method.
+    lastDate = calculateLastDate(end, periodType);
+    
+    if (weeknum.equalsIgnoreCase(">")) {
+        code = getCodeForGreaterThanWeek(lastDate);
+    } else {
+        code = getCodeForSpecificWeek(lastDate, weeknum, weekCode);
+    }
+    return code;
+}
