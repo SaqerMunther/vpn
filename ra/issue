@@ -1,136 +1,51 @@
-// In MB_Main.java
-
-/**
- * Converts a java.util.Date to a LocalDate.
- * If the input date is null, returns LocalDate.now().
- */
-public LocalDate convertDateToLocalDate(Date date) {
-    if (date == null) {
-        return LocalDate.now();
-    }
-    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-}
-
-/**
- * Calculates a bulk scan fill percentage based on the scanDate.
- * For example, this sample logic calculates how many weeks have passed
- * and returns a percentage (e.g., every week adds 25% up to a maximum of 100%).
- * Adjust the logic according to your business rules.
- */
-private int calculateBulkScanFill(LocalDate scanDate) {
-    LocalDate current = LocalDate.now();
-    if (scanDate.isAfter(current) || scanDate.equals(current)) {
-        return 0;
-    }
-    // Example: every week passed increases fill by 25, capping at 100%
-    long weeksPassed = ChronoUnit.WEEKS.between(scanDate, current);
-    int fill = (int) Math.min(weeksPassed * 25, 100);
-    return fill;
-}
-
-/**
- * Returns a fill percentage for Coverage.
- * The parameter 'isNew' distinguishes between new and existing coverage scans.
- * If there is no coverage value (val == 0), returns 0.
- * Otherwise, it converts the appropriate scan date (dateComp or dateComp2) to LocalDate,
- * then calculates the fill using calculateBulkScanFill.
- */
-public int getCovFill(int isNew, double val) {
-    if (val == 0) {
-        return 0;
-    }
-    LocalDate scanDate;
-    // Assuming dateComp holds the scan date for existing coverage 
-    // and dateComp2 for new coverage scans.
-    if (isNew == 0) {
-        scanDate = convertDateToLocalDate(dateComp);
-    } else {
-        scanDate = convertDateToLocalDate(dateComp2);
-    }
-    return calculateBulkScanFill(scanDate);
-}
-
------------------------------------------------------------------
-
-// In MB_Main.java
-
-// Field "now" should be initialized in init() or elsewhere. For safety, we use a fallback.
-private LocalDate now;
-
-// Calculates a date by subtracting an interval (months, weeks, or days) from the base date (now).
-private LocalDate calculateLastDate(long end, String periodType) {
-    // Use now if available, otherwise fallback to LocalDate.now()
-    LocalDate baseDate = (now != null) ? now : LocalDate.now();
-    // If periodType is null, default to subtracting days
-    if (periodType == null) {
-        // Optionally log a warning here
-        return baseDate.minusDays(end);
-    }
-    if (periodType.contains("month")) {
-        return baseDate.minusMonths(end);
-    } else if (periodType.contains("week")) {
-        return baseDate.minusWeeks(end);
-    } else {
-        return baseDate.minusDays(end);
-    }
-}
-
-// Helper method to compute week number given a day of month.
-private int getWeekNum(int dayOfMonth) {
-    return (dayOfMonth - 1) / 7 + 1;
-}
-
-// Returns a code when the week number parameter equals ">" (i.e. greater than a certain week)
-private String getCodeForGreaterThanWeek(LocalDate lastDate) {
-    LocalDate baseDate = (now != null) ? now : LocalDate.now();
-    long daysBetween = Math.abs(ChronoUnit.DAYS.between(lastDate, baseDate));
-    // For example, subtract days to compute a reference date (adjust the formula as needed)
-    LocalDate date = baseDate.minusDays(daysBetween - (4 * 7) + 1);
-    int weekNumber = getWeekNum(date.getDayOfMonth());
-    String month = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
-    return ">" + " " + month;
-}
-
-// Returns a code based on a specific week number.
-private String getCodeForSpecificWeek(LocalDate lastDate, String weeknum, String weekCode) {
-    LocalDate baseDate = (now != null) ? now : LocalDate.now();
-    // Assuming weeknum is like "W1", "W2", etc.
-    int week = Integer.parseInt(weeknum.substring(1));
-    long daysBetween = Math.abs(ChronoUnit.DAYS.between(lastDate, baseDate));
-    LocalDate date = baseDate.minusDays(daysBetween - (week * 7) + 1);
-    int weekNumber = getWeekNum(date.getDayOfMonth());
-    String month = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
-    return month + " " + weekCode + weekNumber;
-}
-
-// The method that builds a week box string based on input parameters.
-public String getWeekBox(String weeknum, String type) {
-    long end = 0;
-    String weekCode = "W";
-    String code = "";
-    String periodType = "";
-    LocalDate lastDate = null;
-    
-    // Sample logic: based on the 'type' value, choose appropriate values.
-    // (In your actual code, these values come from objects such as greenExist, etc.)
-    if ("Green-Exist".equalsIgnoreCase(type)) {
-        end = 2; // e.g., 2 months
-        periodType = "month";
-    } else if ("SomeOtherType".equalsIgnoreCase(type)) {
-        end = 3; // e.g., 3 weeks
-        periodType = "week";
-    } else {
-        end = 1; // default value
-        periodType = "day";
-    }
-    
-    // Compute the base date using our safe method.
-    lastDate = calculateLastDate(end, periodType);
-    
-    if (weeknum.equalsIgnoreCase(">")) {
-        code = getCodeForGreaterThanWeek(lastDate);
-    } else {
-        code = getCodeForSpecificWeek(lastDate, weeknum, weekCode);
-    }
-    return code;
-}
+Error Page
+Back to Home
+Message:Component ID j_idt2:form:bt_85_95_new has already been found in the view.
+Technical description for the problem:
+Type of the exception: java.lang.IllegalStateException:Throwable instance: java.lang.IllegalStateException: Component ID j_idt2:form:bt_85_95_new has already been found in the view. Exception message: Component ID j_idt2:form:bt_85_95_new has already been found in the view. Stack trace: java.lang.IllegalStateException: Component ID j_idt2:form:bt_85_95_new has already been found in the view.
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1026)
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1010)
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1010)
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1010)
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1010)
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1010)
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1010)
+at com.sun.faces.util.Util.checkIdUniqueness(Util.java:1010)
+at com.sun.faces.application.view.FaceletPartialStateManagementStrategy.saveView(FaceletPartialStateManagementStrategy.java:460)
+at com.sun.faces.application.StateManagerImpl.saveView(StateManagerImpl.java:89)
+at com.sun.faces.application.view.WriteBehindStateWriter.getState(WriteBehindStateWriter.java:327)
+at com.sun.faces.application.view.WriteBehindStateWriter.flushToWriter(WriteBehindStateWriter.java:221)
+at com.sun.faces.application.view.FaceletViewHandlingStrategy.renderView(FaceletViewHandlingStrategy.java:473)
+at com.sun.faces.application.view.MultiViewHandler.renderView(MultiViewHandler.java:134)
+at javax.faces.application.ViewHandlerWrapper.renderView(ViewHandlerWrapper.java:337)
+at com.sun.faces.lifecycle.RenderResponsePhase.execute(RenderResponsePhase.java:120)
+at com.sun.faces.lifecycle.Phase.doPhase(Phase.java:101)
+at com.sun.faces.lifecycle.LifecycleImpl.render(LifecycleImpl.java:219)
+at javax.faces.webapp.FacesServlet.service(FacesServlet.java:659)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+at com.jk.web.filters.JKDefaultFilter.doFilter(JKDefaultFilter.java:95)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+at com.jk.web.filters.SetCharacterEncodingFilter.doFilter(SetCharacterEncodingFilter.java:81)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:199)
+at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)
+at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:493)
+at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:137)
+at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:81)
+at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:87)
+at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:343)
+at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:798)
+at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:66)
+at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:808)
+at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1498)
+at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
+at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+at java.lang.Thread.run(Thread.java:750)
