@@ -255,21 +255,52 @@ public class MB_Main extends CmonManagedBean {
         twoMonthMap = processAssetList(listTwo);
     }
 
-    private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
-        // Group by LocationCode + SubViewId
-        Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
-            .collect(Collectors.groupingBy(asset -> asset.getLocationCode() + asset.getSubViewId(),
-                Collectors.collectingAndThen(Collectors.toList(),
-                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                )
-            ));
+private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
+    // Group by individual LocationCode + SubViewId
+    Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
+        .collect(Collectors.groupingBy(
+            asset -> asset.getLocationCode() + asset.getSubViewId(),
+            Collectors.collectingAndThen(
+                Collectors.toList(),
+                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+            )
+        ));
 
-        // Additional groupings as in the original code can be applied here...
-        // For example, grouping by "ALL" location and overall totals.
-        // ...
+    // Group by "ALL" for each SubViewId: treating all locations together per subview
+    Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
+        .collect(Collectors.groupingBy(
+            asset -> "ALL" + asset.getSubViewId(),
+            Collectors.collectingAndThen(
+                Collectors.toList(),
+                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+            )
+        ));
 
-        return resultMap;
-    }
+    // Group by all locations, but with SubViewId = -1 (i.e. a grouping by location code only)
+    Map<String, Pair<Integer, Integer>> allLocationsMap = assetList.stream()
+        .collect(Collectors.groupingBy(
+            asset -> asset.getLocationCode() + "-1",
+            Collectors.collectingAndThen(
+                Collectors.toList(),
+                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+            )
+        ));
+
+    // Calculate overall total across all assets
+    Pair<Integer, Integer> totalPair = assetList.stream()
+        .collect(Collectors.collectingAndThen(
+            Collectors.toList(),
+            assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+        ));
+
+    // Merge the additional groupings into the main result map
+    resultMap.putAll(allGroupMapBySubViewId);
+    resultMap.putAll(allLocationsMap);
+    resultMap.put("ALL-1", totalPair);
+
+    return resultMap;
+}
+
 
     public LocalDate getScanDate() {
         Date date = da.getBulkScanDate(viewId, subViewId, country.equals("ALL") ? "" : country, 0);
@@ -391,3 +422,6 @@ public class MB_Main extends CmonManagedBean {
     // ... remaining methods from the original MB_Main go here, refactored if needed for lazy loading ...
 
 }
+
+
+
