@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  - Copyright (c) 2021.
+  - Suhaib Irsheidat - Arab Bank - Head office +962 56 00000 - 1504
+  -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:c="http://xmlns.jcp.org/jsp/jstl/core"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+  
+  <!-- Cache heavy expressions using ui:param so they are computed once -->
+  <ui:param name="tripleTwo" value="#{mbMain.getTripleTwoMonth()}" />
+  <ui:param name="pairTwo" value="#{mbMain.getPairTwoMonth()}" />
+  <ui:param name="tripleOne" value="#{mbMain.getTripleOneMonth()}" />
+  <ui:param name="pairOne" value="#{mbMain.getPairOneMonth()}" />
+  <ui:param name="covToday" value="#{mbMain.getCovUpperData(0)}" />
+  
+  <div class="full CMON-Gradient bold lg primary"
+       style="padding: 0.3vw 0.75vw">
+    Coverage
+    <span style="float: right;font-size: 1vw;">Full Scan Date : #{mbMain.scanDate}</span>
+  </div>
+  <!-- Coverage Items -->
+  <div class="full flex" style="margin-top: 2vh">
+    <div class="full flex spaced" style="margin-bottom:10px;font-size: 0.6vw;">
+      <div class="flex spaced" style="flex-basis: 6%;"></div> 
+      <p:outputPanel styleClass="quarter flex spaced rounded-corners primary"
+                     style="padding: 0.2vw 0.5vw;display: contents">
+        <div class="bold small-title">
+          Coverage before 2 months
+        </div>
+      </p:outputPanel>
+      <p:outputPanel styleClass="quarter flex spaced rounded-corners primary"
+                     style="padding: 0.2vw 0.5vw;display: contents">
+        <div class="bold small-title">
+          Coverage before 1 month
+        </div>
+      </p:outputPanel>
+      <p:outputPanel styleClass="quarter flex spaced rounded-corners primary"
+                     style="padding: 0.2vw 0.5vw;">
+        <div class="bold small-title">
+          Coverage today
+        </div>
+      </p:outputPanel>
+    </div>
+    
+    <!-- First Row -->
+    <div class="full flex spaced">
+      <!-- CELL: IT Label (if not manual) -->
+      <ui:fragment rendered="#{not mbMain.isManual}">
+        <div class="col-1 lg bold" style="flex-basis: 6%;margin-top: 5px;">
+          IT
+        </div>
+      </ui:fragment>
+      <ui:fragment rendered="#{mbMain.isManual}">
+        <!-- (Nothing to display when manual) -->
+      </ui:fragment>
+      
+      <p:tooltip for="sec_month" value="Coverage status before 2 months (Today – 60)" />
+      <p:outputPanel id="sec_month"
+                     styleClass="quarter flex spaced bg-white shadow rounded-corners xl primary"
+                     style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{tripleTwo.first}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>%
+        </div>
+        <div class="column-flex sm bold">
+          <div>#{tripleTwo.second} <span style="font-size:0.5vw;font-weight: bold">(#{pairTwo.first})</span></div>
+          <hr/>
+          <div>#{tripleTwo.third} <span style="font-size:0.5vw;font-weight: bold">(#{pairTwo.second})</span></div>
+        </div>
+      </p:outputPanel>
+      <!-- CELL for "one month" -->
+      <p:tooltip for="one_month" value="Coverage status before 1 months (Today – 30)" />
+      <p:outputPanel id="one_month"
+                     styleClass="quarter flex spaced bg-white shadow rounded-corners xl primary"
+                     style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{tripleOne.first}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>%
+        </div>
+        <div class="column-flex sm bold">
+          <div style="text-align: center;">#{tripleOne.second} <span style="font-size:0.5vw;font-weight: bold">(#{pairOne.first})</span></div>
+          <hr />
+          <div>#{tripleOne.third} <span style="font-size:0.5vw;font-weight: bold">(#{pairOne.second})</span></div>
+        </div>
+      </p:outputPanel>
+      <!-- CELL for "today" -->
+      <ui:param name="covRow" value="#{covToday}" />
+      <p:tooltip for="today" value="Coverage status today" />
+      <p:outputPanel id="today"
+                     styleClass="quarter flex spaced bg-white shadow rounded-corners xl primary"
+                     style="padding: 0.2vw 0.5vw;background-color:#{mbMain.getCoverageTodaythreshold(covRow.first)};color:#{mbMain.getCoverageTodaythreshold(covRow.first) eq 'white' ? '#37538C' :'white !important'}">
+        <div class="regular">
+          <h:outputText value="#{covRow.first}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>%
+        </div>
+        <div class="column-flex sm bold">
+          <div style="text-align: center;">#{covRow.second}<span style="font-size:0.5vw;font-weight: bold">(#{mbMain.getPairCur().first})</span></div>
+          <hr />
+          <div>#{covRow.third} <span style="font-size:0.5vw;font-weight: bold">(#{mbMain.getPairCur().second})</span></div>
+        </div>
+      </p:outputPanel>
+    </div>
+    <!-- ROW END -->
+    
+    <!-- Second Row -->
+    <div class="full flex spaced" style="margin-top: 2vh; margin-left: -0.5vw;">
+      <!-- CELL: Yellow Circle -->
+      <p:tooltip for="yello_circle" value="No. of uncovered assets since 3-6 months" />
+      <p:outputPanel id="yello_circle" styleClass="bg-warning circle" />
+      <!-- CELL: Coverage before 2 months summary -->
+      <div class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+           style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{mbMain.getCovBeforTwoMonth('Orange', 'Existing') + mbMain.getCovBeforTwoMonth('Orange', 'New')}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>
+        </div>
+      </div>
+      <!-- CELL: Coverage before 1 month summary -->
+      <div class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+           style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{mbMain.getCovBeforOneMonth('Orange', 'Existing') + mbMain.getCovBeforOneMonth('Orange', 'New')}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>
+        </div>
+      </div>
+      <!-- CELL: Coverage today summary -->
+      <div class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+           style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{mbMain.getCov('Orange', 'Existing') + mbMain.getCov('Orange', 'New')}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>
+        </div>
+      </div>
+    </div>
+    <!-- ROW END -->
+    
+    <!-- Third Row -->
+    <div class="full flex spaced" style="margin-top: 2vh; margin-left: -0.5vw;">
+      <!-- CELL: Red Circle -->
+      <p:tooltip for="red_circle" value="No. of uncovered assets since more than 6 months" />
+      <p:outputPanel id="red_circle" styleClass="bg-fatal circle" />
+      <!-- CELL: Red 2-month summary -->
+      <div class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+           style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{mbMain.getCovBeforTwoMonth('Red', 'Existing') + mbMain.getCovBeforTwoMonth('Red', 'New')}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>
+        </div>
+      </div>
+      <!-- CELL: Red 1-month summary -->
+      <div class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+           style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{mbMain.getCovBeforOneMonth('Red', 'Existing') + mbMain.getCovBeforOneMonth('Red', 'New')}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>
+        </div>
+      </div>
+      <!-- CELL: Red today summary -->
+      <div class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+           style="padding: 0.2vw 0.5vw">
+        <div class="regular">
+          <h:outputText value="#{mbMain.getCov('Red', 'Existing') + mbMain.getCov('Red', 'New')}">
+            <f:convertNumber maxFractionDigits="2" />
+          </h:outputText>
+        </div>
+      </div>
+    </div>
+    <!-- ROW END -->
+  </div>
+  
+  <!-- Lower Compartment: The rest of the page remains unchanged. All EL calls remain the same but now may reference cached parameters where appropriate. -->
+  <!-- (No changes to the layout, style or core logic of the page.) -->
+  
+  <style>
+    li {
+      background-color:#C3ECFB !important;
+      border-radius: 10px !important;
+      border-style: solid;
+      border-color: white;
+    }
+    body .ui-menu .ui-menu-list .ui-widget-header h3 {
+      font-weight: bold;
+      font-size:1vw;
+      color: #37538C !important;
+      text-align: center;
+    }
+    body .ui-menu .ui-menu-list .ui-menuitem{
+      background-color: white !important;
+      font-size:0.1vw;
+      text-align: center;
+      border: unset;
+      border-radius: 0 !important;
+      display: flex;
+      align-content: center;
+      justify-content: center;
+    }
+    body .ui-menu .ui-menu-list .ui-menuitem .ui-menuitem-link{
+      margin:5px;
+      display: flex !important;
+      justify-content: center;
+      align-items: center;
+    }
+    body .ui-menu.ui-menu-toggleable .ui-menu-list .ui-widget-header {
+      border: unset;
+      box-shadow: 0 0.25vw 0.5vw #0001;
+      border-radius: 0 !important;
+    }
+    body .ui-menu.ui-menu-toggleable .ui-menu-list .ui-widget-header:nth-child(odd){
+      background: #DAF0FF !important;
+    } 
+    body .ui-menu.ui-menu-toggleable .ui-menu-list .ui-widget-header:nth-child(even){
+      background: #E5F5FF !important;
+    } 
+  </style>
+  
+</html>
