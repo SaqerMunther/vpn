@@ -1,5 +1,59 @@
 // In MB_Main.java
 
+/**
+ * Converts a java.util.Date to a LocalDate.
+ * If the input date is null, returns LocalDate.now().
+ */
+public LocalDate convertDateToLocalDate(Date date) {
+    if (date == null) {
+        return LocalDate.now();
+    }
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+}
+
+/**
+ * Calculates a bulk scan fill percentage based on the scanDate.
+ * For example, this sample logic calculates how many weeks have passed
+ * and returns a percentage (e.g., every week adds 25% up to a maximum of 100%).
+ * Adjust the logic according to your business rules.
+ */
+private int calculateBulkScanFill(LocalDate scanDate) {
+    LocalDate current = LocalDate.now();
+    if (scanDate.isAfter(current) || scanDate.equals(current)) {
+        return 0;
+    }
+    // Example: every week passed increases fill by 25, capping at 100%
+    long weeksPassed = ChronoUnit.WEEKS.between(scanDate, current);
+    int fill = (int) Math.min(weeksPassed * 25, 100);
+    return fill;
+}
+
+/**
+ * Returns a fill percentage for Coverage.
+ * The parameter 'isNew' distinguishes between new and existing coverage scans.
+ * If there is no coverage value (val == 0), returns 0.
+ * Otherwise, it converts the appropriate scan date (dateComp or dateComp2) to LocalDate,
+ * then calculates the fill using calculateBulkScanFill.
+ */
+public int getCovFill(int isNew, double val) {
+    if (val == 0) {
+        return 0;
+    }
+    LocalDate scanDate;
+    // Assuming dateComp holds the scan date for existing coverage 
+    // and dateComp2 for new coverage scans.
+    if (isNew == 0) {
+        scanDate = convertDateToLocalDate(dateComp);
+    } else {
+        scanDate = convertDateToLocalDate(dateComp2);
+    }
+    return calculateBulkScanFill(scanDate);
+}
+
+-----------------------------------------------------------------
+
+// In MB_Main.java
+
 // Field "now" should be initialized in init() or elsewhere. For safety, we use a fallback.
 private LocalDate now;
 
