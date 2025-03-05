@@ -1,6 +1,7 @@
 package com.app.dev.cmon.controllers;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -36,6 +37,12 @@ import javax.faces.context.FacesContext;
 import javax.faces.event.AjaxBehaviorEvent;
 import javax.servlet.http.HttpServletResponse;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
@@ -48,6 +55,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.app.dev.cmon.cache.CacheService;
 import com.app.dev.cmon.components.AllRadarData;
 import com.app.dev.cmon.components.AssetInfo;
 import com.app.dev.cmon.components.ComplianceInfo;
@@ -56,8 +64,6 @@ import com.app.dev.cmon.components.CountryCardComponent;
 import com.app.dev.cmon.components.CountryLeftCardData;
 import com.app.dev.cmon.components.HeaderView;
 import com.app.dev.cmon.components.RadarDashValidation;
-import com.app.dev.cmon.components.RadarHistorical;
-import com.app.dev.cmon.components.RadarLeftCard;
 import com.app.dev.cmon.components.Score;
 import com.app.dev.cmon.components.ServiceSyncMain;
 import com.app.dev.cmon.components.TotalAssetsHistory;
@@ -72,356 +78,2719 @@ import com.arabbank.devf.cmon.controllers.portal.CmonManagedBean;
 @ManagedBean(name = "mbMain")
 @ViewScoped
 public class MB_Main extends CmonManagedBean {
-
-    // ===============================
-    // Fields (mostly unchanged)
-    // ===============================
-    private CountryCardComponent countriesCard;
-    private String curCountry = "ALL";
-    private DataAccess da = new DataAccess();
-    private String country = "";
-    private List<String> upperMonthLabels = new ArrayList<>();
-    private int viewId;
-    private int subViewId = -1;
-    private List<AssetInfo> assetList;
-    private List<ComplianceInfo> complianceList;
-    public Map<String, List<AssetInfo>> assetMap;
-    public Map<String, List<AssetInfo>> excludeMap;
-    public Map<String, List<ComplianceInfo>> complianceExcludeMap;
-    public Map<String, List<ComplianceInfo>> complianceMap;
-    private List<Views> viewList;
-    private List<Views> symantecList = new ArrayList<>();
-    private String viewText;
-    private String subViewText = "All";
-    private boolean isManual;
-    private String COMPLIANCE_PATH_REDIRECT = "radar/inc/details-compliance.xhtml";
-    private String COVERAGE_PATH_REDIRECT = "radar/inc/details-coverage.xhtml";
-    private int selectedThresold;
-    private LocalDate manualAssetScanDate;
-    private LocalDate scanDate;
-    private HashMap<String, List<RadarLeftCard>> radarLeftCardMap;
-    private Views selectedView;
-    private List<AssetInfo> assetTopRows;
-    private HashMap<String, List<RadarLeftCard>> wsusLeftCardMap = new HashMap<>();
-    private List<Pair<String, Long>> excludeList;
-    private LocalDate now;
-    private Date nowCycle;
-    private List<AssetInfo> nowCycle1;
-    private List<AssetInfo> excludeCovList;
-    private List<ComplianceInfo> excludeCompList;
-    private List<ViewInfo> veiwDataComp;
-    private List<ViewInfo> veiwDataAll;
-    private List<ViewInfo> veiwDataCov;
-    private List<ViewInfo> veiwDataCompOneMonth;
-    private List<ViewInfo> veiwDataCovOneMonth;
-    private List<ViewInfo> veiwDataCompTwoMonth;
-    private List<ViewInfo> veiwDataCovTwoMonth;
-    private List<ViewInfo> veiwDataCompDate2;
-    private List<ViewInfo> circleCompPerWeek;
-    private List<ViewInfo> circleCovPerWeek;
-    private List<ViewInfo> circleExiCompDetails;
-    private List<ViewInfo> circleNewCompDetails;
-    private List<AssetInfo> covDataList;
-    private List<ComplianceInfo> compDataList;
-    public Map<String, List<ViewInfo>> leftCardDataMap = new HashMap<>();
-    public Map<String, List<ViewInfo>> wsusleftCardDataMap = new HashMap<>();
-    public List<ViewInfo> leftCardList = new ArrayList<>();
-    public List<AssetInfo> timeList = new ArrayList<>();
-    public List<ViewInfo> headeData;
-    public List<HeaderView> covHeaderData1;
-    public List<HeaderView> covHeaderData2;
-    public List<HeaderView> compHeaderData1;
-    public List<HeaderView> compHeaderData2;
-    public static HashMap<String, ViewInfo> headerMap = new HashMap<>();
-    public static HashMap<String, Integer> covHeaderList1 = new HashMap<>();
-    public static HashMap<String, Integer> covHeaderList2 = new HashMap<>();
-    public static HashMap<String, Integer> compHeaderList1 = new HashMap<>();
-    public static HashMap<String, Integer> compHeaderList2 = new HashMap<>();
-    public HashMap<String, List<ViewInfo>> circleData = new HashMap<>();
-    public List<AssetInfo> listPerWeek = new ArrayList<>();
-    private Date date1 = new Date();
-    private Date date2 = new Date();
-    private List<CountryLeftCardData> countryAssetList;
-    private List<ViewInfo> exeludedCov;
-    private List<ViewInfo> exeludedComp;
-    private String contriName;
-    private String circleDetail = "";
-    private Date dateComp;
-    private Integer checkIsNew2;
-    private Integer checkValue2;
-    private String checkCountry;
-    private Date dateComp2;
-    List<ViewInfo> compUpperAndLo;
-    List<ViewInfo> covUpperAndLo;
-    public List<Score> scoreList;
-    public Map<String, Pair<Integer, Double>> scoreMap = new HashMap<>();
-    private int viewSymantecName;
-    private Map<String, AllRadarData> allRadarData = new HashMap<>();
-    List<AllRadarData> radarInfo = new ArrayList<>();
-    Long itNewCov = 0L;
-    Long itNewComp = 0L;
-    Long itExistComp = 0L;
-    Long itExistCov = 0L;
-    Long RiskNewCov = 0L;
-    Long RiskNewComp = 0L;
-    Long RiskExistComp = 0L;
-    Long RiskExistCov = 0L;
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+	private CountryCardComponent countriesCard;
+	private String curCountry = "ALL";
+	private DataAccess da = new DataAccess();
+	private String country = "";
+	private List<String> upperMonthLabels = new ArrayList<>();
+	private int viewId;
+	private int subViewId = -1;
+	private List<AssetInfo> assetList;
+	private List<ComplianceInfo> complianceList;
+	public Map<String, List<AssetInfo>> assetMap;
+	public Map<String, List<AssetInfo>> excludeMap;
+	public Map<String, List<ComplianceInfo>> complianceExcludeMap;
+	public Map<String, List<ComplianceInfo>> complianceMap;
+	private List<Views> viewList;
+	private List<Views> symantecList = new ArrayList<Views>();
+	private String viewText;
+	private String subViewText= "All";
+	private boolean isManual;
+	private String COMPLIANCE_PATH_REDIRECT = "radar/inc/details-compliance.xhtml";
+	private String COVERAGE_PATH_REDIRECT = "radar/inc/details-coverage.xhtml";
+	private int selectedThresold;
+	private LocalDate manualAssetScanDate;
+	private LocalDate scanDate;
+	private HashMap<String, List<RadarLeftCard>> radarLeftCardMap;
+	private Views selectedView;
+	private List<AssetInfo> assetTopRows;
+	HashMap<String, List<RadarLeftCard>> wsusLeftCardMap = new HashMap<String, List<RadarLeftCard>>();
+	private List<Pair<String, Long>> excludeList;
+	private LocalDate now;
+	private Date nowCycle;
+	private List<AssetInfo> nowCycle1;
+	private List<AssetInfo> excludeCovList;
+	private List<ComplianceInfo> excludeCompList;
+	private List<ViewInfo> veiwDataComp;
+	private List<ViewInfo> veiwDataAll;
+	private List<ViewInfo> veiwDataCov;
+	private List<ViewInfo> veiwDataCompOneMonth;
+	private List<ViewInfo> veiwDataCovOneMonth;
+	private List<ViewInfo> veiwDataCompTwoMonth;
+	private List<ViewInfo> veiwDataCovTwoMonth;
+	private List<ViewInfo> veiwDataCompDate2;
+	private List<ViewInfo> circleCompPerWeek;
+	private List<ViewInfo> circleCovPerWeek;
+	private List<ViewInfo> circleExiCompDetails;
+	private List<ViewInfo> circleNewCompDetails;
+	private List<AssetInfo> covDataList;
+	private List<ComplianceInfo> compDataList;
+	public Map<String, List<ViewInfo>> leftCardDataMap = new HashMap<>();
+	public Map<String, List<ViewInfo>> wsusleftCardDataMap = new HashMap<>();
+	public List<ViewInfo> leftCardList = new ArrayList<>();
+	public List<AssetInfo> timeList = new ArrayList<>();
+	public List<ViewInfo> headeData;
+	public List<HeaderView> covHeaderData1;
+	public List<HeaderView> covHeaderData2;
+	public List<HeaderView> compHeaderData1;
+	public List<HeaderView> compHeaderData2;
+	public static HashMap<String, ViewInfo> headerMap= new HashMap<>();
+	public static HashMap<String, Integer> covHeaderList1 = new HashMap<>();
+	public static HashMap<String, Integer> covHeaderList2 = new HashMap<>();
+	public static HashMap<String, Integer> compHeaderList1 = new HashMap<>();
+	public static HashMap<String, Integer> compHeaderList2 = new HashMap<>();
+	public HashMap<String, List<ViewInfo>> circleData = new HashMap<>();
+	public List<AssetInfo> listPerWeek = new ArrayList<>();
+	private Date date1 = new Date();
+	private Date date2 = new Date();
+	private List<CountryLeftCardData> countryAssetList;
+	private List<ViewInfo> exeludedCov;
+	private List<ViewInfo> exeludedComp;
+	private String contriName;
+	private String circleDetail = "";
+	private Date dateComp;
+	private Integer checkIsNew2;
+	private Integer checkValue2;
+	private String checkCountry;
+	private Date dateComp2;
+	List<ViewInfo> compUpperAndLo;
+	List<ViewInfo> covUpperAndLo;
+	public List<Score> scoreList;
+	public Map<String, Pair<Integer, Double>> scoreMap = new HashMap<String, Pair<Integer, Double>>();
+	private int viewSymantecName;
+	private Map<String, AllRadarData> allRadarData = new HashMap<String, AllRadarData>();
+	List<AllRadarData> radarInfo = new ArrayList<AllRadarData>();
+	Long itNewCov = (long) 0;
+	Long itNewComp = (long) 0;
+	Long itExistComp = (long) 0;
+	Long itExistCov = (long) 0;
+	Long RiskNewCov = (long) 0;
+	Long RiskNewComp = (long) 0;
+	Long RiskExistComp = (long) 0;
+	Long RiskExistCov = (long) 0;
+	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     String formattedDate;
     private String cycleStatus;
-    RadarController radar = ((RadarController) getManagedBeanByName("radarController"));
-    RadarDataSource radarDataSource = ((RadarDataSource) getManagedBeanByName("RadarDataSource"));
-    public List<AllRadarData> allRadar = new ArrayList<>();
-    private AllRadarData filter;
-    private List<String> countresAccess = new ArrayList<>();
-    public HashMap<String, Double> countryValueMap = new HashMap<>();
-    private List<ViewInfo> listOfTodayData;
-    Triple<Double, Integer, Integer> tripleOneMonth = new Triple<>();
-    Triple<Double, Integer, Integer> tripleTwoMonth = new Triple<>();
-    Pair<Integer, Integer> pairCur;
-    Pair<Integer, Integer> pairOneMonth;
-    Pair<Integer, Integer> pairTwoMonth;
-    private Map<String, Pair<Integer, Integer>> oneMonthMap = new HashMap<>();
-    private Map<String, Pair<Integer, Integer>> twoMonthMap = new HashMap<>();
-    List<AssetInfo> coverageAll;
-    Commons commons = new Commons();
-    List<RadarDashValidation> radarValidation = new ArrayList<>();
-    public Map<String, List<AssetInfo>> exeludedCovMap = new HashMap<>();
-    public Map<String, List<ComplianceInfo>> exeludedCompMap = new HashMap<>();
-    public List<AssetInfo> excludedCovList;
-    public List<ComplianceInfo> excludedCompList;
-    List<String> colorTypes = Arrays.asList("Orange-Exist", "Orange-New", "Red-Exist", "Red-New");
-    // ... other fields as necessary
+	
+	RadarController radar = ((RadarController) getManagedBeanByName("radarController"));
+	RadarDataSource radarDataSource = ((RadarDataSource) getManagedBeanByName("RadarDataSource")) ;
+	public List<AllRadarData> allRadar = new ArrayList<>();
+	private AllRadarData filter;
+	private List<String> countresAccess = new ArrayList<String>();
+	
+	public HashMap<String, Double> countryValueMap = new HashMap<>();
+	private List<ViewInfo> listOfTodayData;
+	
+	Triple<Double, Integer, Integer> tripleOneMonth = new Triple<Double, Integer, Integer>();
+	Triple<Double, Integer, Integer> tripleTwoMonth = new Triple<Double, Integer, Integer>();
+	
+	Pair<Integer, Integer> pairCur;
+	Pair<Integer, Integer> pairOneMonth;
+	Pair<Integer, Integer> pairTwoMonth;
+	
+	private Map<String, Pair<Integer, Integer>> oneMonthMap = new HashMap<String, Pair<Integer,Integer>>();
+	private Map<String, Pair<Integer, Integer>> twoMonthMap = new HashMap<String, Pair<Integer,Integer>>();
+	List<AssetInfo> coverageAll;
+	Commons commons = new Commons();
+	List<RadarDashValidation> radarValidation = new ArrayList<RadarDashValidation>();
+	public Map<String, List<AssetInfo>> exeludedCovMap = new HashMap<String, List<AssetInfo>>();
+	public Map<String, List<ComplianceInfo>> exeludedCompMap = new HashMap<String, List<ComplianceInfo>>();
+	public List<AssetInfo> excludedCovList;
+	public List<ComplianceInfo> excludedCompList;
+	List<String> colorTypes = Arrays.asList("Orange-Exist", "Orange-New", "Red-Exist", "Red-New");
+	
+	private CacheService cacheService;
+    
+	@PostConstruct
+	public void init() {
+		cacheService = CacheService.getInstance();
+		radarValidation = da.getRadarDashValidation();
+		date1 = checkDateValidations(radarValidation);		
+		listOfTodayData = da.getHistoryData(radar.getUsername(),sdf.format(radar.getDate1()).trim());
+		radar.setLists();
+		setSelectedView(radar.getSelectedView());
+		country = radar.getCountry();
+		curCountry = radar.getCurCountry();
+		viewId = radar.getViewId();
+		viewText = radar.getViewText();
+		subViewId = radar.getSubViewId();
+		processAndMapData();
+		getDate();
+		getHistoricalForUpperData();
+		getLeftCardInfo();
+		logger.debug("set all Lists:");	
+		viewList = radar.getViewList();
+		symantecList = radar.getSymantecList();		
+		radarInfo = da.getRadarData();
+		getExcludedAssets();
+		setRadarMap();	
+		isSymantec();	
+		logger.debug("set hedar data for cis:");		
+		headeData = da.getHeaderData();				
 
-    // ===============================
-    // Initialization
-    // ===============================
-    @PostConstruct
-    public void init() {
-        // Retrieve validations and set basic date
-        radarValidation = da.getRadarDashValidation();
-        date1 = checkDateValidations(radarValidation);
+		cycle();
+		
+		subViewText = "";
+		filterHeaderData();
+		
+		scoreList = null;
+		setCountryValue();
+	}
+	
+	private void getExcludedAssets() {
+		if (viewId == 29 || viewId == 28 || viewId == 27) {
+			excludedCovList = da.getExcludeList(viewId, subViewId, country);
+			excludedCompList = da.getComplianceExecludedList(viewId, subViewId, country);
+		}
+		setExcludedAssets();
+	}
+	
+	public static Date getPreviousDate(Date date) {
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(date);
+		calendar.add(Calendar.DAY_OF_MONTH, -1);
+		return calendar.getTime();
+	}
+	
+	public void setCountryValue() {
+		List<Countres> valueList = da.getCountryValue();
+		if(valueList != null && valueList.size() >0 ) {
+			for(Countres item: valueList) {
+				countryValueMap.put(item.getViewID() + "-" + item.getViewName() + "-" + item.getCountry() + "-" + item.getDate(), item.getValue());
+			}
+		}
+	}
 
-        // Set up radar and view info
-        radar.setLists();
-        selectedView = radar.getSelectedView();
-        country = radar.getCountry();
-        curCountry = radar.getCurCountry();
-        viewId = radar.getViewId();
-        viewText = radar.getViewText();
-        subViewId = radar.getSubViewId();
+	public void cycle() {
+	    LocalDate currentDate = LocalDate.now();
 
-        // Load only lightweight data here; heavy data will be loaded lazily
-        getDate(); // Assume this is lightweight (e.g., sets dateComp fields)
-        logger.debug("MB_Main initialization complete; heavy data will be loaded on demand.");
-    }
+	    ZonedDateTime zdt = currentDate.atStartOfDay().atZone(ZoneId.systemDefault());
+	    Date date = Date.from(zdt.toInstant());
 
-    // ===============================
-    // Lazy Getters and Deferred Data Loading
-    // ===============================
-    public List<ViewInfo> getLeftCardData() {
-        if (leftCardDataMap == null || leftCardDataMap.isEmpty()) {
-            getLeftCardInfo();  // load left card mapping on demand
+	    List<Date> lastDates = da.getLastDate();
+	    if (!lastDates.isEmpty()) {
+	    	Date lastDate = lastDates.get(0);
+	        if (lastDate instanceof java.sql.Date) {
+	            now = ((java.sql.Date) lastDate).toLocalDate(); 
+	        } else {
+	            now = lastDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	        }
+	    } else {
+	        now = currentDate; 
+	    }
+
+	    formattedDate = sdf.format(date);
+	}
+	//////////////////////////////////////////////////
+	public boolean getvalidateCycle() {
+		List<ServiceSyncMain> syncList = da.getLatestSyncMain();
+		LocalDate currentDate = LocalDate.now();
+		ServiceSyncMain lastSync = syncList.stream().max(Comparator.comparingInt(ServiceSyncMain::getSyncID))
+				.orElse(new ServiceSyncMain());
+		if (lastSync.isFetching()) {
+			setCycleStatus(commons.CYCLEFETCHING);
+			return true;
+		}
+		if (lastSync.getCompletedDate() != null) {
+			LocalDate completedDate = lastSync.getCompletedDate().toInstant().atZone(ZoneId.systemDefault())
+					.toLocalDate();
+			if (currentDate.isAfter(completedDate)) {
+				setCycleStatus(commons.CYCLEISSUE);
+				return true;
+			}
+		}
+		if (checkValidations(radarValidation)) {
+			setCycleStatus(commons.CYCLEISSUE);
+			return true;
+		}
+
+		return false;
+	}
+	
+	//////////////////////////////////////////
+	
+	public boolean checkValidations(List<RadarDashValidation> validations) {
+		if (validations == null || validations.isEmpty()) {
+			return true;
+		}
+		
+		int maxSyncID = Integer.MIN_VALUE;
+
+        for (RadarDashValidation validation : validations) {
+            if (validation.getSyncID() > maxSyncID) {
+                maxSyncID = validation.getSyncID();
+            }
         }
-        return leftCardDataMap.get(curCountry);
-    }
-
-    public List<ViewInfo> getListOfTodayData() {
-        if (listOfTodayData == null) {
-            String formatted = sdf.format(radar.getDate1()).trim();
-            listOfTodayData = da.getHistoryData(radar.getUsername(), formatted);
+		
+        for (RadarDashValidation validation : validations) {
+            if (validation.getSyncID() == maxSyncID) {
+                if (!validation.isComplianceMatch() || !validation.isCoverageMatch()) {
+                    return true;
+                }
+            }
         }
-        return listOfTodayData;
+		return false;
+	}
+	////////////////////////////////////////////////
+	public Date checkDateValidations(List<RadarDashValidation> validations) {
+		if (validations == null || validations.isEmpty()) {
+			return radar.getDate1();
+		}
+
+		Map<Integer, List<RadarDashValidation>> validationMap = validations.stream()
+				.collect(Collectors.groupingBy(RadarDashValidation::getSyncID));
+
+		Optional<Date> lastValidDate = validationMap.values().stream().flatMap(List::stream)
+				.filter(validation -> validation.isComplianceMatch() && validation.isCoverageMatch())
+				.map(validation -> convertLocalDateTimeToMidnightDate(validation.getInsertDate())).max(Date::compareTo);
+		if (radar.getDate1().before(lastValidDate.orElse(radar.getDate1()))) {
+			return radar.getDate1();
+		} else {
+			return lastValidDate.orElse(radar.getDate1());
+		}
+	}
+	
+	public Date convertLocalDateTimeToMidnightDate(LocalDateTime localDateTime) {
+	    if (localDateTime == null) {
+	        return null; 
+	    }
+	    LocalDateTime startOfDay = localDateTime.toLocalDate().atStartOfDay();
+	    return Date.from(startOfDay.atZone(ZoneId.systemDefault()).toInstant());
+	}
+	
+	////////////////////////////////////
+	public List<String> getMapCountryAccess() {
+		return radar.getCountryMap().get(viewId);
+		
+	}
+	//////////////////////////////////////
+	public void setRadarMap() {
+		for (int i = 0; i < radarInfo.size(); i++) {
+			allRadarData.put(radarInfo.get(i).getIDName(), radarInfo.get(i));
+
+		}
+	}
+
+	private void getDate() {
+		dateComp = da.getBulkScanDate(viewId, subViewId, country.equalsIgnoreCase("ALL") ? "" : country, 0);
+		dateComp2 = da.getBulkScanDate(viewId, subViewId, country.equalsIgnoreCase("ALL") ? "" : country, 1);
+	}
+
+	public String changeCountry(String country) {
+		this.curCountry = country;
+		this.country = country.equalsIgnoreCase("ALL") ? "" : country;
+		radar.setCountry(this.country);
+		radar.setCurCountry(this.curCountry);
+		reset();
+		getDate();
+		getHistoricalForUpperData();
+		getExcludedAssets();
+		return country;
+	}
+	
+	
+	public void getLeftCardInfo() {
+	    RadarHistorical radarHist = new RadarHistorical();
+	    radarHist.setCompVal1(0);
+	    radarHist.setCompVal2(0);
+	    radarHist.setCovVal1(0);
+	    radarHist.setCovVal2(0);
+
+	    leftCardDataMap = new HashMap<>();
+	    
+	    List<String> countries = commons.getCountries();
+	    logger.debug("Start filtering left Card Data:");
+
+	    for (String country : countries) {
+	        List<ViewInfo> filteredList = listOfTodayData.stream()
+	                .filter(item -> !item.getControlName().contains("Symantec -") && item.getCountry().equalsIgnoreCase(country))
+	                .map(item -> {
+	                    item.setRadarHistorical(radarHist);
+	                    return item;
+	                })
+	                .collect(Collectors.toList());
+
+	        leftCardDataMap.put(country, filteredList);
+	    }
+
+	    logger.debug("End filtering left Card Data:");
+	    logger.debug("/////////////////////////////");
+	}
+	
+	
+	public void getHistoricalForUpperData() {
+		tripleOneMonth = getCovUpperDataHis(1);
+		tripleTwoMonth = getCovUpperDataHis(2);
+		pairOneMonth = getTotalAssetAndTotalCoverd(1);
+		pairTwoMonth = getTotalAssetAndTotalCoverd(2);
+	}
+
+	public void updateCurrentCountry(String country) {
+		this.curCountry = country;
+	}
+
+	public CountryCardComponent getCountriesCard() {
+		countriesCard = new CountryCardComponent(assetMap, complianceMap, viewText);
+		return countriesCard;
+	}
+
+	public String getCurCountry() {
+		return curCountry;
+	}
+
+	public void setCurCountry(String curCountry) {
+		this.curCountry = curCountry;
+	}
+
+	public List<String> getUpperMonthLabels() {
+		return upperMonthLabels;
+	}
+
+	public List<Views> getViews() {
+		return viewList;
+	}
+
+	public void setSymantecViewId(Views viewId, int subViewId) {
+		this.viewId = viewId.getId();
+		this.subViewId = -1;
+		assetMap = new HashMap<>();
+		complianceMap = new HashMap<>();
+
+		
+		this.viewText = viewId.getName();
+		isSymantec();
+		selectedView = viewId;
+		this.subViewText = "";
+		reset();
+		getDate();
+		getHistoricalForUpperData();
+	}
+
+	public void setViewIds(Views viewId, Views subViewId) {
+		radar.setViewId(viewId.getId());
+		radar.setSubViewId(subViewId.getId());
+		radar.setViewText(viewId.getName());
+		radar.setSelectedView(viewId);
+		
+		this.viewId = viewId.getId();
+		this.subViewId = subViewId.getId();
+		assetMap = new HashMap<>();
+		complianceMap = new HashMap<>();
+		
+		this.viewText = viewId.getName();
+		isSymantec();
+		selectedView = viewId;
+		this.subViewText = subViewId.getName();
+		this.isManual = subViewId.getIsManual() == 1 ? true : false;
+		reset();
+		getDate();
+		getHistoricalForUpperData();
+		getExcludedAssets();
+	}
+
+	public void isSymantec() {
+		if (viewText != null && viewText.contains("Symantec -"))
+			viewSymantecName = 1;
+		else
+			viewSymantecName = 0;
+	}
+	
+	public void setViewIdAll(int viewId, String viewName ) {
+		radar.setViewId(viewId);
+		radar.setSubViewId(-1);
+		radar.setViewText( viewName);
+		radar.getSelectedView().setId(viewId);
+		radar.getSelectedView().setName(viewName);
+		selectedView.setId(viewId);
+		selectedView.setName(viewName);
+		
+		
+		viewSymantecName = 0;
+		int id = -1;
+		int isManual = 0;
+		String name = "ALL";
+		if (viewName.equalsIgnoreCase("CIS - EndPoints")) {
+			id = 2;
+			name = "Windows";
+		}
+		this.viewId = viewId;
+		this.subViewId = id;
+		symantecList = new ArrayList<>();
+		this.viewText = viewName;
+		selectedView = radar.getSelectedView();
+		this.subViewText = name;
+		this.isManual = isManual == 1 ? true : false;
+		reset();
+		processAndMapData();
+		getHistoricalForUpperData();
+		getExcludedAssets();
+	}
+
+	public void setViewIdAll(Views viewId) {
+		radar.setViewId(viewId.getId());
+		radar.setSubViewId(-1);
+		radar.setViewText( viewId.getName());
+		radar.setSelectedView(viewId);
+		
+		viewSymantecName = 0;
+		int id = -1;
+		int isManual = 0;
+		String name = "ALL";
+		if (viewId.getName().equalsIgnoreCase("CIS - EndPoints")) {
+			id = 2;
+			name = "Windows";
+		}
+		this.viewId = viewId.getId();
+		this.subViewId = id;
+		symantecList = new ArrayList<>();
+		this.viewText = viewId.getName();
+		selectedView = viewId;
+		this.subViewText = name;
+		this.isManual = isManual == 1 ? true : false;
+		reset();
+		getHistoricalForUpperData();
+		getExcludedAssets();
+	}
+
+	public List<AssetInfo> getAssetList() {
+		return assetList;
+	}
+
+	public void setAssetList(List<AssetInfo> assetList) {
+		this.assetList = assetList;
+	}
+
+	public List<ComplianceInfo> getComplianceList() {
+		return complianceList;
+	}
+
+	public void setComplianceList(List<ComplianceInfo> complianceList) {
+		this.complianceList = complianceList;
+	}
+
+	public Triple<Double, Integer, Integer> getCoverageFirstRow(int curr) {
+		String key = curr + "" + country + "" + viewId + "" + subViewId;
+
+		Triple<Double, Integer, Integer> triple = new Triple<>();
+		Pair<Integer, Double> item = getFirstObject(da.getCoverageUpper(curr, country, viewId, subViewId));
+		triple.setFirst(divideTwoNumbers(item.getFirst(), item.getSecond()) * 100);
+		triple.setSecond(item.getFirst());
+		triple.setThird(item.getSecond().intValue());
+		return triple;
+	}
+	//////////////////////////////////////////////
+
+	public Triple<Double, Integer, Integer> getCompUpperData(int cur, int isRisk) {
+		Triple<Double, Integer, Integer> triple = new Triple<>();
+		String columnDateExist = "";
+
+		if (isRisk == 1) {
+			columnDateExist = radarInfo.stream()
+					.filter(o -> o.getColorType().equalsIgnoreCase("IT-Exist") && o.getIDName().contains("Comp") && o.getViewID() == viewId)
+					.findFirst().map(AllRadarData::getColumnDateName).orElse("");
+			triple.setFirst(columnDateExist.equalsIgnoreCase("Score") ? divideTwoNumbers(getComp("Risk", "Existing"), getComp("Risk", "New") * 100) * 100:  (divideTwoNumbers(getComp("Risk", "Existing"), getComp("Risk", "New")) * 100));
+			triple.setSecond(getMaxFourDigits(columnDateExist.equalsIgnoreCase("Score") ? (int) (getComp("Risk", "Existing")) : (int) (getComp("Risk", "Existing"))));
+			triple.setThird(getMaxFourDigits((int) (columnDateExist.equalsIgnoreCase("Score") ? getComp("Risk", "New") * 100 : getComp("Risk", "New"))));
+		} else {
+			columnDateExist = radarInfo.stream()
+					.filter(o -> o.getColorType().equalsIgnoreCase("Risk-Exist") && o.getIDName().contains("Comp") && o.getViewID() == viewId)
+					.findFirst().map(AllRadarData::getColumnDateName).orElse("");
+			triple.setFirst(columnDateExist.equalsIgnoreCase("Score") ? divideTwoNumbers(getComp("IT", "Existing"), getComp("IT", "New") * 100) * 100: (divideTwoNumbers(getComp("IT", "Existing"), getComp("IT", "New")) * 100));
+			triple.setSecond(getMaxFourDigits((int) (columnDateExist.equalsIgnoreCase("Score") ? getComp("IT", "Existing"): getComp("IT", "Existing"))));
+			triple.setThird(getMaxFourDigits((int) (columnDateExist.equalsIgnoreCase("Score") ? getComp("IT", "New") * 100 :getComp("IT", "New"))));
+		}
+		return triple;
+	}
+	
+	////////////////////////////////////////////////////////////////////
+	
+	public Triple<Double, Integer, Integer> getCompUpperDataHis(int cur, int isRisk) {
+	    String type = isRisk == 1 ? "Risk" : "IT";
+	    String colorType = isRisk == 1 ? "IT-Exist" : "Risk-Exist";
+	    String columnDateExist = getColumnDateExist(colorType);
+
+	    if (cur == 1) {
+	        return calculateTriple(type, "Existing", "New", columnDateExist, this::getCompBeforOneMoth);
+	    } else if (cur == 2) {
+	        return calculateTriple(type, "Existing", "New", columnDateExist, this::getCompBeforTwoMoth);
+	    }
+
+	    return new Triple<>();
+	}
+
+	private String getColumnDateExist(String colorType) {
+	    return radarInfo.stream()
+	            .filter(o -> o.getColorType().equalsIgnoreCase(colorType) && o.getIDName().contains("Comp") && o.getViewID() == viewId)
+	            .findFirst()
+	            .map(AllRadarData::getColumnDateName)
+	            .orElse("");
+	}
+
+	private Triple<Double, Integer, Integer> calculateTriple(String mainType, String existingType, String newType, String columnDateExist, BiFunction<String, String, Long> dataFetcher) {
+	    Triple<Double, Integer, Integer> triple = new Triple<>();
+
+	    double existingValue = dataFetcher.apply(mainType, existingType);
+	    double newValue = dataFetcher.apply(mainType, newType);
+	    newValue = columnDateExist.equalsIgnoreCase("Score") ? newValue * 100 : newValue;
+	    double ratio = divideTwoNumbers(existingValue, newValue) * 100;
+
+	    triple.setFirst(ratio);
+	    triple.setSecond(getMaxFourDigits((int) existingValue));
+	    triple.setThird(getMaxFourDigits((int) (columnDateExist.equalsIgnoreCase("Score") ? newValue * 100 : newValue)));
+
+	    return triple;
+	}
+
+	public Integer getMaxFourDigits(Integer number) {
+		if (number > 9999999) {
+			number = (number / 10000);
+		}
+		if (number > 999999) {
+			number = (number / 1000);
+		}
+		if (number > 99999) {
+			number = (number / 100);
+		}
+		if (number > 9999) {
+			number = (number / 10);
+		}
+		return number;
+	}
+
+	public Triple<Double, Integer, Integer> getCovUpperData(int cur) {
+		Triple<Double, Integer, Integer> triple = new Triple<>();
+		triple.setFirst(divideTwoNumbers(getCov("IT", "Existing"), getCov("IT", "New")) * 100);
+		triple.setSecond(getMaxFourDigits((int) (getCov("IT", "Existing"))));
+		triple.setThird(getMaxFourDigits((int) (getCov("IT", "New"))));
+		return triple;
+	}
+
+	/////////////////////////////////////////////////
+	public Triple<Double, Integer, Integer> getCovUpperDataHis(int cur) {
+		Triple<Double, Integer, Integer> triple = new Triple<>();
+		if (cur == 1) {
+			triple.setFirst(
+					divideTwoNumbers(getCovBeforOneMonth("IT", "Existing"), getCovBeforOneMonth("IT", "New")) * 100);
+			triple.setSecond(getMaxFourDigits((int) (getCovBeforOneMonth("IT", "Existing"))));
+			triple.setThird(getMaxFourDigits((int) (getCovBeforOneMonth("IT", "New"))));
+		} else if (cur == 2) {
+			triple.setFirst(
+					divideTwoNumbers(getCovBeforTwoMonth("IT", "Existing"), getCovBeforTwoMonth("IT", "New")) * 100);
+			triple.setSecond(getMaxFourDigits((int) (getCovBeforTwoMonth("IT", "Existing"))));
+			triple.setThird(getMaxFourDigits((int) (getCovBeforTwoMonth("IT", "New"))));
+		}
+		return triple;
+	}
+	/////////////////////////////////////////////////
+
+	private Pair getFirstObject(List<Pair<Integer, Double>> list) {
+		if (list == null)
+			return new Pair<Integer, Double>(0, 1.0);
+
+		if (list.size() == 0)
+			return new Pair<Integer, Double>(0, 1.0);
+
+		return list.get(0);
+	}
+
+	public double getCovUpperVal(int curr, int start, int end) {
+		Double num = 0.0;
+		List<Pair<Number, String>> list = radarDataSource.getCoverageTotal(viewId, subViewId, start, end, curr,
+				country);
+		if (list == null)
+			return 0;
+		num = (Double) list.get(0).getFirst();
+		return num == null ? 0 : num;
+	}
+
+	public Triple<Double, Integer, Integer> getCompUpper(int cur, int isRisk) {
+		String key = cur + "" + viewId + "" + subViewId + "" + country + "" + isRisk;
+
+		Pair<Integer, Double> item = getFirstObject(
+				radarDataSource.getComplianceUpperValue(cur, viewId, subViewId, country, isRisk));
+		Triple<Double, Integer, Integer> triple = new Triple<>();
+		triple.setFirst(divideTwoNumbers(item.getFirst(), item.getSecond()));
+		triple.setSecond(item.getFirst() / 100);
+		triple.setThird(item.getSecond().intValue());
+
+		return triple;
+	}
+
+	private double divideTwoNumbers(Number a, Number b) {
+		if (b == null || a == null)
+			return 0;
+		if (b.doubleValue() == 0)
+			return 0;
+
+		return a.doubleValue() / b.doubleValue();
+	}
+	
+	public void getVeiwData() {
+		List<ViewInfo> veiwData = da.getDataInfoNew(viewId,subViewId,country.equalsIgnoreCase("all") ? "" : country,"%","%",viewText);
+		veiwDataComp = veiwData.stream().filter(o -> o.getType().contains("Comp") && o.getDate().equalsIgnoreCase(sdf.format(date1).trim())).collect(Collectors.toList());
+
+		veiwDataCov = veiwData.stream().filter(o -> o.getType().contains("Cov")&& o.getDate().equalsIgnoreCase(sdf.format(date1).trim())).collect(Collectors.toList());
+	}
+
+	
+	//////////////////////////////////////////////////////////////////////////////////
+	
+	public void getVeiwDataHis() {
+	    veiwDataAll = da.getDataInfoNew(viewId, subViewId, 
+	        country.equalsIgnoreCase("all") ? "" : country, "%", "%", viewText);
+
+	    String oneMonth = sdf.format(getPreviousMonth(1));
+	    String twoMonth = sdf.format(getPreviousMonth(2));
+
+	    Map<String, List<ViewInfo>> dataByDateAndType = veiwDataAll.stream()
+	        .collect(Collectors.groupingBy(
+	            o -> o.getDate() + "_" + (o.getType().contains("Comp") ? "Comp" : "Cov")
+	        ));
+
+	    veiwDataCompTwoMonth = dataByDateAndType.getOrDefault(twoMonth + "_Comp", Collections.emptyList());
+	    veiwDataCovTwoMonth = dataByDateAndType.getOrDefault(twoMonth + "_Cov", Collections.emptyList());
+	    veiwDataCompOneMonth = dataByDateAndType.getOrDefault(oneMonth + "_Comp", Collections.emptyList());
+	    veiwDataCovOneMonth = dataByDateAndType.getOrDefault(oneMonth + "_Cov", Collections.emptyList());
+	}
+	
+	public Date getPreviousMonth(int month) {
+		LocalDate today = LocalDate.now();
+		Date date;
+		if (month < 0 || month > 3) {
+			throw new IllegalArgumentException("Invalid month value: " + month);
+		}
+		LocalDate resultDate = today.withDayOfMonth(1);
+		switch (month) {
+		case 0:
+			resultDate = today.withDayOfMonth(1);
+			break;
+		case 1:
+			resultDate = resultDate.minusMonths(1);
+			break;
+		case 2:
+			resultDate = resultDate.minusMonths(2);
+			break;
+		case 3:
+			resultDate = resultDate.minusMonths(3);
+			break;
+		}
+		date =  Date.from(resultDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+		return date;
+	}
+
+    public List<ViewInfo> getDataPerWeek(String type, String isNew) {
+        String date = sdf.format(radar.getDate1()).trim(); // Format the date as needed
+        return cacheService.getDataPerWeek(type, isNew, viewId, subViewId, country, viewText, date);
     }
+	
+	public List<Date> getDistinctDate() {
+		List<ViewInfo> veiwData = da.getAvailabelDate();
+			List<ViewInfo> lst = veiwData.stream().filter(o -> o.getType().contains("Comp"))
+					.collect(Collectors.toList());
+			List<ViewInfo> lst2 = veiwData.stream().filter(o -> o.getType().contains("Cov"))
+					.collect(Collectors.toList());
+			
+		 	List<LocalDate> listA_dates = lst.stream().map(s -> LocalDate.parse(s.getDate(), DateTimeFormatter.ISO_DATE)).distinct().collect(Collectors.toList());
+	        List<LocalDate> listB_dates = lst2.stream().map(s -> LocalDate.parse(s.getDate(), DateTimeFormatter.ISO_DATE)).distinct().collect(Collectors.toList());
 
-    public Pair<Integer, Integer> getTotalAssetAndTotalCoverd(int month) {
-        ensureAssetMappingIsProcessed();
-        String key = (country.toUpperCase().isEmpty() ? "ALL" : country) + subViewId;
-        Pair<Integer, Integer> pair = (month == 1) ? oneMonthMap.get(key) : twoMonthMap.get(key);
-        return (pair == null) ? new Pair<>() : pair;
-    }
+	        List<LocalDate> result = new ArrayList<>();
+	        result.addAll(listA_dates);
+	        result.addAll(listB_dates);
+	        result = result.stream().distinct().collect(Collectors.toList());
 
-    private void ensureAssetMappingIsProcessed() {
-        if (oneMonthMap == null || twoMonthMap == null || oneMonthMap.isEmpty() || twoMonthMap.isEmpty()) {
-            processAndMapData();
-        }
-    }
 
-    private void processAndMapData() {
-        // Retrieve coverage data for one and two months and process into maps
-        List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-        List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-        oneMonthMap = processAssetList(listOne);
-        twoMonthMap = processAssetList(listTwo);
-    }
+	        List<Date> dates = result.stream()
+	                .map(localDate -> localDate.atStartOfDay(ZoneId.of("America/Halifax")).toInstant())
+	                .map(Date::from)
+	                .collect(Collectors.toList());
+	        return dates;
+	}
+	 public List<Date> getDisabledDates() {
+	        int currentYear = LocalDate.now().getYear();
+	        int previousYear = currentYear - 1;
+	        int nextYear = currentYear + 1;
 
-private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
-    // Group by individual LocationCode + SubViewId
-    Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
-        .collect(Collectors.groupingBy(
-            asset -> asset.getLocationCode() + asset.getSubViewId(),
-            Collectors.collectingAndThen(
-                Collectors.toList(),
-                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-            )
-        ));
+	        LocalDate startDate = LocalDate.of(previousYear, 1, 1);
+	        LocalDate endDate = LocalDate.of(nextYear, 12, 31);
 
-    // Group by "ALL" for each SubViewId: treating all locations together per subview
-    Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
-        .collect(Collectors.groupingBy(
-            asset -> "ALL" + asset.getSubViewId(),
-            Collectors.collectingAndThen(
-                Collectors.toList(),
-                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-            )
-        ));
+	        long daysBetween = ChronoUnit.DAYS.between(startDate, endDate);
 
-    // Group by all locations, but with SubViewId = -1 (i.e. a grouping by location code only)
-    Map<String, Pair<Integer, Integer>> allLocationsMap = assetList.stream()
-        .collect(Collectors.groupingBy(
-            asset -> asset.getLocationCode() + "-1",
-            Collectors.collectingAndThen(
-                Collectors.toList(),
-                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-            )
-        ));
+	        List<LocalDate> allDates = Stream.iterate(startDate, date -> date.plusDays(1))
+	                .limit(daysBetween)
+	                .collect(Collectors.toList());
 
-    // Calculate overall total across all assets
-    Pair<Integer, Integer> totalPair = assetList.stream()
-        .collect(Collectors.collectingAndThen(
-            Collectors.toList(),
-            assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-        ));
+	        List<LocalDate> enabledDates = getDistinctDate().stream()
+	                .map(date -> date.toInstant().atZone(ZoneId.of("America/Halifax")).toLocalDate())
+	                .collect(Collectors.toList());
 
-    // Merge the additional groupings into the main result map
-    resultMap.putAll(allGroupMapBySubViewId);
-    resultMap.putAll(allLocationsMap);
-    resultMap.put("ALL-1", totalPair);
+	        List<LocalDate> disabledDates = allDates.stream()
+	                .filter(date -> !enabledDates.contains(date))
+	                .collect(Collectors.toList());
 
-    return resultMap;
+	        LocalDate today = getMaxEnabledDate(enabledDates);
+	        disabledDates = disabledDates.stream()
+	                .filter(date -> !date.isEqual(today))
+	                .collect(Collectors.toList());
+
+	        List<Date> result = disabledDates.stream()
+	                .map(localDate -> localDate.atStartOfDay(ZoneId.of("America/Halifax")).toInstant())
+	                .map(Date::from)
+	                .collect(Collectors.toList());
+	        return result;
+	    }
+	 
+		public LocalDate getMaxEnabledDate(List<LocalDate> enabledDates) {
+			Optional<LocalDate> maxDate = enabledDates.stream().max(Comparator.naturalOrder());
+
+			return maxDate.orElse(null);
+		}
+
+		public List<ViewInfo> getCompCircleScore(String type) {
+			if (circleExiCompDetails == null || circleExiCompDetails.size() < 1) {
+				circleExiCompDetails = da.getComplyCirclePerScore(viewId, subViewId,
+						country.equalsIgnoreCase("all") ? "" : country, type, viewText,
+						sdf.format(radar.getDate1()).trim());
+			}
+			return circleExiCompDetails;
+
+		}
+	
+	AllRadarData greenExist = new AllRadarData();
+	AllRadarData greenNew = new AllRadarData();
+	AllRadarData orangeExist = new AllRadarData();
+	AllRadarData orangeNew = new AllRadarData();
+	AllRadarData redExist = new AllRadarData();
+	AllRadarData redNew = new AllRadarData();
+	
+	public String getWeekBox(String weeknum, String type) {
+	    long end = 0;
+	    String weekCode = "W";
+	    String code = "";
+	    String periodType = "";
+	    LocalDate lastDate;
+
+	    switch (type) {
+	        case "Green-Exist":
+	            end = greenExist.getEnd();
+	            periodType = greenExist.getTimePeriod();
+	            break;
+	        case "Green-New":
+	            end = greenNew.getEnd();
+	            periodType = greenNew.getTimePeriod();
+	            break;
+	        case "Orange-Exist":
+	            end = orangeExist.getEnd();
+	            periodType = orangeExist.getTimePeriod();
+	            break;
+	        case "Orange-New":
+	            end = orangeNew.getEnd();
+	            periodType = orangeNew.getTimePeriod();
+	            break;
+	        case "Red-Exist":
+	            end = redExist.getEnd();
+	            periodType = redExist.getTimePeriod();
+	            break;
+	        case "Red-New":
+	            end = redNew.getEnd();
+	            periodType = redNew.getTimePeriod();
+	            break;
+	    }
+
+	    lastDate = calculateLastDate(end, periodType);
+
+	    if (weeknum.equalsIgnoreCase(">")) {
+	        code = getCodeForGreaterThanWeek(lastDate);
+	    } else {
+	        code = getCodeForSpecificWeek(lastDate, weeknum, weekCode);
+	    }
+
+	    return code;
+	}
+
+	private LocalDate calculateLastDate(long end, String periodType) {
+	    if (periodType.contains("month")) {
+	        return now.minusMonths(end);
+	    } else if (periodType.contains("week")) {
+	        return now.minusWeeks(end);
+	    } else {
+	        return now.minusDays(end);
+	    }
+	}
+
+	private String getCodeForGreaterThanWeek(LocalDate lastDate) {
+	    long day = ChronoUnit.DAYS.between(lastDate, now);
+	    day = Math.abs(day);
+
+	    LocalDate date = now.minusDays(day - (4 * 7) + 1);
+	    int weekNumber = getWeekNum(date.getDayOfMonth());
+	    String month = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+
+	    return ">" + " " + month;
+	}
+
+	private String getCodeForSpecificWeek(LocalDate lastDate, String weeknum, String weekCode) {
+	    int week = Integer.parseInt(weeknum.substring(1));
+	    long day = ChronoUnit.DAYS.between(lastDate, now);
+	    day = Math.abs(day);
+
+	    LocalDate date = now.minusDays(day - (week * 7) + 1);
+	    int weekNumber = getWeekNum(date.getDayOfMonth());
+	    String month = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+
+	    return month + " " + weekCode + weekNumber;
+	}
+
+
+	private int getWeekNum(int dayOfMonth) {
+	    return (dayOfMonth - 1) / 7 + 1;
+	}
+
+	public long filterSummation(List<ViewInfo> lst,String type,String isNew) {
+		long sum = 0;
+		sum = lst.stream()
+                .filter(data -> data.getTypeSort().equalsIgnoreCase(isNew))
+                .map(data -> {
+                    switch (type) {
+                        case "TotalSum":
+                            return data.getTotalSum();
+                        case "Green":
+                            return data.getGreen();
+                        case "Orange":
+                            return data.getOrange();
+                        case "Red":
+                            return data.getRed();
+                        case "IT":
+                            return data.getIt();
+                        case "Risk":
+                            return data.getRisk();
+                        default:
+                            throw new IllegalArgumentException("Invalid type: " + type);
+                    }
+                })
+                .collect(Collectors.summingLong(Long::longValue));
+		return sum;	
+	}
+	public long getComp(String type, String isNew) {
+		if (veiwDataComp == null) {
+			getVeiwData();
+		}
+		if(subViewId == -1) {
+		return filterSummation(veiwDataComp,type,isNew);
+		}
+		for (int i = 0; i < veiwDataComp.size(); i++) {
+			if (veiwDataComp.get(i).getTypeSort().equalsIgnoreCase(isNew)) {
+				switch (type) {
+				case "TotalSum":
+					return veiwDataComp.get(i).getTotalSum();
+				case "Green":
+					return veiwDataComp.get(i).getGreen();
+				case "Orange":
+					return veiwDataComp.get(i).getOrange();
+				case "Red":
+					return veiwDataComp.get(i).getRed();
+				case "IT":
+					return veiwDataComp.get(i).getIt();
+				case "Risk":
+					return veiwDataComp.get(i).getRisk();
+				}
+			}
+		}
+		
+		return 0;
+	}
+	
+	//////////////////////////////////////////////////////////
+	public long getCompBeforOneMoth(String type, String isNew) {
+		if (veiwDataCompOneMonth == null) {
+			getVeiwDataHis();
+		}
+		if(subViewId == -1) {
+			return filterSummation(veiwDataCompOneMonth,type,isNew);
+			}
+		for (int i = 0; i < veiwDataCompOneMonth.size(); i++) {
+			if (veiwDataCompOneMonth.get(i).getTypeSort().equalsIgnoreCase(isNew) && veiwDataCompOneMonth.get(i).getSupViewID() == subViewId) {
+				switch (type) {
+				case "TotalSum":
+					return veiwDataCompOneMonth.get(i).getTotalSum();
+				case "Green":
+					return veiwDataCompOneMonth.get(i).getGreen();
+				case "Orange":
+					return veiwDataCompOneMonth.get(i).getOrange();
+				case "Red":
+					return veiwDataCompOneMonth.get(i).getRed();
+				case "IT":
+					return veiwDataCompOneMonth.get(i).getIt();
+				case "Risk":
+					return veiwDataCompOneMonth.get(i).getRisk();
+				}
+			}
+		}
+
+		return 0;
+	}
+	////////////////////////////////////////////////////////////
+	public long getCompBeforTwoMoth(String type, String isNew) {
+		if (veiwDataCompTwoMonth == null) {
+			getVeiwDataHis();
+		}
+		if(subViewId == -1) {
+			return filterSummation(veiwDataCompTwoMonth,type,isNew);
+			}
+		for (int i = 0; i < veiwDataCompTwoMonth.size(); i++) {
+			if (veiwDataCompTwoMonth.get(i).getTypeSort().equalsIgnoreCase(isNew) && veiwDataCompOneMonth.get(i).getSupViewID() == subViewId) {
+				switch (type) {
+				case "TotalSum":
+					return veiwDataCompTwoMonth.get(i).getTotalSum();
+				case "Green":
+					return veiwDataCompTwoMonth.get(i).getGreen();
+				case "Orange":
+					return veiwDataCompTwoMonth.get(i).getOrange();
+				case "Red":
+					return veiwDataCompTwoMonth.get(i).getRed();
+				case "IT":
+					return veiwDataCompTwoMonth.get(i).getIt();
+				case "Risk":
+					return veiwDataCompTwoMonth.get(i).getRisk();
+				}
+			}
+		}
+
+		return 0;
+	}
+	
+	
+	public long getComparedList(String type, String isNew) {
+		List<ViewInfo> comparedCompl;
+		long sumDate1 = getComp(type,isNew);
+		long sumDate2 = 0;
+		comparedCompl= veiwDataCompDate2.stream().filter(o -> o.getTypeSort().equalsIgnoreCase(isNew)).collect(Collectors.toList());
+		sumDate2 = filterSummation(comparedCompl,type,isNew);
+			
+		 
+		return sumDate2 - sumDate1;
+	}
+	public long getCov(String type, String isNew) {
+		if (veiwDataCov == null || veiwDataCov.isEmpty()) {
+			logger.debug("get view data");
+			getVeiwData();
+			logger.debug("End get view data");
+			logger.debug("//////////////////////////////////");
+		}
+		if(subViewId == -1) {
+			return filterSummation(veiwDataCov,type,isNew);
+			}
+		for (int i = 0; i < veiwDataCov.size(); i++) {
+			if (veiwDataCov.get(i).getTypeSort().equalsIgnoreCase(isNew)) {
+				switch (type) {
+				case "TotalSum":
+					return veiwDataCov.get(i).getTotalSum();
+				case "Green":
+					return veiwDataCov.get(i).getGreen();
+				case "Orange":
+					return veiwDataCov.get(i).getOrange();
+				case "Red":
+					return veiwDataCov.get(i).getRed();
+				case "IT":
+					return veiwDataCov.get(i).getIt();
+				}
+			}
+		}
+		return 0;
+	}
+	
+	
+	public long getCovBeforOneMonth(String type, String isNew) {
+		if (veiwDataCovOneMonth == null) {
+			getVeiwDataHis();
+		}
+		if(subViewId == -1) {
+			return filterSummation(veiwDataCovOneMonth,type,isNew);
+			}
+		for (int i = 0; i < veiwDataCovOneMonth.size(); i++) {
+			if (veiwDataCovOneMonth.get(i).getTypeSort().equalsIgnoreCase(isNew)  && veiwDataCompOneMonth.get(i).getSupViewID() == subViewId) {
+				switch (type) {
+				case "TotalSum":
+					return veiwDataCovOneMonth.get(i).getTotalSum();
+				case "Green":
+					return veiwDataCovOneMonth.get(i).getGreen();
+				case "Orange":
+					return veiwDataCovOneMonth.get(i).getOrange();
+				case "Red":
+					return veiwDataCovOneMonth.get(i).getRed();
+				case "IT":
+					return veiwDataCovOneMonth.get(i).getIt();
+				}
+			}
+		}
+		return 0;
+	}
+	
+	////////////////////////////////////////////////////////
+	
+	public long getCovBeforTwoMonth(String type, String isNew) {
+		if (veiwDataCovTwoMonth == null) {
+			getVeiwDataHis();
+		}
+		if(subViewId == -1) {
+			return filterSummation(veiwDataCovTwoMonth,type,isNew);
+			}
+		for (int i = 0; i < veiwDataCovTwoMonth.size(); i++) {
+			if (veiwDataCovTwoMonth.get(i).getTypeSort().equalsIgnoreCase(isNew)  && veiwDataCompOneMonth.get(i).getSupViewID() == subViewId) {
+				switch (type) {
+				case "TotalSum":
+					return veiwDataCovTwoMonth.get(i).getTotalSum();
+				case "Green":
+					return veiwDataCovTwoMonth.get(i).getGreen();
+				case "Orange":
+					return veiwDataCovTwoMonth.get(i).getOrange();
+				case "Red":
+					return veiwDataCovTwoMonth.get(i).getRed();
+				case "IT":
+					return veiwDataCovTwoMonth.get(i).getIt();
+				}
+			}
+		}
+		return 0;
+	}
+	
+	
+	public String getCountryShortName(String country) {
+		switch (country) {
+		case "JORDAN":
+			return "JO";
+		case "EGYPT":
+			return "EG";
+		case "PALESTINE":
+			return "PS";
+		case "EMIRATES":
+			return "AE";
+		case "LEBANON":
+			return "LB";
+		case "QATAR":
+			return "QA";
+		case "BAHRAIN":
+			return "BH";
+		case "YEMEN":
+			return "YE";
+		case "MOROCCO":
+			return "MA";
+		case "ALGERIA":
+			return "DZ";
+		case "SINGAPORE":
+			return "SG";
+		case "CHINA":
+			return "CN";
+		case "ARAB BANK":
+			return "AB";
+		}
+		return country;
+	}
+
+	public String getViewText() {
+		if (viewText == null || viewText.length() == 0)
+			return "CIS-EndPoints";
+		return viewText;
+	}
+
+	public void setViewText(String viewText) {
+		this.viewText = viewText;
+	}
+
+	public String getSubViewText() {
+		if (subViewText == null || subViewText.length() == 0)
+			return "ALL";
+		return subViewText;
+	}
+
+	public void setSubViewText(String subViewText) {
+		this.subViewText = subViewText;
+	}
+
+	public boolean getIsManual() {
+		return isManual;
+	}
+
+	public void setIsManual(boolean isManual) {
+		this.isManual = isManual;
+	}
+
+	public void redirectToComplianceDetails() throws IOException {
+		FacesContext.getCurrentInstance().getExternalContext().redirect(COMPLIANCE_PATH_REDIRECT);
+	}
+
+	public void redirectToCoverageDetails() throws IOException {
+		FacesContext.getCurrentInstance().getExternalContext().redirect(COVERAGE_PATH_REDIRECT);
+	}
+
+	public double getCompScorePerCountry(String country) {
+		String key = viewId + "-" + viewText + "-" + country + "-" + sdf.format(radar.getDate1()).trim();
+		double result = 0.0;
+			if (countryValueMap.get(key) != null) {
+				result = countryValueMap.get(key);
+			}
+		
+		return result;
+
+	}
+
+	public int getSelectedThresold() {
+		return selectedThresold;
+	}
+
+
+	public String compFirstLabel() {
+		if (viewText.toLowerCase().contains("endpoints"))
+			return "98%-100%";
+		else if (viewText.toLowerCase().contains("servers"))
+			return "95%-100%";
+		else
+			return "90%-100%";
+	}
+
+	public String compSecondLabel() {
+		if (viewText.toLowerCase().contains("endpoints"))
+			return "95%-98%";
+		else if (viewText.toLowerCase().contains("servers"))
+			return "90%-95%";
+		else
+			return "85%-90%";
+	}
+	
+	private void processAndMapData() {
+	    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
+	    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
+	    
+	    oneMonthMap = processAssetList(listOne);
+
+	    twoMonthMap = processAssetList(listTwo);
+	    coverageAll = da.getAllCoverage(viewId, subViewId, country ,sdf.format(radar.getDate1()).trim());
+	}
+
+	private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
+		// Group by LocationCode + SubViewId
+		Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
+				.collect(Collectors.groupingBy(asset -> asset.getLocationCode() + asset.getSubViewId(),
+						Collectors.collectingAndThen(Collectors.toList(),
+								assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(),
+										assets.size()))));
+
+		// Group by "ALL" location per SubViewId
+		Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
+				.collect(Collectors.groupingBy(asset -> "ALL" + asset.getSubViewId(),
+						Collectors.collectingAndThen(Collectors.toList(),
+								assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(),
+										assets.size()))));
+
+		// Group by SubViewId = -1 for all locations
+		Map<String, Pair<Integer, Integer>> allLocationsMap = assetList.stream()
+				.collect(Collectors.groupingBy(asset -> asset.getLocationCode() + "-1",
+						Collectors.collectingAndThen(Collectors.toList(),
+								assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(),
+										assets.size()))));
+
+		// Calculate the total for all data without grouping
+		Pair<Integer, Integer> totalPair = assetList.stream().collect(Collectors.collectingAndThen(Collectors.toList(),
+				assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())));
+
+		// Add the "ALL" group to the result map
+		resultMap.putAll(allGroupMapBySubViewId);
+
+		// Add the all locations grouped by SubViewId = -1 to the result map
+		resultMap.putAll(allLocationsMap);
+
+		// Add the overall total to the result map
+		resultMap.put("ALL" + "-1", totalPair);
+
+		return resultMap;
+	}
+
+	
+	private void getCovMapHist() {
+		List<TotalAssetsHistory> assetslist = da.getTotalAssetAndTotalCoverdHist(sdf.format(getPreviousMonth(1)),
+				sdf.format(getPreviousMonth(2)), country, viewId, subViewId);
+		for (TotalAssetsHistory item : assetslist) {
+			if (item.getLabel().equalsIgnoreCase("One")) {
+				oneMonthMap.put(item.getLocationCode() + item.getSubviewId(),
+						new Pair<>((int) item.getTotalCovered(), (int) item.getTotalCount()));
+			} else {
+				twoMonthMap.put(item.getLocationCode() + item.getSubviewId(),
+						new Pair<>((int) item.getTotalCovered(), (int) item.getTotalCount()));
+			}
+		}
+	}
+	
+	public Pair<Integer, Integer> getTotalAssetAndTotalCoverd(int month) {
+		Pair<Integer, Integer> pair = new Pair<Integer, Integer>();
+		if (month == 1) {
+			pair = oneMonthMap.get((country.toUpperCase() == "" ? "ALL" : country) + subViewId);
+		} else {
+			pair = twoMonthMap.get((country.toUpperCase() == "" ? "ALL" : country) + subViewId);
+		}
+		if (pair == null)
+			return new Pair<Integer, Integer>();
+
+		return pair;
+
+	}
+
+	public Pair<Integer, Integer> getTotalAssetAndTotalCoverdToday() {
+		Pair<Integer, Integer> pair;
+		List<AssetInfo> assetInfos = da.getAllCoverage(viewId, subViewId, country ,sdf.format(radar.getDate1()).trim());
+		int totalCovered = 0;
+	    int totalCount = assetInfos.size();
+
+	    for (AssetInfo asset : assetInfos) {
+	        totalCovered += asset.getIsCoveredByControl();
+	    }
+
+	    return new Pair<>(totalCovered, totalCount);
+	}
+
+	public String getCycleDate() {
+		List<AssetInfo> SyncDate;
+		SyncDate = da.getSyncDate(viewId, subViewId, country,sdf.format(radar.getDate1()).trim());
+		LocalDate now = null;
+		if (SyncDate.size() > 0) {
+			now = SyncDate.get(0).getSyncDate().toLocalDate();
+		} else {
+			now = LocalDate.now();
+		}
+		return now.toString().substring(0, 10);
+	}
+
+	public String getCoverageTodaythreshold(double val) {
+		if (viewText.toLowerCase().contains("endpoints"))
+			if (val >= 90)
+				return RadarThresholds.NORMAL_COLOR;
+			else if (val >= 85)
+				return RadarThresholds.WARNING_COLOR;
+			else
+				return RadarThresholds.CRITICAL_COLOR;
+
+		else if (viewText.toLowerCase().contains("servers"))
+			if (val >= 99)
+				return RadarThresholds.NORMAL_COLOR;
+			else if (val >= 95)
+				return RadarThresholds.WARNING_COLOR;
+			else
+				return RadarThresholds.CRITICAL_COLOR;
+		else if (val >= 99)
+			return RadarThresholds.NORMAL_COLOR;
+		else if (val >= 95)
+			return RadarThresholds.WARNING_COLOR;
+		else
+			return RadarThresholds.CRITICAL_COLOR;
+	}
+
+	public String getComplianceTodaythreshold(double val) {
+
+		if (viewText.toLowerCase().contains("endpoints"))
+			if (val >= 95)
+				return RadarThresholds.NORMAL_COLOR;
+			else if (val >= 90)
+				return RadarThresholds.WARNING_COLOR;
+			else
+				return RadarThresholds.CRITICAL_COLOR;
+
+		else if (viewText.toLowerCase().contains("servers"))
+			if (val >= 90)
+				return RadarThresholds.NORMAL_COLOR;
+			else if (val >= 80)
+				return RadarThresholds.WARNING_COLOR;
+			else
+				return RadarThresholds.CRITICAL_COLOR;
+		else if (val >= 85)
+			return RadarThresholds.NORMAL_COLOR;
+		else if (val >= 80)
+			return RadarThresholds.WARNING_COLOR;
+		else
+			return RadarThresholds.CRITICAL_COLOR;
+	}
+
+	public int getCompFill(int isNew, int val) {
+		LocalDate scanDate;
+		if (val == 0)
+			return 0;
+		if (isNew == 0) {
+			scanDate = convertDateToLocalDate(dateComp);
+		} else {
+			scanDate = convertDateToLocalDate(dateComp2);
+		}
+		return calculateBulkScanFill(scanDate);
+
+	}
+
+	public int getCompFill(String country, int isNew, int val) {
+
+		if (val == 0)
+			return 0;
+		if ((checkIsNew2 == null && checkValue2 == null && checkCountry == null)
+				|| (checkIsNew2 != isNew || checkValue2 != val || checkCountry != country)) {
+			dateComp2 = da.getBulkScanDate(viewId, subViewId, country.equals("ALL") ? "" : country, isNew);
+		}
+		LocalDate scanDate = convertDateToLocalDate(dateComp2);
+		checkIsNew2 = isNew;
+		checkValue2 = val;
+		checkCountry = country;
+		return calculateBulkScanFill(scanDate);
+	}
+
+	private LocalDate convertDateToLocalDate(Date date) {
+		LocalDate localDate;
+		try {
+			if (date == null || date.equals(null))
+				localDate = now;
+			localDate = Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+		} catch (Exception e) {
+			localDate = now;
+		}
+
+		return localDate;
+	}
+
+	private int calculateBulkScanFill(LocalDate scanDate) {
+
+		if (scanDate.isEqual(now) || scanDate.isAfter(now))
+			return 0;
+		int percent = 25;
+		int week = 0;
+		for (int i = 1; i < 4; i++) {
+			if (scanDate != null)
+				if ((scanDate.isBefore(now.minusWeeks(week)) && scanDate.isAfter(now.minusWeeks(week + 1)))
+						|| scanDate.isEqual(now.minusWeeks(week + 1)))
+					return percent;
+			percent += 25;
+			week++;
+		}
+		return percent;
+	}
+
+	public RadarHistorical getRadarHistoryLeftCard(int id, String name, String country) {
+		RadarHistorical radarHist = new RadarHistorical();
+		long covVal1 = 0;
+		long covVal2 = 0;
+		radarHist.setCovVal1((int) covVal1);
+		radarHist.setCovVal2((int) covVal2);
+		long compVal1 = 0;
+		long compVal2 = 0;
+		radarHist.setCompVal1((int) compVal1);
+		radarHist.setCompVal2((int) compVal2);
+		return radarHist;
+	}
+
+	public List<RadarLeftCard> getLeftCardItem(String country) {
+		return radarLeftCardMap.get(country);
+	}
+
+	public List<RadarLeftCard> geWsustLeftCardItem(String country) {
+		return wsusLeftCardMap.get(country);
+	}
+
+	public LocalDate getManualAssetScanDate() {
+		return manualAssetScanDate;
+	}
+
+	public List<ViewInfo> getLeftCardList() {
+		return leftCardList;
+	}
+
+	public List<ViewInfo> getLeftCardData() {
+		return leftCardDataMap.get(curCountry);
+	}
+
+	public List<ViewInfo> getWSUSLeftCardData(String country) {
+		return wsusleftCardDataMap.get(country);
+	}
+
+	public LocalDate getScanDate() {
+		Date date = da.getBulkScanDate(viewId, subViewId, country.equals("ALL") ? "" : country, 0);
+		scanDate = convertDateToLocalDate(date);
+		return scanDate;
+	}
+
+	public void setScanDate(LocalDate scanDate) {
+		this.scanDate = scanDate;
+	}
+
+	public void filterHeaderData() {
+		for (ViewInfo item : headeData) {
+			item.setRadarHistorical(getRadarHistoryLeftCard(item.getId(), item.getControlName(), item.getCountry()));
+			headerMap.put(item.getId() + "-" + item.getSupViewID() + "-" + item.getCountry(), item);
+		}
+	}
+	
+	public Triple<Integer, Integer, Double> getHedarTodayAndYesterday(Views view, int subViewId) {
+		Triple<Integer, Integer, Double> item = new Triple<>();
+		Commons comm = new Commons();
+		int val1 = 0;
+		int val2 = 0;
+		if ( !viewText.contains("Symantec")) {
+			val1 = headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)) == null ? 0 :
+				headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)).getCovFirst();
+			val2 = headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)) == null ? 0 :
+				headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)).getCovSecond();
+		}
+		item.setFirst(val1 + val2);
+		int covVal1 = 0;
+		int covVal2 = 0;
+		item.setSecond(covVal1 + covVal2);
+		item.setThird(item.getFirst() / (double) (item.getSecond() + item.getFirst()) * 100);
+
+		return item;
+	}
+	///////////////////////////////////////////////////////////
+	public Triple<Integer, Integer, Double> getCompHedarTodayAndYesterday(Views view, int subViewId) {
+		Triple<Integer, Integer, Double> item = new Triple<>();
+		int val1 = 0;
+		int val2 = 0;
+		if ( !viewText.contains("Symantec")) {
+			val1 = headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)) == null ? 0 :
+				headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)).getCompFirst();
+			val2 = headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)) == null ? 0 :
+				headerMap.get(view.getId() + "-" + subViewId + "-" + (country.equals("") ? "ALL" : country)).getCompSecond();
+		}
+		item.setFirst(val1 + val2);
+		int compVal1 = 0;
+		int compVal2 = 0;
+		item.setSecond( compVal1 + compVal2);
+		item.setThird(item.getFirst() / (double) (item.getSecond() + item.getFirst()) * 100);
+
+		return item;
+	}
+	
+	
+	//////////////////////////////////////////////////////////
+
+	public Triple<Integer, Integer, Double> getCovTodayAndYesterday(Views view, int subViewId) {
+		Triple<Integer, Integer, Double> item = new Triple<>();
+		Commons comm = new Commons();
+		int val1 = 0;
+		int val2 = 0;
+		if ( !viewText.contains("Symantec")) {
+			val1 = covHeaderList1.get(view.getId() + "-" + (country.equals("") ? -1 : subViewId) + "-"
+					+ (country.equals("") ? "ALL" : country)) == null ? 0
+							: covHeaderList1.get(view.getId() + "-" + (country.equals("") ? -1 : subViewId) + "-"
+									+ (country.equals("") ? "ALL" : country));
+		}
+		item.setFirst(val1);
+
+		int covVal1 = 0;
+		int covVal2 = 0;
+		item.setSecond(covVal1 + covVal2);
+		item.setThird(item.getFirst() / (double) (item.getSecond() + item.getFirst()) * 100);
+
+		return item;
+	}
+
+	public Triple<Integer, Integer, Double> getCompTodayAndYesterday(Views view, int subViewId) {
+		Triple<Integer, Integer, Double> item = new Triple<>();
+		int val1 = 0;
+
+		if (view.getId() != 4 && view.getId() != 2 && view.getId() != 3 && view.getId() != 7
+				&& !viewText.contains("Symantec")) {
+			val1 = compHeaderList1.get(view.getId() + "-" + (country.equals("") ? -1 : subViewId) + "-"
+					+ (country.equals("") ? "ALL" : country)) == null ? 0
+							: compHeaderList1.get(view.getId() + "-" + (country.equals("") ? -1 : subViewId) + "-"
+									+ (country.equals("") ? "ALL" : country));
+		}
+		item.setFirst(val1);
+		int compVal1 = 0;
+		int compVal2 = 0;
+		item.setSecond(compVal1 + compVal2);
+		item.setThird(item.getFirst() / (double) (item.getSecond() + item.getFirst()) * 100);
+
+		return item;
+	}
+
+	public String formatDouble(double num) {
+		NumberFormat formatter = new DecimalFormat("#0.00");
+		return formatter.format(num);
+	}
+
+	public Views getSelectedView() {
+		if (selectedView == null) {
+			selectedView = radar.getSelectedView();
+		}
+		return selectedView;
+	}
+
+	public int getViewId() {
+		return viewId;
+	}
+
+	public void setViewId(int viewId) {
+		this.viewId = viewId;
+	}
+
+	public void setSelectedView(Views selectedView) {
+		this.selectedView = selectedView;
+	}
+
+	public Pair<Integer, Integer> getCovCountPerControl(int subViewId) {
+		int Val1;
+		int Val2;
+
+		Pair<Integer, Integer> item = new Pair<Integer, Integer>();
+
+			Val1 = 0;
+			Val2 = 0;
+
+		item.setFirst( Val1);
+		item.setSecond( Val2);
+		return item;
+	}
+	
+	////////////////////////////////////
+	
+	public List<Integer> getCountPerControl(int subViewId) {
+		int Val1;
+		int Val2;
+		int Val3;
+		int Val4;
+		List<Integer> item = new ArrayList<Integer>();
+		Val1 = headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)) == null ? 0 :
+			headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)).getCovFirst();
+		Val2 = headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)) == null ? 0 :
+				headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)).getCovSecond();
+		Val3 = headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)) == null ? 0 :
+				headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)).getCompFirst();
+		Val4 = headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)) == null ? 0 :
+				headerMap.get(viewId + "-" + subViewId + "-" + (country.equalsIgnoreCase("") ? "ALL" : country)).getCompSecond();
+
+		item.add(Val1);
+		item.add(Val2);
+		item.add(Val3);
+		item.add(Val4);
+		return item;
+	}
+
+	public Pair<Integer, Integer> getCompCountPerControl(int subViewId) {
+		int Val1 ;
+		int Val2;
+
+		Pair<Integer, Integer> item = new Pair<Integer, Integer>();
+
+			Val1 = 0;
+			Val2 = 0;
+
+		item.setFirst( Val1);
+		item.setSecond( Val2);
+		return item;
+	}
+
+	public String getCurrentDate() {
+		return LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss "));
+	}
+
+	///////////////////////////////////////////
+
+	public List<AssetInfo> getAssetTopRows() {
+		return assetTopRows;
+	}
+
+	public long getWsusCoverage(int isCovered, int month1, int month2) {
+		country = country.equalsIgnoreCase("all") ? "" : country;
+
+		if (assetMap.get(country) == null)
+			return 0;
+		List<AssetInfo> assetList = assetMap.get(country);
+		assetList = assetMap.get(country).stream().filter(p -> {
+			if (p.getIsCoveredByControl() == isCovered && month1 == 0) {
+				return true;
+			} else {
+				if (p.getCreateDate() != null)
+					if (((p.getCreateDate().toLocalDate().isAfter(now.minusMonths(month2))
+							&& p.getCreateDate().toLocalDate().isBefore(now.minusMonths(month1)))
+							|| p.getCreateDate().toLocalDate().isEqual(now.minusMonths(month1)))
+							&& p.getIsCoveredByControl() == isCovered) {
+						return true;
+					}
+				return false;
+			}
+		}).collect(Collectors.toList());
+		assetMap.put(isCovered + "" + month1 + "" + month2 + country + viewId + subViewId, assetList);
+		long num = assetList.size();
+		return num;
+	}
+
+	public long getWsusSync(int isCovered, int month1, int month2) {
+
+		country = country.equalsIgnoreCase("all") ? "" : country;
+
+		if (assetMap.get(country) == null)
+			return 0;
+		List<AssetInfo> assetList = assetMap.get(country);
+		assetList = assetMap.get(country).stream().filter(p -> {
+
+			if (p.getEvaluationDate() != null)
+
+				if (((p.getEvaluationDate().toLocalDate().isAfter(now.minusMonths(month2))
+						&& p.getEvaluationDate().toLocalDate().isBefore(now.minusMonths(month1)))
+						|| p.getEvaluationDate().toLocalDate().isEqual(now.minusMonths(month1)))
+						&& p.getIsCoveredByControl() == isCovered)
+
+				{
+
+					return true;
+				}
+
+			return false;
+
+		}).collect(Collectors.toList());
+
+		assetMap.put(isCovered + "" + month1 + "" + month2 + country + viewId + subViewId, assetList);
+		long num = assetList.size();
+		return num;
+	}
+
+	public List<Pair<String, Long>> getExcludeList() {
+		return excludeList;
+	}
+
+	public void setExcludeList(List<Pair<String, Long>> excludeList) {
+		this.excludeList = excludeList;
+	}
+
+	public void redirectToExcludeDetails() throws IOException {
+		FacesContext.getCurrentInstance().getExternalContext().redirect("radar/inc/cov-exclude-dialog.xhtml");
+	}
+
+	public void redirectToCompExcludeDetails() throws IOException {
+		FacesContext.getCurrentInstance().getExternalContext().redirect("radar/inc/comp-exclude-dialog.xhtml");
+	}
+
+	public List<AssetInfo> getExcludeCovList() {
+		return excludeCovList;
+	}
+
+	public void setExcludeCovList(List<AssetInfo> excludeCovList) {
+		this.excludeCovList = excludeCovList;
+	}
+
+	public List<ComplianceInfo> getExcludeCompList() {
+		return excludeCompList;
+	}
+
+	public void setExcludeCompList(List<ComplianceInfo> excludeCompList) {
+		this.excludeCompList = excludeCompList;
+	}
+
+	public List<AssetInfo> getCovDataList() {
+		return covDataList;
+	}
+
+	public void setCovDataList(List<AssetInfo> covDataList) {
+		this.covDataList = covDataList;
+	}
+
+	public List<ComplianceInfo> getCompDataList() {
+		return compDataList;
+	}
+
+	public void setCompDataList(List<ComplianceInfo> compDataList) {
+		this.compDataList = compDataList;
+	}
+
+	public List<CountryLeftCardData> getJordanAssetList() {
+		return countryAssetList;
+	}
+
+	public void setJordanAssetList(List<CountryLeftCardData> countryAssetList) {
+		this.countryAssetList = countryAssetList;
+	}
+
+	public List<ViewInfo> getCircleCompDetails() {
+		return circleExiCompDetails;
+	}
+
+	public void setCircleCompDetails(List<ViewInfo> circleCompDetails) {
+		this.circleExiCompDetails = circleCompDetails;
+	}
+
+	public List<ViewInfo> getCircleNewCompDetails() {
+		return circleNewCompDetails;
+	}
+
+	public void setCircleNewCompDetails(List<ViewInfo> circleNewCompDetails) {
+		this.circleNewCompDetails = circleNewCompDetails;
+	}
+
+	public List<ViewInfo> getExeludedCov() {
+		return exeludedCov;
+	}
+
+	public void setExeludedCov(List<ViewInfo> exeludedCov) {
+		this.exeludedCov = exeludedCov;
+	}
+
+	public List<ViewInfo> getExeludedComp() {
+		return exeludedComp;
+	}
+
+	public void setExeludedComp(List<ViewInfo> exeludedComp) {
+		this.exeludedComp = exeludedComp;
+	}
+
+	public String getContriName() {
+		return contriName;
+	}
+
+	public void getLocationId(String country, int viewId) throws IOException {
+		switch (country) {
+		case "JO":
+			exportToExcel(2, viewId);
+			break;
+		case "AE":
+			exportToExcel(3, viewId);
+			break;
+		case "QA":
+			exportToExcel(4, viewId);
+			break;
+		case "BH":
+			exportToExcel(5, viewId);
+			break;
+		case "LB":
+			exportToExcel(6, viewId);
+			break;
+		case "EG":
+			exportToExcel(7, viewId);
+			break;
+		case "PS":
+			exportToExcel(8, viewId);
+			break;
+		case "YE":
+			exportToExcel(9, viewId);
+			break;
+		case "MA":
+			exportToExcel(10, viewId);
+			break;
+		case "DZ":
+			exportToExcel(11, viewId);
+			break;
+		case "SG":
+			exportToExcel(12, viewId);
+			break;
+		case "CN":
+			exportToExcel(13, viewId);
+			break;
+		default:
+			exportToExcel(1, viewId);
+			break;
+		}
+	}
+
+	public void exportToExcel(int country, int viewId) throws IOException {
+		countryAssetList = da.getCountryLeftCardData(this.country, country, viewId, viewText);
+
+		FacesContext facesContext = FacesContext.getCurrentInstance();
+		ExternalContext externalContext = facesContext.getExternalContext();
+
+		HttpServletResponse response = (HttpServletResponse) externalContext.getResponse();
+
+		response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheet.sheet");
+		response.setHeader("Content-Disposition", "attachment; filename=" + this.viewText + " - " + "Gap For "
+				+ this.curCountry + " " + getCurrentDate() + ".xlsx");
+
+		Workbook workbook = new XSSFWorkbook();
+		Sheet sheet = workbook.createSheet("Data");
+		// create Cell Style for header row
+		CellStyle headerCellStyle = workbook.createCellStyle();
+		headerCellStyle.setFillForegroundColor(IndexedColors.AQUA.getIndex());
+		headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		Font headerFont = workbook.createFont();
+
+		headerFont.setColor(IndexedColors.WHITE.getIndex());
+		headerFont.setBold(true);
+		headerFont.setItalic(true);
+		headerFont.setFontHeightInPoints((short) 12);
+
+		headerCellStyle.setFont(headerFont);
+
+		Row headerRow = sheet.createRow(0);
+		Field[] fields = CountryLeftCardData.class.getDeclaredFields();
+		for (int i = 0; i < fields.length; i++) {
+			Field field = fields[i];
+			String headerName = field.getName();
+			Cell headerCell = headerRow.createCell(i);
+			headerCell.setCellValue(headerName);
+			headerCell.setCellStyle(headerCellStyle);
+		}
+
+		// Date Format
+		CreationHelper creationHelper = workbook.getCreationHelper();
+		CellStyle dateCellStyle = workbook.createCellStyle();
+		dateCellStyle.setDataFormat(creationHelper.createDataFormat().getFormat("yyyy-MM-dd"));
+
+		// Sort
+		Collections.sort(countryAssetList, Comparator.comparing(CountryLeftCardData::getVersionParentName));
+
+		for (int i = 0; i < countryAssetList.size(); i++) {
+			Row dataRow = sheet.createRow(i + 1);
+			CountryLeftCardData leftCardData = countryAssetList.get(i);
+			for (int j = 0; j < fields.length; j++) {
+				Field field = fields[j];
+				field.setAccessible(true);
+				Object value = null;
+				try {
+					value = field.get(leftCardData);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				Cell dataCell = dataRow.createCell(j);
+				if (value instanceof String) {
+					dataCell.setCellValue((String) value);
+				} else if (value instanceof Number) {
+					dataCell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Date) {
+					dataCell.setCellValue((Date) value);
+					dataCell.setCellStyle(dateCellStyle);
+				}
+
+			}
+		}
+		// add filter to file for all columns
+		sheet.setAutoFilter(
+				CellRangeAddress.valueOf("A1:" + getLastColumnName(fields.length) + (countryAssetList.size() + 1)));
+		workbook.write(response.getOutputStream());
+		facesContext.responseComplete();
+
+	}
+
+	public void exportToExcelForCoverageCircle() throws IOException {
+		FacesContext facesContext = FacesContext.getCurrentInstance();
+		ExternalContext externalContext = facesContext.getExternalContext();
+		HttpServletResponse response = (HttpServletResponse) externalContext.getResponse();
+
+		response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheet.sheet");
+		response.setHeader("Content-Disposition", "attachment; filename=" + this.viewText + " - " + this.circleDetail
+				+ " - " + "Gap For " + this.curCountry + " " + getCurrentDate() + ".xlsx");
+
+		Workbook workbook = new XSSFWorkbook();
+		Sheet sheet = workbook.createSheet("Data");
+		// create Cell Style for header row
+		CellStyle headerCellStyle = workbook.createCellStyle();
+		headerCellStyle.setFillForegroundColor(IndexedColors.AQUA.getIndex());
+		headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		Font headerFont = workbook.createFont();
+
+		headerFont.setColor(IndexedColors.WHITE.getIndex());
+		headerFont.setBold(true);
+		headerFont.setItalic(true);
+		headerFont.setFontHeightInPoints((short) 12);
+
+		headerCellStyle.setFont(headerFont);
+
+		Row headerRow = sheet.createRow(0);
+		Field[] fields = AssetInfo.class.getDeclaredFields();
+		for (int i = 0; i < fields.length; i++) {
+			Field field = fields[i];
+			String headerName = field.getName();
+			Cell headerCell = headerRow.createCell(i);
+			headerCell.setCellValue(headerName);
+			headerCell.setCellStyle(headerCellStyle);
+		}
+
+		// Date Format
+		CreationHelper creationHelper = workbook.getCreationHelper();
+		CellStyle dateCellStyle = workbook.createCellStyle();
+		dateCellStyle.setDataFormat(creationHelper.createDataFormat().getFormat("yyyy-MM-dd"));
+
+		// Sort
+		Collections.sort(covDataList, Comparator.comparing(AssetInfo::getDomain));
+
+		for (int i = 0; i < covDataList.size(); i++) {
+			Row dataRow = sheet.createRow(i + 1);
+			AssetInfo leftCardData = covDataList.get(i);
+			for (int j = 0; j < fields.length; j++) {
+				Field field = fields[j];
+				field.setAccessible(true);
+				Object value = null;
+				try {
+					value = field.get(leftCardData);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				Cell dataCell = dataRow.createCell(j);
+				if (value instanceof String) {
+					dataCell.setCellValue((String) value);
+				} else if (value instanceof Number) {
+					dataCell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Date) {
+					dataCell.setCellValue((Date) value);
+					dataCell.setCellStyle(dateCellStyle);
+				}
+
+			}
+		}
+		// add filter to file for all columns
+		sheet.setAutoFilter(
+				CellRangeAddress.valueOf("A1:" + getLastColumnName(fields.length) + (covDataList.size() + 1)));
+		workbook.write(response.getOutputStream());
+		facesContext.responseComplete();
+
+	}
+
+	public void exportToExcelForComplCircle() throws IOException {
+		FacesContext facesContext = FacesContext.getCurrentInstance();
+		ExternalContext externalContext = facesContext.getExternalContext();
+		HttpServletResponse response = (HttpServletResponse) externalContext.getResponse();
+
+		response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheet.sheet");
+		response.setHeader("Content-Disposition", "attachment; filename=" + this.viewText + " - " + this.circleDetail
+				+ " - " + "Gap For " + this.curCountry + " " + getCurrentDate() + ".xlsx");
+
+		Workbook workbook = new XSSFWorkbook();
+		Sheet sheet = workbook.createSheet("Data");
+		// create Cell Style for header row
+		CellStyle headerCellStyle = workbook.createCellStyle();
+		headerCellStyle.setFillForegroundColor(IndexedColors.AQUA.getIndex());
+		headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+		Font headerFont = workbook.createFont();
+
+		headerFont.setColor(IndexedColors.WHITE.getIndex());
+		headerFont.setBold(true);
+		headerFont.setItalic(true);
+		headerFont.setFontHeightInPoints((short) 12);
+
+		headerCellStyle.setFont(headerFont);
+
+		Row headerRow = sheet.createRow(0);
+		Field[] fields = ComplianceInfo.class.getDeclaredFields();
+		for (int i = 0; i < fields.length; i++) {
+			Field field = fields[i];
+			String headerName = field.getName();
+			Cell headerCell = headerRow.createCell(i);
+			headerCell.setCellValue(headerName);
+			headerCell.setCellStyle(headerCellStyle);
+		}
+
+		// Date Format
+		CreationHelper creationHelper = workbook.getCreationHelper();
+		CellStyle dateCellStyle = workbook.createCellStyle();
+		dateCellStyle.setDataFormat(creationHelper.createDataFormat().getFormat("yyyy-MM-dd"));
+
+		// Sort
+		Collections.sort(compDataList, Comparator.comparing(ComplianceInfo::getHostName));
+
+		for (int i = 0; i < compDataList.size(); i++) {
+			Row dataRow = sheet.createRow(i + 1);
+			ComplianceInfo leftCardData = compDataList.get(i);
+			for (int j = 0; j < fields.length; j++) {
+				Field field = fields[j];
+				field.setAccessible(true);
+				Object value = null;
+				try {
+					value = field.get(leftCardData);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				Cell dataCell = dataRow.createCell(j);
+				if (value instanceof String) {
+					dataCell.setCellValue((String) value);
+				} else if (value instanceof Number) {
+					dataCell.setCellValue(((Number) value).doubleValue());
+				} else if (value instanceof Date) {
+					dataCell.setCellValue((Date) value);
+					dataCell.setCellStyle(dateCellStyle);
+				}
+
+			}
+		}
+		// add filter to file for all columns
+		sheet.setAutoFilter(
+				CellRangeAddress.valueOf("A1:" + getLastColumnName(fields.length) + (compDataList.size() + 1)));
+		workbook.write(response.getOutputStream());
+		facesContext.responseComplete();
+
+	}
+
+	private String getLastColumnName(int columnCount) {
+		StringBuilder columnName = new StringBuilder();
+		while (columnCount > 0) {
+			columnCount--;
+			columnName.insert(0, (char) ('A' + (columnCount % 26)));
+			columnCount /= 26;
+		}
+		return columnName.toString();
+	}
+
+	private void getCovCircelColorDetails(String check) {
+		switch (check) {
+		case "Coverage-Green-Existing": {
+			circleDetail = check;
+			break;
+		}
+		case "Coverage-Orange-Existing": {
+			circleDetail = check;
+			break;
+		}
+		case "Coverage-Red-Existing": {
+			circleDetail = check;
+			break;
+		}
+		case "Coverage-Green-New": {
+			circleDetail = check;
+			break;
+		}
+		case "Coverage-Orange-New": {
+			circleDetail = check;
+			break;
+		}
+		case "Coverage-Red-New": {
+			circleDetail = check;
+			break;
+		}
+
+		}
+	}
+
+	private void getComplCircelColorDetails(String check) {
+		switch (check) {
+		case "Compliance-Green-Existing": {
+			circleDetail = check;
+			break;
+		}
+		case "Compliance-Orange-Existing": {
+			circleDetail = check;
+			break;
+		}
+		case "Compliance-Red-Existing": {
+			circleDetail = check;
+			break;
+		}
+		case "Compliance-Green-New": {
+			circleDetail = check;
+			break;
+		}
+		case "Compliance-Orange-New": {
+			circleDetail = check;
+			break;
+		}
+		case "Compliance-Red-New": {
+			circleDetail = check;
+			break;
+		}
+
+		}
+	}
+
+	private void getWsusCovCircelColorDetails(String check) {
+		switch (check) {
+		case "first-Coverage-WSUS-Green": {
+			circleDetail = check;
+			break;
+		}
+		case "first-Coverage-WSUS-Orange": {
+			circleDetail = check;
+			break;
+		}
+		case "first-Coverage-WSUS-Red": {
+			circleDetail = check;
+			break;
+		}
+		case "second-Coverage-WSUS-Green": {
+			circleDetail = check;
+			break;
+		}
+		case "second-Coverage-WSUS-Orange": {
+			circleDetail = check;
+			break;
+		}
+		case "second-Coverage-WSUS-Red": {
+			circleDetail = check;
+			break;
+		}
+
+		}
+
+	}
+
+	private void getWsusComplCircelColorDetails(String check) {
+		switch (check) {
+		case "Complaince-WSUS-Green": {
+			circleDetail = check;
+			break;
+		}
+		case "Complaince-WSUS-Orange": {
+			circleDetail = check;
+			break;
+		}
+		case "Complaince-WSUS-Red": {
+			circleDetail = check;
+			break;
+		}
+		}
+	}
+
+	private void getWsusThirdPartyCircelColorDetails(String check) {
+		switch (check) {
+		case "ThirdParty-WSUS-Green": {
+			circleDetail = check;
+			break;
+		}
+		case "ThirdParty-WSUS-Orange": {
+			circleDetail = check;
+			break;
+		}
+		case "ThirdParty-WSUS-Red": {
+			circleDetail = check;
+			break;
+		}
+		}
+	}
+
+	public void getCircelColor(String color, String isNew, String type) {
+		String check = null;
+		if (!type.contains("WSUS")) {
+			check = type + "-" + color + "-" + isNew;
+		} else {
+			check = type + "-" + color;
+		}
+
+		switch (type) {
+		case "Coverage": {
+			getCovCircelColorDetails(check);
+			break;
+		}
+		case "Compliance": {
+			getComplCircelColorDetails(check);
+			break;
+		}
+		case "first-Coverage-WSUS": {
+			getWsusCovCircelColorDetails(check);
+			break;
+		}
+		case "second-Coverage-WSUS": {
+			getWsusCovCircelColorDetails(check);
+			break;
+		}
+		case "Complaince-WSUS": {
+			getWsusComplCircelColorDetails(check);
+			break;
+		}
+		case "ThirdParty-WSUS": {
+			getWsusThirdPartyCircelColorDetails(check);
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
+	public String getDeurationAndDate(String colorType, String type) {
+		AllRadarData info;
+		getFilterAll(colorType, type + "-" + viewId);
+		info = filter;
+		String tooltip = "";
+		if(info == null) {
+			if(type.equalsIgnoreCase("Cov")) {
+				return "Coverage";
+			}else {
+				return "Comply";
+			}
+		} else {
+			tooltip = formatRange(info.getColumnDateName(), info.getStart(), info.getEnd(), info.getIDName(),
+					info.getTimePeriod());
+			if (tooltip.equalsIgnoreCase("Comply") || tooltip.equalsIgnoreCase("Coverage")) {
+				return tooltip;
+			} else {
+				return separateCamelCase(info.getColumnDateName()) + " " + tooltip;
+			}
+		}
+	}
+	
+	public static String separateCamelCase(String input) {
+		return input.replaceAll(String.format("%s|%s|%s",
+				"(?<=[A-Z])(?=[A-Z][a-z])",
+				"(?<=[^A-Z])(?=[A-Z])",
+				"(?<=[A-Za-z])(?=[^A-Za-z])"),
+				" ");
+	}
+
+	public String getDeuration(String colorType, String type) {
+		AllRadarData info;
+		getFilterAll(colorType, type + "-" + viewId);
+		info = filter;
+		if(info == null) {
+			if(type.equalsIgnoreCase("Cov")) {
+				return "Coverage";
+			}else {
+				return "Comply";
+			}
+		} else {
+			return formatRange(info.getColumnDateName(), info.getStart(),
+					info.getEnd(), info.getIDName(), info.getTimePeriod());
+		}
+	}
+	
+	public String getLabel(String name) {
+		String lable = "";
+		if (filter != null) {
+			if (name.equalsIgnoreCase("first")) {
+				lable = (int) (((filter.getEnd() - filter.getStart()) / 2) + filter.getStart()) + "%-"
+						+ (filter.getEnd() == 101 ? filter.getEnd() - 1 : filter.getEnd()) + "%";
+			} else {
+				lable = filter.getStart() + "%-"
+						+ ((int) (((filter.getEnd() - filter.getStart()) / 2) + filter.getStart()) + "%");
+			}
+		}
+
+		return lable;
+	}
+
+	public void getFilterAll(String type, String IDName) {
+		if (allRadar == null || allRadar.isEmpty()) {
+			allRadar = da.getRadarData(viewId);
+		} else if (allRadar.get(0).getViewID() != viewId) {
+			allRadar = da.getRadarData(viewId);
+		}
+
+		for (AllRadarData item : allRadar) {
+			if (item.getColorType().equalsIgnoreCase(type) && item.getIDName().equalsIgnoreCase(IDName)) {
+				filter = item;
+			}
+			if (item.getIDName().contains("Cov")) {
+				switch (item.getColorType()) {
+				case "Green-Exist":
+					greenExist = item;
+					break;
+				case "Green-New":
+					greenNew = item;
+					break;
+				case "Orange-Exist":
+					orangeExist = item;
+					break;
+				case "Orange-New":
+					orangeNew = item;
+					break;
+				case "Red-Exist":
+					redExist = item;
+					break;
+				case "Red-New":
+					redNew = item;
+					break;
+				}
+			}
+		}
+
+	}
+
+	private String formatRange(String columnDateName, int start, int end, String idName, String period) {
+		if ("Score".equalsIgnoreCase(columnDateName)) {
+			if (start == 0) {
+				return "<" + end + "%";
+			} else {
+				return start + "% - " + (end == 101 ? 100 : end) + "%";
+			}
+		} else if ("day".equalsIgnoreCase(period)) {
+			if (start == 0 && end >= 30) {
+				if ((end - start) >= 30 && end < 1000) {
+					return "< " + (end / 30) + " Month";
+				}
+			} else if ((end >= 60) && (start >= 30) && (end < 1000)) {
+				return start / 30 + " - " + end / 30 + " Month";
+			} else if (start != 0 && start < 30 && end <= 30) {
+				return (int) (start / 7) + " - " + (int) (end / 7) + " Week";
+			} else if (end >= 1000 && start >= 30) {
+				return "> " + (start / 30) + " Month";
+			}
+		} else if ("week".equalsIgnoreCase(period)) {
+			if (start == 0 && end < 500) {
+				return "< " + (end) + " Week";
+			} else if(end < 500) {
+				return start + " - " + (end) + " Week";	
+			} else if(start != 0 && end > 500) {
+				return "> " + (start) + " Week";	
+			}
+		} else if ("month".equalsIgnoreCase(period)) {
+			if (start == 0 && end < 500) {
+				return "< " + (end) + " Month";
+			} else if(start != 0 && end < 500) {
+				return start + " - " + (end) + " Month";	
+			} else if(start != 0 && end > 500) {
+				return "> " + (start) + " Month";	
+			}
+		}
+
+		if (idName.contains("Cov")) {
+			return "Coverage";
+		} else {
+			return "Comply";
+		}
+	}
+	
+	
+	public boolean isHighlighted(String fullName) {
+		if (fullName.contains("Symantec")) {
+			return fullName != null && viewText != null && viewText.toLowerCase().contains(fullName.toLowerCase());
+		} else {
+			return fullName != null && viewText != null && viewText.toLowerCase().equalsIgnoreCase(fullName.toLowerCase());
+		}
+	}
+
+	public String getCircleDetail() {
+		return circleDetail;
+	}
+
+	public void setCircleDetail(String circleDetail) {
+		this.circleDetail = circleDetail;
+	}
+
+	public List<Views> getSymantecList() {
+		return radar.getSymantecList();
+	}
+	
+	public void submit(AjaxBehaviorEvent event) {
+		reset();
+
+		Date date1 = radar.getDate1();
+		if (date1 != null) {
+			if (date1 instanceof java.sql.Date) {
+				now = ((java.sql.Date) date1).toLocalDate();
+			} else {
+				now = date1.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			}
+		} else {
+			now = null;
+		}
+
+		date2 = radar.getDate2();
+		setCountryValue();
+
+		String formattedDate = sdf.format(date1).trim();
+		listOfTodayData = da.getHistoryData(radar.getUsername(), formattedDate);
+
+		getLeftCardInfo();
+
+		if (date1 == null) {
+		}
+	}
+	
+	public List<AssetInfo> getExcludedCoverage(String name) {
+		if (exeludedCovMap.get(name) == null) {
+			return new ArrayList<AssetInfo>();
+		} else {
+			radar.setCovDataList(exeludedCovMap.get(name));
+			return exeludedCovMap.get(name);
+		}
+	}
+	
+	public List<ComplianceInfo> getExcludedCompliance(String name) {
+		if (exeludedCompMap.get(name) == null) {
+			return new ArrayList<ComplianceInfo>();
+		} else {
+			radar.setCompDataList(exeludedCompMap.get(name));
+			return exeludedCompMap.get(name);
+		}
+	}
+
+	public void setExcludedAssets() {
+		excludedCovList = da.getExcludeList(viewId, subViewId, country);
+		excludedCompList = da.getComplianceExecludedList(viewId, subViewId, country);
+		LocalDateTime currentTime = LocalDateTime.now(ZoneId.of("UTC")).plusHours(3);
+
+		for (String colorType : colorTypes) {
+			AllRadarData circleCovInfo = getCircleInfo(colorType, "Cov");
+			AllRadarData circleCompInfo = getCircleInfo(colorType, "Comp");
+			if (isCircleInfoValid(circleCovInfo)) {
+				List<AssetInfo> filteredAssets = filterAssets(excludedCovList, circleCovInfo, currentTime);
+				exeludedCovMap.put(colorType, filteredAssets);
+			}
+			if (isCircleInfoValid(circleCompInfo)) {
+				List<ComplianceInfo> filteredAssets = filterCompliance(excludedCompList, circleCovInfo, currentTime);
+				exeludedCompMap.put(colorType, filteredAssets);
+			}
+		}
+	}
+
+	private AllRadarData getCircleInfo(String colorType, String asset) {
+		return radarInfo.stream()
+				.filter(radar -> radar.getViewID() == viewId && radar.getColorType().equalsIgnoreCase(colorType) && radar.getIDName().contains(asset))
+				.findFirst().orElse(new AllRadarData());
+	}
+
+	private boolean isCircleInfoValid(AllRadarData circleInfo) {
+		return circleInfo != null;
+	}
+
+	private List<AssetInfo> filterAssets(List<AssetInfo> assets, AllRadarData circleInfo, LocalDateTime currentTime) {
+		
+		if (assets == null || assets.isEmpty() || assets.size() == 0) {
+	        return Collections.emptyList(); 
+	    }
+		
+		return assets.stream().filter(asset -> {
+			Date date;
+			try {
+				Method method = asset.getClass().getMethod("get" + circleInfo.getColumnDateName());
+				date = (Date) method.invoke(asset);
+			} catch (Exception e) {
+				date = asset.getScanDate();
+			}
+			return (circleInfo.getIsScanned() == -1 || asset.getIsScanned() == circleInfo.getIsScanned())
+					&& (circleInfo.getIsNew() == -1 || asset.getIsNew() == circleInfo.getIsNew())
+					&& (circleInfo.getIsComply() == -1 || asset.getIsComply() == circleInfo.getIsComply())
+					&& (circleInfo.getIsCovered() == -1 || asset.getIsCoveredByControl() == circleInfo.getIsCovered())
+					&& date.after(convertToDate(currentTime.minusMonths(circleInfo.getEnd())))
+					&& date.before(convertToDate(currentTime.minusMonths(circleInfo.getStart())));
+		}).collect(Collectors.toList());
+	}
+	
+	private List<ComplianceInfo> filterCompliance(List<ComplianceInfo> assets, AllRadarData circleInfo, LocalDateTime currentTime) {
+		
+		if (assets == null || assets.isEmpty() || assets.size() == 0) {
+	        return Collections.emptyList(); 
+	    }
+		
+		return assets.stream().filter(asset -> {
+			double score;
+			try {
+				Method method = asset.getClass().getMethod("get" + circleInfo.getColumnDateName());
+				score = (double) method.invoke(asset);
+			} catch (Exception e) {
+				score = asset.getScore();
+			}
+			return (circleInfo.getIsNew() == -1 || asset.getIsNew() == circleInfo.getIsNew())
+					&& (circleInfo.getIsComply() == -1 || asset.getIsComply() == circleInfo.getIsComply())
+					&& (circleInfo.getIsCovered() == -1 || asset.getIsCoveredByControl() == circleInfo.getIsCovered())
+					&& score < circleInfo.getEnd()
+					&& score > circleInfo.getStart();
+		}).collect(Collectors.toList());
+	}
+
+	public static Date convertToDate(LocalDateTime localDateTime) {
+		return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+	}
+	
+	@Override
+	public void reset() {
+		veiwDataComp = null;
+		veiwDataCov = null;
+		veiwDataCompOneMonth = null;
+		veiwDataCovOneMonth = null;
+		veiwDataCompTwoMonth = null;
+		veiwDataCovTwoMonth = null;
+		circleCompPerWeek = null;
+		circleCovPerWeek =null;
+		circleExiCompDetails = null;
+		circleNewCompDetails = null;
+		exeludedCov =null;
+		exeludedComp = null;
+		checkIsNew2 = null;
+		checkValue2 = null;
+		checkCountry = null;
+		scoreList = null;
+		pairCur = null;
+		pairOneMonth = null;
+		pairTwoMonth = null;
+	}
+
+	public int getViewSymantecName() {
+		return viewSymantecName;
+	}
+
+	public void setViewSymantecName(int viewSymantecName) {
+		this.viewSymantecName = viewSymantecName;
+	}
+
+	public Long getItNewCov() {
+		return itNewCov;
+	}
+
+	public void setItNewCov(Long itNewCov) {
+		this.itNewCov = itNewCov;
+	}
+
+	public Long getItExistComp() {
+		return itExistComp;
+	}
+
+	public void setItExistComp(Long itExistComp) {
+		this.itExistComp = itExistComp;
+	}
+
+	public Long getRiskNewCov() {
+		return RiskNewCov;
+	}
+
+	public void setRiskNewCov(Long riskNewCov) {
+		RiskNewCov = riskNewCov;
+	}
+
+	public Long getRiskExistComp() {
+		return RiskExistComp;
+	}
+
+	public void setRiskExistComp(Long riskExistComp) {
+		RiskExistComp = riskExistComp;
+	}
+
+	public Long getItNewComp() {
+		return itNewComp;
+	}
+
+	public void setItNewComp(Long itNewComp) {
+		this.itNewComp = itNewComp;
+	}
+
+	public Long getItExistCov() {
+		return itExistCov;
+	}
+
+	public void setItExistCov(Long itExistCov) {
+		this.itExistCov = itExistCov;
+	}
+
+	public Long getRiskNewComp() {
+		return RiskNewComp;
+	}
+
+	public void setRiskNewComp(Long riskNewComp) {
+		RiskNewComp = riskNewComp;
+	}
+
+	public Long getRiskExistCov() {
+		return RiskExistCov;
+	}
+
+	public void setRiskExistCov(Long riskExistCov) {
+		RiskExistCov = riskExistCov;
+	}
+
+	public List<AllRadarData> getAllRadar() {
+		return allRadar;
+	}
+
+	public void setAllRadar(List<AllRadarData> allRadar) {
+		this.allRadar = allRadar;
+	}
+
+	public AllRadarData getFilter() {
+		return filter;
+	}
+
+	public void setFilter(AllRadarData filter) {
+		this.filter = filter;
+	}
+
+	public List<String> getCountresAccess() {
+		return countresAccess;
+	}
+
+	public void setCountresAccess(List<String> countresAccess) {
+		this.countresAccess = countresAccess;
+	}
+
+	public List<ViewInfo> getListOfTodayData() {
+		return listOfTodayData;
+	}
+
+	public void setListOfTodayData(List<ViewInfo> listOfTodayData) {
+		this.listOfTodayData = listOfTodayData;
+	}
+	
+	
+	public Date getDate1() {
+		return date1;
+	}
+
+	public void setDate1(Date date1) {
+		this.date1 = date1;
+	}
+
+		public Date getDate2() {
+			return date2;
+		}
+
+		public void setDate2(Date date2) {
+			this.date2 = date2;
+		}
+
+		public Triple<Double, Integer, Integer> getTripleOneMonth() {
+			return tripleOneMonth;
+		}
+
+		public void setTripleOneMonth(Triple<Double, Integer, Integer> tripleOneMonth) {
+			this.tripleOneMonth = tripleOneMonth;
+		}
+
+		public Triple<Double, Integer, Integer> getTripleTwoMonth() {
+			return tripleTwoMonth;
+		}
+
+		public void setTripleTwoMonth(Triple<Double, Integer, Integer> tripleTwoMonth) {
+			this.tripleTwoMonth = tripleTwoMonth;
+		}
+
+		public Pair<Integer, Integer> getPairCur() {
+			if (pairCur == null) {
+				pairCur = getTotalAssetAndTotalCoverdToday();
+			}
+			return pairCur;
+		}
+
+		public void setPairCur(Pair<Integer, Integer> pairCur) {
+			this.pairCur = pairCur;
+		}
+
+		public Pair<Integer, Integer> getPairOneMonth() {
+			if(pairOneMonth == null) {
+				pairOneMonth = getTotalAssetAndTotalCoverd(1);
+			} 
+			return pairOneMonth;
+		}
+
+		public void setPairOneMonth(Pair<Integer, Integer> pairOneMonth) {
+			this.pairOneMonth = pairOneMonth;
+		}
+
+		public Pair<Integer, Integer> getPairTwoMonth() {
+			if(pairTwoMonth == null) {
+				pairTwoMonth = getTotalAssetAndTotalCoverd(2);
+			} 
+			return pairTwoMonth;
+		}
+
+		public void setPairTwoMonth(Pair<Integer, Integer> pairTwoMonth) {
+			this.pairTwoMonth = pairTwoMonth;
+		}
+
+		public String getFormattedDate() {
+			return formattedDate;
+		}
+
+		public void setFormattedDate(String formattedDate) {
+			this.formattedDate = formattedDate;
+		}
+
+		public Map<String, Pair<Integer, Integer>> getOneMonthMap() {
+			return oneMonthMap;
+		}
+
+		public void setOneMonthMap(Map<String, Pair<Integer, Integer>> oneMonthMap) {
+			this.oneMonthMap = oneMonthMap;
+		}
+
+		public Map<String, Pair<Integer, Integer>> getTwoMonthMap() {
+			return twoMonthMap;
+		}
+
+		public void setTwoMonthMap(Map<String, Pair<Integer, Integer>> twoMonthMap) {
+			this.twoMonthMap = twoMonthMap;
+		}
+
+		public String getCycleStatus() {
+			return cycleStatus;
+		}
+
+		public void setCycleStatus(String cycleStatus) {
+			this.cycleStatus = cycleStatus;
+		}	
+		
+		
+		
+		
 }
-
-
-    public LocalDate getScanDate() {
-        Date date = da.getBulkScanDate(viewId, subViewId, country.equals("ALL") ? "" : country, 0);
-        scanDate = convertDateToLocalDate(date);
-        return scanDate;
-    }
-
-    // Lazy getter for header data
-    public List<ViewInfo> getHeadeData() {
-        if (headeData == null) {
-            headeData = da.getHeaderData();
-            filterHeaderData();
-        }
-        return headeData;
-    }
-
-    // ===============================
-    // Helper Methods (some unchanged)
-    // ===============================
-    public void getLeftCardInfo() {
-        RadarHistorical radarHist = new RadarHistorical();
-        radarHist.setCompVal1(0);
-        radarHist.setCompVal2(0);
-        radarHist.setCovVal1(0);
-        radarHist.setCovVal2(0);
-
-        leftCardDataMap = new HashMap<>();
-        List<String> countries = commons.getCountries();
-        logger.debug("Start filtering left Card Data:");
-
-        for (String c : countries) {
-            List<ViewInfo> filteredList = getListOfTodayData().stream()
-                .filter(item -> !item.getControlName().contains("Symantec -") && item.getCountry().equalsIgnoreCase(c))
-                .peek(item -> item.setRadarHistorical(radarHist))
-                .collect(Collectors.toList());
-            leftCardDataMap.put(c, filteredList);
-        }
-        logger.debug("End filtering left Card Data:");
-    }
-
-    private LocalDate convertDateToLocalDate(Date date) {
-        if (date == null) {
-            return LocalDate.now();
-        }
-        return Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
-    }
-
-    public Date getPreviousDate(Date date) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.DAY_OF_MONTH, -1);
-        return calendar.getTime();
-    }
-
-    public Date getPreviousMonth(int month) {
-        LocalDate today = LocalDate.now();
-        LocalDate resultDate = today.withDayOfMonth(1);
-        switch (month) {
-            case 1:
-                resultDate = resultDate.minusMonths(1);
-                break;
-            case 2:
-                resultDate = resultDate.minusMonths(2);
-                break;
-            case 3:
-                resultDate = resultDate.minusMonths(3);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid month value: " + month);
-        }
-        return Date.from(resultDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-    }
-
-    // Example: filterHeaderData remains unchanged
-    public void filterHeaderData() {
-        for (ViewInfo item : headeData) {
-            item.setRadarHistorical(getRadarHistoryLeftCard(item.getId(), item.getControlName(), item.getCountry()));
-            headerMap.put(item.getId() + "-" + item.getSupViewID() + "-" + item.getCountry(), item);
-        }
-    }
-
-    public RadarHistorical getRadarHistoryLeftCard(int id, String name, String country) {
-        RadarHistorical radarHist = new RadarHistorical();
-        // The original logic for setting radar history; unchanged
-        radarHist.setCovVal1(0);
-        radarHist.setCovVal2(0);
-        radarHist.setCompVal1(0);
-        radarHist.setCompVal2(0);
-        return radarHist;
-    }
-
-    // Additional methods such as changeCountry, setViewIds, isSymantec, exportToExcel, etc.
-    // remain largely unchanged. You can integrate lazy-loading into them where appropriate.
-    // ... unchanged methods ...
-
-    @Override
-    public void reset() {
-        veiwDataComp = null;
-        veiwDataCov = null;
-        veiwDataCompOneMonth = null;
-        veiwDataCovOneMonth = null;
-        veiwDataCompTwoMonth = null;
-        veiwDataCovTwoMonth = null;
-        circleCompPerWeek = null;
-        circleCovPerWeek = null;
-        circleExiCompDetails = null;
-        circleNewCompDetails = null;
-        exeludedCov = null;
-        exeludedComp = null;
-        checkIsNew2 = null;
-        checkValue2 = null;
-        checkCountry = null;
-        scoreList = null;
-        pairCur = null;
-        pairOneMonth = null;
-        pairTwoMonth = null;
-    }
-
-    // ... remaining methods from the original MB_Main go here, refactored if needed for lazy loading ...
-
-}
-
-
-
