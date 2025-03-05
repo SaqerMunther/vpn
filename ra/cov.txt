@@ -22,6 +22,7 @@ import com.app.dev.cmon.components.ViewInfo;
 import com.app.dev.cmon.components.Views;
 import com.app.dev.cmon.controllers.DataAccess;
 import com.app.dev.cmon.utilites.CacheConstants;
+import com.arabbank.dev.utility.Pair;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class CacheService {
     private CacheService() {
         Configuration config = new Configuration();
         // Set maximum entries to 1500 as required
-        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 1500)
+        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
                 .eternal(false)
                 .timeToIdleSeconds(180)
                 .timeToLiveSeconds(300)
@@ -218,16 +219,19 @@ public class CacheService {
                 Collectors.collectingAndThen(
                     Collectors.toList(),
                     assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+                    )
             ));
 
-        // Group by "ALL" location per SubViewId
-        Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
-            .collect(Collectors.groupingBy(
-                asset -> "ALL" + asset.getSubViewId(),
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-            ));
+         // Group by "ALL" location per SubViewId
+            Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
+                .collect(Collectors.groupingBy(
+                    asset -> "ALL" + asset.getSubViewId(),
+                    Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+                    ) // Added closing parenthesis here
+                ));
+
 
         // Group by SubViewId = -1 for all locations
         Map<String, Pair<Integer, Integer>> allLocationsMap = assetList.stream()
@@ -236,6 +240,7 @@ public class CacheService {
                 Collectors.collectingAndThen(
                     Collectors.toList(),
                     assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+                    )
             ));
 
         // Calculate the total for all data without grouping
@@ -243,6 +248,7 @@ public class CacheService {
             .collect(Collectors.collectingAndThen(
                 Collectors.toList(),
                 assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+                )
             );
 
         // Add the "ALL" group to the result map
@@ -282,13 +288,4 @@ public class CacheService {
     public void setViewNameMap(Map<Integer, String> viewNameMap) {
         this.viewNameMap = viewNameMap;
     }
-}
-
-
-private void processAndMapData() {
-    String date = sdf.format(radar.getDate1()).trim();
-    Map<String, Pair<Integer, Integer>> oneMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
-    this.oneMonthMap = oneMonthMap;
-    this.twoMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
-    coverageAll = da.getAllCoverage(viewId, subViewId, country, date);
 }
