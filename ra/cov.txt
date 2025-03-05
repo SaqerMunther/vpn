@@ -1,174 +1,107 @@
-// --- Assumed utility methods for date and country normalization ---
+package com.app.dev.cmon.cache;
 
-/**
- * Returns the normalized country string: if null or "all", returns "ALL".
- */
-private String normalizeCountry(String country) {
-    return (country == null || country.equalsIgnoreCase("all")) ? "ALL" : country;
-}
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Returns the formatted date string for the current radar date.
- */
-private String getCurrentRadarDateStr() {
-    return sdf.format(radar.getDate1()).trim();
-}
+public class CacheService {
+    private static CacheService instance = new CacheService();
+    private Map<String, Object> cache = new ConcurrentHashMap<>();
 
-// --- Updated method for processing and mapping data ---
+    private CacheService() { }
 
-/**
- * Processes asset data for the given view, sub-view, and country, then caches the resulting maps.
- * The maps (oneMonthMap and twoMonthMap) are keyed under a unique cache key.
- */
-private void processAndMapData(int viewId, int subViewId, String country) {
-    String normalizedCountry = normalizeCountry(country);
-    String cacheKey = "processAndMapData_" + viewId + "_" + subViewId + "_" + normalizedCountry;
-    
-    // Try to retrieve cached maps (assume the cache holds a Map with two entries)
-    Map<String, Map<String, Pair<Integer, Integer>>> cachedResult = 
-            CacheService.getInstance().<Map<String, Map<String, Pair<Integer, Integer>>>>getCachedObject(cacheKey);
-    
-    if (cachedResult != null) {
-        oneMonthMap = cachedResult.get("oneMonthMap");
-        twoMonthMap = cachedResult.get("twoMonthMap");
-        return;
+    public static CacheService getInstance() {
+        return instance;
     }
-    
-    // Otherwise, fetch the data from the data access object.
-    String dateOne = sdf.format(getPreviousMonth(1));
-    String dateTwo = sdf.format(getPreviousMonth(2));
-    
-    List<AssetInfo> listOne = da.getAllCoverage(viewId, subViewId, country, dateOne);
-    List<AssetInfo> listTwo = da.getAllCoverage(viewId, subViewId, country, dateTwo);
-    
-    Map<String, Pair<Integer, Integer>> oneMonth = processAssetList(listOne);
-    Map<String, Pair<Integer, Integer>> twoMonth = processAssetList(listTwo);
-    
-    // Prepare result map and cache it.
-    Map<String, Map<String, Pair<Integer, Integer>>> result = new HashMap<>();
-    result.put("oneMonthMap", oneMonth);
-    result.put("twoMonthMap", twoMonth);
-    
-    CacheService.getInstance().putCachedObject(cacheKey, result);
-    
-    // Also update the local instance variables.
-    oneMonthMap = oneMonth;
-    twoMonthMap = twoMonth;
-}
 
-// --- Updated method for retrieving compliance circle scores ---
-
-/**
- * Returns the circle score for compliance. If the data is cached, returns it; otherwise, fetches and caches it.
- */
-public List<ViewInfo> getCompCircleScore(String type) {
-    String normalizedCountry = normalizeCountry(country);
-    String dateStr = getCurrentRadarDateStr();
-    String cacheKey = "compCircleScore_" + viewId + "_" + subViewId + "_" + normalizedCountry + "_" + type + "_" + dateStr;
-    
-    List<ViewInfo> cachedScore = CacheService.getInstance().<List<ViewInfo>>getCachedObject(cacheKey);
-    if (cachedScore != null && !cachedScore.isEmpty()) {
-        return cachedScore;
+    public <T> T getCachedObject(String key) {
+        return (T) cache.get(key);
     }
-    
-    List<ViewInfo> result = da.getComplyCirclePerScore(
-            viewId, subViewId,
-            country.equalsIgnoreCase("all") ? "" : country,
-            type,
-            viewText,
-            dateStr);
-    
-    CacheService.getInstance().putCachedObject(cacheKey, result);
-    return result;
-}
 
-// --- Methods to preload caches in background ---
-
-/**
- * Iterates over all available countries and sub-views for the current viewId to pre-cache the
- * processAndMapData results.
- */
-public void preloadProcessAndMapDataCache() {
-    List<String> countries = radar.getCountryMap().get(viewId);
-    if (countries == null || countries.isEmpty()) {
-        countries = Collections.singletonList("ALL");
-    }
-    // Get subviews for the current view (if none, use -1 as default)
-    List<Views> subViews = radar.getSubViews(viewId);
-    if (subViews == null || subViews.isEmpty()) {
-        for (String c : countries) {
-            processAndMapData(viewId, -1, c);
-        }
-    } else {
-        for (Views sub : subViews) {
-            for (String c : countries) {
-                processAndMapData(viewId, sub.getId(), c);
-            }
-        }
+    public void putCachedObject(String key, Object value) {
+        cache.put(key, value);
     }
 }
 
-/**
- * Iterates over all available countries and sub-views (and for each type if needed)
- * to preload the compliance circle score cache.
- */
-public void preloadCompCircleScoreCache() {
-    // Define the types you wish to preload; here we use "Comp" as an example.
-    List<String> types = Arrays.asList("Comp");
-    List<String> countries = radar.getCountryMap().get(viewId);
-    if (countries == null || countries.isEmpty()) {
-        countries = Collections.singletonList("ALL");
+
+package com.app.dev.cmon.cache;
+
+import com.arabbank.dev.utility.Pair;
+import java.util.Map;
+
+public class CoverageMaps {
+    private Map<String, Pair<Integer, Integer>> oneMonthMap;
+    private Map<String, Pair<Integer, Integer>> twoMonthMap;
+
+    public CoverageMaps(Map<String, Pair<Integer, Integer>> oneMonthMap, Map<String, Pair<Integer, Integer>> twoMonthMap) {
+        this.oneMonthMap = oneMonthMap;
+        this.twoMonthMap = twoMonthMap;
     }
-    String dateStr = getCurrentRadarDateStr();
-    List<Views> subViews = radar.getSubViews(viewId);
-    
-    if (subViews == null || subViews.isEmpty()) {
-        for (String c : countries) {
-            for (String t : types) {
-                String normalizedCountry = normalizeCountry(c);
-                String cacheKey = "compCircleScore_" + viewId + "_" + (-1) + "_" + normalizedCountry + "_" + t + "_" + dateStr;
-                List<ViewInfo> result = da.getComplyCirclePerScore(
-                        viewId, -1,
-                        c.equalsIgnoreCase("all") ? "" : c,
-                        t, viewText, dateStr);
-                CacheService.getInstance().putCachedObject(cacheKey, result);
-            }
-        }
-    } else {
-        for (Views sub : subViews) {
-            for (String c : countries) {
-                for (String t : types) {
-                    String normalizedCountry = normalizeCountry(c);
-                    String cacheKey = "compCircleScore_" + viewId + "_" + sub.getId() + "_" + normalizedCountry + "_" + t + "_" + dateStr;
-                    List<ViewInfo> result = da.getComplyCirclePerScore(
-                            viewId, sub.getId(),
-                            c.equalsIgnoreCase("all") ? "" : c,
-                            t, viewText, dateStr);
-                    CacheService.getInstance().putCachedObject(cacheKey, result);
-                }
-            }
-        }
+
+    public Map<String, Pair<Integer, Integer>> getOneMonthMap() {
+        return oneMonthMap;
+    }
+
+    public Map<String, Pair<Integer, Integer>> getTwoMonthMap() {
+        return twoMonthMap;
     }
 }
 
-// --- In your @PostConstruct initialization method ---
 
-@PostConstruct
-public void init() {
-    // ... existing initialization logic ...
+package com.app.dev.cmon.controllers;
+
+// ... (other imports) ...
+import com.app.dev.cmon.cache.CachedDataService;
+import com.app.dev.cmon.cache.CoverageMaps;
+
+@ManagedBean(name = "mbMain")
+@ViewScoped
+public class MB_Main extends CmonManagedBean {
+    // ... (other fields) ...
     
-    // For example, after setting viewId, country, and subViewId from the radar controller:
-    viewId = radar.getViewId();
-    subViewId = radar.getSubViewId();
-    country = radar.getCountry();
-    viewText = radar.getViewText();
+    private CachedDataService cachedDataService = new CachedDataService();
+    private DataAccess da;  // Assume this is properly initialized/injected
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     
-    // Optionally, call processAndMapData for the current selection synchronously:
-    processAndMapData(viewId, subViewId, country);
+    // Fields updated from cached data
+    private Map<String, Pair<Integer, Integer>> oneMonthMap;
+    private Map<String, Pair<Integer, Integer>> twoMonthMap;
+    private List<ViewInfo> circleExiCompDetails;
     
-    // Then launch background threads to preload caches for all combinations.
-    new Thread(() -> {
-         preloadProcessAndMapDataCache();
-         preloadCompCircleScoreCache();
-    }).start();
+    private int viewId;
+    private int subViewId;
+    private String country;
+    private String viewText;
+    private RadarController radar; // Assume this is set from context
+
+    // --- Updated method for processing and mapping coverage data using cache ---
+    private void updateCoverageMaps() {
+        CoverageMaps maps = cachedDataService.getCoverageMaps(viewId, subViewId, country, da, sdf);
+        oneMonthMap = maps.getOneMonthMap();
+        twoMonthMap = maps.getTwoMonthMap();
+    }
+    
+    // --- Updated method for retrieving compliance circle scores using cache ---
+    public List<ViewInfo> updateCompCircleScore(String type) {
+        String dateStr = sdf.format(radar.getDate1()).trim();
+        circleExiCompDetails = cachedDataService.getCompCircleScore(
+            type, viewId, subViewId, country, viewText, dateStr, da);
+        return circleExiCompDetails;
+    }
+    
+    // --- Example of calling the cache-enabled methods in init ---
+    @PostConstruct
+    public void init() {
+        // ... (other initialization logic, e.g. setting viewId, subViewId, country, viewText from radar) ...
+        viewId = radar.getViewId();
+        subViewId = radar.getSubViewId();
+        country = radar.getCountry();
+        viewText = radar.getViewText();
+        
+        // Load the current view's coverage maps synchronously.
+        updateCoverageMaps();
+        
+        // Optionally, you can launch background preloading (e.g., with an ExecutorService) for additional combinations.
+    }
+    
+    // ... (rest of MB_Main code) ...
 }
