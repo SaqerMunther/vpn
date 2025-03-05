@@ -23,44 +23,31 @@ import org.slf4j.LoggerFactory;
 
 public class CacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
-    private static CacheService instance; // Singleton instance
+    private static CacheService instance;
+    
     private CacheManager cacheManager;
     private Cache dataPerWeekCache;
     private Timer timer;
     private DataAccess da = new DataAccess();
     
-    
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
     
-
-    // Private constructor to prevent instantiation
+    // Private constructor for Singleton
     private CacheService() {
-        // Create cache configuration programmatically
         Configuration config = new Configuration();
-
-        // Create a cache configuration for dataPerWeekCache
-        CacheConfiguration cacheConfig = new CacheConfiguration("dataPerWeekCache", 500000) // Reduced max entries
+        CacheConfiguration cacheConfig = new CacheConfiguration("dataPerWeekCache", 500000)
                 .eternal(false)
-                .timeToIdleSeconds(180) // Reduced idle time
-                .timeToLiveSeconds(300) // Reduced live time
-                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU); // Set LRU eviction policy
-
-        // Add the cache configuration to the main configuration
+                .timeToIdleSeconds(180)
+                .timeToLiveSeconds(300)
+                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
         config.addCache(cacheConfig);
-
-        // Initialize the cache manager with the configuration
         cacheManager = CacheManager.newInstance(config);
-
-        // Get the cache
         dataPerWeekCache = cacheManager.getCache("dataPerWeekCache");
-
-        // Schedule cache refresh
         scheduleCacheRefresh();
         logger.info("CacheService initialized and cache refresh scheduled.");
     }
 
-    // Public method to get the singleton instance
     public static synchronized CacheService getInstance() {
         if (instance == null) {
             instance = new CacheService();
@@ -70,112 +57,103 @@ public class CacheService {
 
     private void scheduleCacheRefresh() {
         timer = new Timer();
+        // Refresh every 10 minutes (update comment if needed)
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-        		List<Date> lastDates = da.getLastDate();
-        		Date date = null;
-        		if (!lastDates.isEmpty()) {
-        			date = lastDates.get(0);
-        		}
-               refreshDataPerWeekCache(viewCountryMap, viewNameMap, date.toString());
+                List<Date> lastDates = da.getLastDate();
+                Date date = lastDates.isEmpty() ? new Date() : lastDates.get(0);
+                refreshDataPerWeekCache(date.toString());
             }
-        }, 0, 10 * 60 * 1000); // Refresh every 20 minutes
-        logger.info("Cache refresh task scheduled to run every 20 minutes.");
+        }, 0, 10 * 60 * 1000);
+        logger.info("Cache refresh task scheduled to run every 10 minutes.");
     }
 
-//    public void refreshDataPerWeekCache() {
-//        logger.info("Refreshing dataPerWeekCache...");
-//        dataPerWeekCache.removeAll(); // Clear the entire cache
-//        // Logic to repopulate the cache can be added here
-//        logger.info("dataPerWeekCache has been cleared.");
-//    }
+    // Helper method to generate a cache key consistently
+    private String generateCacheKey(String type, String isNew, int viewId, String country, String date) {
+        return type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date;
+    }
     
-    public void refreshDataPerWeekCache(Map<Integer, List<String>> viewIdCountryMap, Map<Integer, String> viewsNameMap, String date) {
+    // Refresh cache using instance maps directly
+    public void refreshDataPerWeekCache(String date) {
         logger.info("Refreshing dataPerWeekCache...");
-
-        // Clear the entire cache
-        dataPerWeekCache.removeAll(); 
+        dataPerWeekCache.removeAll();
         logger.info("dataPerWeekCache has been cleared.");
-
-        // Logic to repopulate the cache
-        for (String type : CacheConstants.RADAR_TYPES) { // Assuming types are passed as a parameter
-            for (String isNew : CacheConstants.RADAR_IS_NEW) { // Assuming isNews are passed as a parameter
-                for (Map.Entry<Integer, List<String>> entry : viewIdCountryMap.entrySet()) {
+        
+        for (String type : CacheConstants.RADAR_TYPES) {
+            for (String isNew : CacheConstants.RADAR_IS_NEW) {
+                for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
                     Integer viewId = entry.getKey();
                     List<String> countries = entry.getValue();
-
                     for (String country : countries) {
-                    	List<Integer> subViews = da.getSubViews(viewId).stream().map(Views::getId).collect(Collectors.toList());
-                        for (Integer subViewId : subViews) { // Assuming subViewIds is still needed
-                            String cacheKey = type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date; // Create a unique cache key based on parameters
+                        List<Integer> subViews = da.getSubViews(viewId)
+                                .stream()
+                                .map(Views::getId)
+                                .collect(Collectors.toList());
+                        for (Integer subViewId : subViews) {
+                            String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
                             logger.debug("Populating cache for key: {}", cacheKey);
-
-                            // Fetch data from DataAccess
-                            List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewsNameMap.get(viewId), date);
-                            dataPerWeekCache.put(new Element(cacheKey, data)); // Cache the result
+                            List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId,
+                                    country.equalsIgnoreCase("all") ? "" : country,
+                                    type, viewNameMap.get(viewId), date);
+                            dataPerWeekCache.put(new Element(cacheKey, data));
                             logger.info("Data for key: {} has been cached.", cacheKey);
                         }
                     }
                 }
             }
         }
-
-        // Log current cache size
         logger.info("Current cache size after refresh: {}", dataPerWeekCache.getSize());
     }
 
-
-    public List<ViewInfo> getDataPerWeek(String type, String isNew, DataAccess da, int viewId, int subViewId, String country, String viewText, String date) {
-        String cacheKey = type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date; // Create a unique cache key based on parameters
+    // Retrieve data from cache or fetch and cache it if missing
+    public List<ViewInfo> getDataPerWeek(String type, String isNew, int viewId, int subViewId, String country, String viewText, String date) {
+        String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
         logger.debug("Fetching data for cache key: {}", cacheKey);
-
-        // Check if the data is already cached
+        
         Element cachedElement = dataPerWeekCache.get(cacheKey);
         if (cachedElement != null) {
             logger.info("Cache hit for key: {}", cacheKey);
-            return (List<ViewInfo>) cachedElement.getObjectValue(); // Return cached data
+            return (List<ViewInfo>) cachedElement.getObjectValue();
         }
-
-        // If not cached, fetch data and cache it
-        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
-        List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText, date);
-        dataPerWeekCache.put(new Element(cacheKey, data)); // Cache the result
-        logger.info("Data for key: {} has been cached.", cacheKey);
         
-        // Log current cache size
+        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
+        List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId,
+                country.equalsIgnoreCase("all") ? "" : country,
+                type, viewText, date);
+        dataPerWeekCache.put(new Element(cacheKey, data));
+        logger.info("Data for key: {} has been cached.", cacheKey);
         logger.info("Current cache size: {}", dataPerWeekCache.getSize());
         
         return data;
     }
-
+    
     public void shutdown() {
         if (timer != null) {
-            timer.cancel(); // Cancel the timer
+            timer.cancel();
             logger.info("Cache refresh timer cancelled.");
         }
-        cacheManager.shutdown(); // Shutdown the cache manager
+        cacheManager.shutdown();
         logger.info("CacheManager has been shut down.");
     }
 
-	public Map<Integer, List<String>> getViewCountryMap() {
-		return viewCountryMap;
-	}
+    // Getters and Setters for viewCountryMap and viewNameMap
+    public Map<Integer, List<String>> getViewCountryMap() {
+        return viewCountryMap;
+    }
 
-	public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
-		this.viewCountryMap = viewCountryMap;
-	}
+    public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
+        this.viewCountryMap = viewCountryMap;
+    }
 
-	public Map<Integer, String> getViewNameMap() {
-		return viewNameMap;
-	}
+    public Map<Integer, String> getViewNameMap() {
+        return viewNameMap;
+    }
 
-	public void setViewNameMap(Map<Integer, String> viewNameMap) {
-		this.viewNameMap = viewNameMap;
-	}
+    public void setViewNameMap(Map<Integer, String> viewNameMap) {
+        this.viewNameMap = viewNameMap;
+    }
 }
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////
