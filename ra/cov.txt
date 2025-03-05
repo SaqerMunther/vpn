@@ -44,7 +44,6 @@ public class CacheService {
     // Private constructor for Singleton
     private CacheService() {
         Configuration config = new Configuration();
-        // Set maximum entries to 1500 as required
         CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
                 .eternal(false)
                 .timeToIdleSeconds(180)
@@ -66,28 +65,21 @@ public class CacheService {
 
     private void scheduleCacheRefresh() {
         timer = new Timer();
-        // Schedule cache refresh every 10 minutes with an initial delay of 5 seconds.
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                String date = sdf.format(new Date());
-                refreshDataPerWeekCache(date);
+                refreshAllCache();
             }
         }, 5000, 10 * 60 * 1000);
-        logger.info("Cache refresh task scheduled to run every 10 minutes after an initial delay of 5 seconds.");
     }
 
-    // Helper method to generate a cache key consistently
-    private String generateCacheKey(String type, String isNew, int viewId, String country, String date) {
-        return type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date;
-    }
-    
-    // Refresh the entire cache (for all views) using the instance maps
-    public void refreshDataPerWeekCache(String date) {
-        logger.info("Refreshing dataCache...");
+    // Refresh all cached data
+    public void refreshAllCache() {
+        logger.info("Refreshing all cached data...");
+        String currentDate = sdf.format(new Date());
         dataCache.removeAll();
-        logger.info("dataCache has been cleared.");
         
+        // Refreshes for each type and isNew combination
         for (String type : CacheConstants.RADAR_TYPES) {
             for (String isNew : CacheConstants.RADAR_IS_NEW) {
                 for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
@@ -99,170 +91,39 @@ public class CacheService {
                                 .map(Views::getId)
                                 .collect(Collectors.toList());
                         for (Integer subViewId : subViews) {
-                            String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
-                            logger.debug("Populating cache for key: {}", cacheKey);
-                            List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId,
-                                    country.equalsIgnoreCase("all") ? "" : country,
-                                    type, viewNameMap.get(viewId), date);
-                            dataCache.put(new Element(cacheKey, data));
-                            logger.info("Data for key: {} has been cached.", cacheKey);
+                            getDataPerWeek(type, isNew, viewId, subViewId, country, viewNameMap.get(viewId), currentDate);
+                            getCompCircleScore(type, viewId, subViewId, country, viewNameMap.get(viewId), currentDate);
                         }
                     }
                 }
             }
         }
-        logger.info("Current cache size after refresh: {}", dataCache.getSize());
-    }
-    
-    // Preload cache in background without blocking the initial view load
-    public void preloadCacheBackground(String date) {
-        new Thread(() -> {
-            logger.info("Starting background cache preloading.");
-            refreshDataPerWeekCache(date);
-            logger.info("Background cache preloading completed.");
-        }).start();
+        logger.info("All caches refreshed.");
     }
 
-    // Retrieve data from cache or fetch and cache it if missing
+    // Example implementation for data fetching and caching, similar to existing methods
     public List<ViewInfo> getDataPerWeek(String type, String isNew, int viewId, int subViewId, String country, String viewText, String date) {
         String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
-        logger.debug("Fetching data for cache key: {}", cacheKey);
-        
+        return fetchDataAndCache(cacheKey, () -> da.getCoveragePerWeek(viewId, subViewId, country, type, viewText, date));
+    }
+
+    // A generic method to fetch data and cache it
+    private <T> T fetchDataAndCache(String cacheKey, Supplier<T> dataSupplier) {
         Element cachedElement = dataCache.get(cacheKey);
         if (cachedElement != null) {
-            logger.info("Cache hit for key: {}", cacheKey);
-            return (List<ViewInfo>) cachedElement.getObjectValue();
+            logger.debug("Cache hit for key: {}", cacheKey);
+            return (T) cachedElement.getObjectValue();
         }
-        
-        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
-        List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId,
-                country.equalsIgnoreCase("all") ? "" : country,
-                type, viewText, date);
+        logger.debug("Cache miss for key: {}", cacheKey);
+        T data = dataSupplier.get();
         dataCache.put(new Element(cacheKey, data));
-        logger.info("Data for key: {} has been cached.", cacheKey);
-        logger.info("Current cache size: {}", dataCache.getSize());
-        
         return data;
     }
-    
-    // Cache for getCompCircleScore method
-    public List<ViewInfo> getCompCircleScore(String type, int viewId, int subViewId, String country, String viewText, String date) {
-        String cacheKey = "compCircleScore_" + type + "_" + viewId + "_" + subViewId + "_" + country + "_" + date;
-        logger.debug("Fetching data for cache key: {}", cacheKey);
-        
-        Element cachedElement = dataCache.get(cacheKey);
-        if (cachedElement != null) {
-            logger.info("Cache hit for key: {}", cacheKey);
-            return (List<ViewInfo>) cachedElement.getObjectValue();
-        }
-        
-        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
-        List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
-                country.equalsIgnoreCase("all") ? "" : country, type, viewText, date);
-        dataCache.put(new Element(cacheKey, data));
-        logger.info("Data for key: {} has been cached.", cacheKey);
-        logger.info("Current cache size: {}", dataCache.getSize());
-        
-        return data;
+
+    private String generateCacheKey(String type, String isNew, int viewId, String country, String date) {
+        return type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date;
     }
-    
-    // Cache for processAndMapData method
-    public Map<String, Pair<Integer, Integer>> processAndMapData(int viewId, int subViewId, String country, String date) {
-        String cacheKey = "processAndMapData_" + viewId + "_" + subViewId + "_" + country + "_" + date;
-        logger.debug("Fetching data for cache key: {}", cacheKey);
-        
-        Element cachedElement = dataCache.get(cacheKey);
-        if (cachedElement != null) {
-            logger.info("Cache hit for key: {}", cacheKey);
-            return (Map<String, Pair<Integer, Integer>>) cachedElement.getObjectValue();
-        }
-        
-        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
-        List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-        List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-        
-        Map<String, Pair<Integer, Integer>> oneMonthMap = processAssetList(listOne);
-        Map<String, Pair<Integer, Integer>> twoMonthMap = processAssetList(listTwo);
-        
-        dataCache.put(new Element(cacheKey, oneMonthMap));
-        dataCache.put(new Element(cacheKey, twoMonthMap));
-        logger.info("Data for key: {} has been cached.", cacheKey);
-        logger.info("Current cache size: {}", dataCache.getSize());
-        
-        return oneMonthMap;
-    }
-    
-    private Date getPreviousMonth(int months) {
-        LocalDate today = LocalDate.now();
-        LocalDate resultDate = today.withDayOfMonth(1);
-        switch (months) {
-            case 1:
-                resultDate = resultDate.minusMonths(1);
-                break;
-            case 2:
-                resultDate = resultDate.minusMonths(2);
-                break;
-            case 3:
-                resultDate = resultDate.minusMonths(3);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid month value: " + months);
-        }
-        return Date.from(resultDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-    }
-    
-    private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
-        // Group by LocationCode + SubViewId
-        Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
-            .collect(Collectors.groupingBy(
-                asset -> asset.getLocationCode() + asset.getSubViewId(),
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                    )
-            ));
 
-         // Group by "ALL" location per SubViewId
-            Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
-                .collect(Collectors.groupingBy(
-                    asset -> "ALL" + asset.getSubViewId(),
-                    Collectors.collectingAndThen(
-                        Collectors.toList(),
-                        assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                    ) // Added closing parenthesis here
-                ));
-
-
-        // Group by SubViewId = -1 for all locations
-        Map<String, Pair<Integer, Integer>> allLocationsMap = assetList.stream()
-            .collect(Collectors.groupingBy(
-                asset -> asset.getLocationCode() + "-1",
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                    )
-            ));
-
-        // Calculate the total for all data without grouping
-        Pair<Integer, Integer> totalPair = assetList.stream()
-            .collect(Collectors.collectingAndThen(
-                Collectors.toList(),
-                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                )
-            );
-
-        // Add the "ALL" group to the result map
-        resultMap.putAll(allGroupMapBySubViewId);
-
-        // Add the all locations grouped by SubViewId = -1 to the result map
-        resultMap.putAll(allLocationsMap);
-
-        // Add the overall total to the result map
-        resultMap.put("ALL" + "-1", totalPair);
-
-        return resultMap;
-    }
-    
     public void shutdown() {
         if (timer != null) {
             timer.cancel();
@@ -272,17 +133,9 @@ public class CacheService {
         logger.info("CacheManager has been shut down.");
     }
 
-    // Getters and Setters for viewCountryMap and viewNameMap
-    public Map<Integer, List<String>> getViewCountryMap() {
-        return viewCountryMap;
-    }
-
+    // Getters and Setters
     public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
         this.viewCountryMap = viewCountryMap;
-    }
-
-    public Map<Integer, String> getViewNameMap() {
-        return viewNameMap;
     }
 
     public void setViewNameMap(Map<Integer, String> viewNameMap) {
