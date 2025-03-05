@@ -8,6 +8,8 @@ import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +17,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
+import com.app.dev.cmon.components.AssetInfo;
 import com.app.dev.cmon.components.ViewInfo;
 import com.app.dev.cmon.components.Views;
 import com.app.dev.cmon.controllers.DataAccess;
@@ -163,14 +166,14 @@ public class CacheService {
     }
     
     // Cache for processAndMapData method
-    public CoverageMaps processAndMapData(int viewId, int subViewId, String country, String date) {
+    public Map<String, Pair<Integer, Integer>> processAndMapData(int viewId, int subViewId, String country, String date) {
         String cacheKey = "processAndMapData_" + viewId + "_" + subViewId + "_" + country + "_" + date;
         logger.debug("Fetching data for cache key: {}", cacheKey);
         
         Element cachedElement = dataCache.get(cacheKey);
         if (cachedElement != null) {
             logger.info("Cache hit for key: {}", cacheKey);
-            return (CoverageMaps) cachedElement.getObjectValue();
+            return (Map<String, Pair<Integer, Integer>>) cachedElement.getObjectValue();
         }
         
         logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
@@ -180,24 +183,78 @@ public class CacheService {
         Map<String, Pair<Integer, Integer>> oneMonthMap = processAssetList(listOne);
         Map<String, Pair<Integer, Integer>> twoMonthMap = processAssetList(listTwo);
         
-        CoverageMaps coverageMaps = new CoverageMaps(oneMonthMap, twoMonthMap);
-        dataCache.put(new Element(cacheKey, coverageMaps));
+        dataCache.put(new Element(cacheKey, oneMonthMap));
+        dataCache.put(new Element(cacheKey, twoMonthMap));
         logger.info("Data for key: {} has been cached.", cacheKey);
         logger.info("Current cache size: {}", dataCache.getSize());
         
-        return coverageMaps;
+        return oneMonthMap;
     }
     
     private Date getPreviousMonth(int months) {
-        // Logic to get the date for the previous month(s)
-        // This is a placeholder, implement as needed
-        return new Date();
+        LocalDate today = LocalDate.now();
+        LocalDate resultDate = today.withDayOfMonth(1);
+        switch (months) {
+            case 1:
+                resultDate = resultDate.minusMonths(1);
+                break;
+            case 2:
+                resultDate = resultDate.minusMonths(2);
+                break;
+            case 3:
+                resultDate = resultDate.minusMonths(3);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid month value: " + months);
+        }
+        return Date.from(resultDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
     
     private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
-        // Logic to process the asset list and return the map
-        // This is a placeholder, implement as needed
-        return Map.of();
+        // Group by LocationCode + SubViewId
+        Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
+            .collect(Collectors.groupingBy(
+                asset -> asset.getLocationCode() + asset.getSubViewId(),
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+            ));
+
+        // Group by "ALL" location per SubViewId
+        Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
+            .collect(Collectors.groupingBy(
+                asset -> "ALL" + asset.getSubViewId(),
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+            ));
+
+        // Group by SubViewId = -1 for all locations
+        Map<String, Pair<Integer, Integer>> allLocationsMap = assetList.stream()
+            .collect(Collectors.groupingBy(
+                asset -> asset.getLocationCode() + "-1",
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+            ));
+
+        // Calculate the total for all data without grouping
+        Pair<Integer, Integer> totalPair = assetList.stream()
+            .collect(Collectors.collectingAndThen(
+                Collectors.toList(),
+                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+            );
+
+        // Add the "ALL" group to the result map
+        resultMap.putAll(allGroupMapBySubViewId);
+
+        // Add the all locations grouped by SubViewId = -1 to the result map
+        resultMap.putAll(allLocationsMap);
+
+        // Add the overall total to the result map
+        resultMap.put("ALL" + "-1", totalPair);
+
+        return resultMap;
     }
     
     public void shutdown() {
