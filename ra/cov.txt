@@ -283,3 +283,12 @@ public class CacheService {
         this.viewNameMap = viewNameMap;
     }
 }
+
+
+private void processAndMapData() {
+    String date = sdf.format(radar.getDate1()).trim();
+    Map<String, Pair<Integer, Integer>> oneMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
+    this.oneMonthMap = oneMonthMap;
+    this.twoMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
+    coverageAll = da.getAllCoverage(viewId, subViewId, country, date);
+}
