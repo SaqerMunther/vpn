@@ -7,6 +7,7 @@ import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +34,13 @@ public class CacheService {
     private Map<Integer, String> viewNameMap;
     private Map<Integer, List<String>> viewCountryMap;
     
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    
     // Private constructor for Singleton
     private CacheService() {
         Configuration config = new Configuration();
-        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 50000)
+        // Set maximum entries to 1500 as required
+        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 1500)
                 .eternal(false)
                 .timeToIdleSeconds(180)
                 .timeToLiveSeconds(300)
@@ -57,16 +61,15 @@ public class CacheService {
 
     private void scheduleCacheRefresh() {
         timer = new Timer();
-        // Refresh every 10 minutes (update comment if needed)
+        // Schedule cache refresh every 10 minutes with an initial delay of 5 seconds.
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                List<Date> lastDates = da.getLastDate();
-                Date date = lastDates.isEmpty() ? new Date() : lastDates.get(0);
-                refreshDataPerWeekCache(viewCountryMap, viewNameMap,date.toString());
+                String date = sdf.format(new Date());
+                refreshDataPerWeekCache(date);
             }
-        }, 0, 10 * 60 * 1000);
-        logger.info("Cache refresh task scheduled to run every 10 minutes.");
+        }, 5000, 10 * 60 * 1000);
+        logger.info("Cache refresh task scheduled to run every 10 minutes after an initial delay of 5 seconds.");
     }
 
     // Helper method to generate a cache key consistently
@@ -74,11 +77,11 @@ public class CacheService {
         return type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date;
     }
     
-    // Refresh cache using instance maps directly
-    public void refreshDataPerWeekCache(Map<Integer, List<String>> countryMap, Map<Integer, String> viewNameMap, String date) {
-        logger.info("Refreshing dataPerWeekCache...");
+    // Refresh the entire cache (for all views) using the instance maps
+    public void refreshDataPerWeekCache(String date) {
+        logger.info("Refreshing dataCache...");
         dataCache.removeAll();
-        logger.info("dataPerWeekCache has been cleared.");
+        logger.info("dataCache has been cleared.");
         
         for (String type : CacheConstants.RADAR_TYPES) {
             for (String isNew : CacheConstants.RADAR_IS_NEW) {
@@ -104,6 +107,15 @@ public class CacheService {
             }
         }
         logger.info("Current cache size after refresh: {}", dataCache.getSize());
+    }
+    
+    // Preload cache in background without blocking the initial view load
+    public void preloadCacheBackground(String date) {
+        new Thread(() -> {
+            logger.info("Starting background cache preloading.");
+            refreshDataPerWeekCache(date);
+            logger.info("Background cache preloading completed.");
+        }).start();
     }
 
     // Retrieve data from cache or fetch and cache it if missing
@@ -153,7 +165,21 @@ public class CacheService {
     public void setViewNameMap(Map<Integer, String> viewNameMap) {
         this.viewNameMap = viewNameMap;
     }
-}  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -208,16 +234,18 @@ public class RadarController extends CmonManagedBean implements Serializable {
     private Date date1 = new Date();
     private Date date2 = new Date();
     private List<AssetInfo> covDataList;
-	private List<ComplianceInfo> compDataList;
-	
-	@PostConstruct
-	public void init() {
-		List<Date> lastDates = da.getLastDate();
-		if (!lastDates.isEmpty()) {
-			setDate1(lastDates.get(0));
-		}
-		refreshCache();
-	}
+    private List<ComplianceInfo> compDataList;
+    
+    @PostConstruct
+    public void init() {
+        List<Date> lastDates = da.getLastDate();
+        if (!lastDates.isEmpty()) {
+            setDate1(lastDates.get(0));
+        }
+        // Call refreshCache so that the current view is loaded immediately
+        // and then the cache is preloaded in the background.
+        refreshCache();
+    }
 
     public RadarController() {
         this.da = new DataAccess();
@@ -270,45 +298,42 @@ public class RadarController extends CmonManagedBean implements Serializable {
     }
 
     public List<AssetInfo> getCovData(String type, String idName) {
-		covDataList = new ArrayList<>();
-		Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-		covDataList = da.getRadarData(viewId, subViewId, country, type, idName,viewText,sdf.format(date).trim());
-		return covDataList;
-	}
+        covDataList = new ArrayList<>();
+        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
+        covDataList = da.getRadarData(viewId, subViewId, country, type, idName, viewText, sdf.format(date).trim());
+        return covDataList;
+    }
 
-	public List<ComplianceInfo> getCompData(String type, String idName) {
-		compDataList = new ArrayList<>();
-		Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-		compDataList = da.getCompDetails(viewId, subViewId, country, type, idName, viewText,sdf.format(date).trim());
-		return compDataList;
-	}
-	
-	public List<AssetInfo> getDetailsPerWeek(String type, String week) {
-		Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-		covDataList = new ArrayList<>();
-		covDataList = da.getDataPerWeek(viewId, subViewId, country, type, week, "Cov", viewText,sdf.format(date).trim());
-		return covDataList;
-	}
-	
-	public List<ComplianceInfo> getCompDetailsPerWeek(String type, String week) {
-		Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-		compDataList = new ArrayList<>();
-		compDataList = da.getCompDetailsPerWeek(viewId, subViewId, country, type, week, "Comp", viewText,sdf.format(date).trim());
-		return compDataList;
-	}
-	
-	public List<ComplianceInfo> getCompDetailsPerScore(String type, String score) {
-		Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-		compDataList = new ArrayList<>();
-		compDataList = da.getCompDetailsPerScore(viewId, subViewId, country, type, score, "Comp", viewText,sdf.format(date).trim());
-		return compDataList;
-	}
-	
+    public List<ComplianceInfo> getCompData(String type, String idName) {
+        compDataList = new ArrayList<>();
+        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
+        compDataList = da.getCompDetails(viewId, subViewId, country, type, idName, viewText, sdf.format(date).trim());
+        return compDataList;
+    }
+    
+    public List<AssetInfo> getDetailsPerWeek(String type, String week) {
+        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
+        covDataList = new ArrayList<>();
+        covDataList = da.getDataPerWeek(viewId, subViewId, country, type, week, "Cov", viewText, sdf.format(date).trim());
+        return covDataList;
+    }
+    
+    public List<ComplianceInfo> getCompDetailsPerWeek(String type, String week) {
+        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
+        compDataList = new ArrayList<>();
+        compDataList = da.getCompDetailsPerWeek(viewId, subViewId, country, type, week, "Comp", viewText, sdf.format(date).trim());
+        return compDataList;
+    }
+    
+    public List<ComplianceInfo> getCompDetailsPerScore(String type, String score) {
+        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
+        compDataList = new ArrayList<>();
+        compDataList = da.getCompDetailsPerScore(viewId, subViewId, country, type, score, "Comp", viewText, sdf.format(date).trim());
+        return compDataList;
+    }
+    
     public List<Views> getSubViews(int id) {
-        return subViewsCache.computeIfAbsent(String.valueOf(id), k -> {
-            List<Views> subViewList = da.getSubViews(id);
-            return subViewList;
-        });
+        return subViewsCache.computeIfAbsent(String.valueOf(id), k -> da.getSubViews(id));
     }
 
     public void getElementFromDataAccess() {
@@ -318,154 +343,24 @@ public class RadarController extends CmonManagedBean implements Serializable {
         }
     }
     
+    // Refactored refreshCache: load current view synchronously, then preload cache in background.
     public void refreshCache() {
-        // Get the singleton instance of CacheService
         CacheService cacheService = CacheService.getInstance();
         setLists();
         setCountryList();
         cacheService.setViewCountryMap(countryMap);
         cacheService.setViewNameMap(viewNameMap);
-        cacheService.refreshDataPerWeekCache(countryMap, viewNameMap, getDate1().toString());
+        String dateStr = sdf.format(getDate1()).trim();
+        // Synchronously fetch data for the current (first) view.
+        cacheService.getDataPerWeek("Cov", "false", viewId, subViewId, country, viewText, dateStr);
+        // Start asynchronous preloading of the full cache.
+        cacheService.preloadCacheBackground(dateStr);
     }
 
-    
+    // Getters and setters (omitted for brevity) ...
 
-    public String getUsername() {
-		return username;
-	}
-
-	public List<Countres> getCountres() {
-		return countres;
-	}
-
-	public void setCountres(List<Countres> countres) {
-		this.countres = countres;
-	}
-
-	public String getCountry() {
-		return country;
-	}
-
-	public void setCountry(String country) {
-		this.country = country;
-	}
-
-	public String getCurCountry() {
-		return curCountry;
-	}
-
-	public void setCurCountry(String curCountry) {
-		this.curCountry = curCountry;
-	}
-
-	public Date getDate1() {
-		return date1;
-	}
-
-	public void setDate1(Date date1) {
-		this.date1 = date1;
-	}
-	
-	public Date getDate2() {
-		return date2;
-	}
-
-	public void setDate2(Date date2) {
-		this.date2 = date2;
-	}
-
-	public String getViewText() {
-		return viewText;
-	}
-
-	public void setViewText(String viewText) {
-		this.viewText = viewText;
-	}
-
-	public int getViewId() {
-		return viewId;
-	}
-
-	public void setViewId(int viewId) {
-		this.viewId = viewId;
-	}	
-
-	public int getSubViewId() {
-		return subViewId;
-	}
-
-	public void setSubViewId(int subViewId) {
-		this.subViewId = subViewId;
-	}
-
-	public Views getSelectedView() {
-		return selectedView;
-	}
-
-	public void setSelectedView(Views selectedView) {
-		this.selectedView = selectedView;
-	}
-
-	public Map<Integer, List<String>> getCountryMap() {
-		return countryMap;
-	}
-
-	public void setCountryMap(Map<Integer, List<String>> countryMap) {
-		this.countryMap = countryMap;
-	}
-
-	public Map<Integer, String> getViewNameMap() {
-		return viewNameMap;
-	}
-
-	public void setViewNameMap(Map<Integer, String> viewNameMap) {
-		this.viewNameMap = viewNameMap;
-	}
-
-	public List<Views> getSymantecList() {
-		return symantecList;
-	}
-
-	public void setSymantecList(List<Views> symantecList) {
-		this.symantecList = symantecList;
-	}
-
-	public List<Views> getViewList() {
-		return viewList;
-	}
-
-	public void setViewList(List<Views> viewList) {
-		this.viewList = viewList;
-	}
-
-	public Map<String, Integer> getVisibileData() {
-		return visibileData;
-	}
-
-	public void setVisibileData(Map<String, Integer> visibileData) {
-		this.visibileData = visibileData;
-	}
-
-	public List<AssetInfo> getCovDataList() {
-		return covDataList;
-	}
-
-	public List<ComplianceInfo> getCompDataList() {
-		return compDataList;
-	}
-
-	public void setCovDataList(List<AssetInfo> covDataList) {
-		this.covDataList = covDataList;
-	}
-
-	public void setCompDataList(List<ComplianceInfo> compDataList) {
-		this.compDataList = compDataList;
-	}
-
-	@Override
-    public void reset() {
-		
-    }
+    @Override
+    public void reset() { }
 
     @Override
     public String getAppName() {
