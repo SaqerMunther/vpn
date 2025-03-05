@@ -1,30 +1,5 @@
 package com.app.dev.cmon.cache;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-public class Cache {
-    private static Cache instance = new Cache();
-    private Map<String, Object> cache = new ConcurrentHashMap<>();
-
-    private Cache() { }
-
-    public static Cache getInstance() {
-        return instance;
-    }
-
-    public <T> T getCachedObject(String key) {
-        return (T) cache.get(key);
-    }
-
-    public void putCachedObject(String key, Object value) {
-        cache.put(key, value);
-    }
-}
-
-
-package com.app.dev.cmon.cache;
-
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -166,6 +141,65 @@ public class CacheService {
         return data;
     }
     
+    // Cache for getCompCircleScore method
+    public List<ViewInfo> getCompCircleScore(String type, int viewId, int subViewId, String country, String viewText, String date) {
+        String cacheKey = "compCircleScore_" + type + "_" + viewId + "_" + subViewId + "_" + country + "_" + date;
+        logger.debug("Fetching data for cache key: {}", cacheKey);
+        
+        Element cachedElement = dataCache.get(cacheKey);
+        if (cachedElement != null) {
+            logger.info("Cache hit for key: {}", cacheKey);
+            return (List<ViewInfo>) cachedElement.getObjectValue();
+        }
+        
+        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
+        List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
+                country.equalsIgnoreCase("all") ? "" : country, type, viewText, date);
+        dataCache.put(new Element(cacheKey, data));
+        logger.info("Data for key: {} has been cached.", cacheKey);
+        logger.info("Current cache size: {}", dataCache.getSize());
+        
+        return data;
+    }
+    
+    // Cache for processAndMapData method
+    public CoverageMaps processAndMapData(int viewId, int subViewId, String country, String date) {
+        String cacheKey = "processAndMapData_" + viewId + "_" + subViewId + "_" + country + "_" + date;
+        logger.debug("Fetching data for cache key: {}", cacheKey);
+        
+        Element cachedElement = dataCache.get(cacheKey);
+        if (cachedElement != null) {
+            logger.info("Cache hit for key: {}", cacheKey);
+            return (CoverageMaps) cachedElement.getObjectValue();
+        }
+        
+        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
+        List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
+        List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
+        
+        Map<String, Pair<Integer, Integer>> oneMonthMap = processAssetList(listOne);
+        Map<String, Pair<Integer, Integer>> twoMonthMap = processAssetList(listTwo);
+        
+        CoverageMaps coverageMaps = new CoverageMaps(oneMonthMap, twoMonthMap);
+        dataCache.put(new Element(cacheKey, coverageMaps));
+        logger.info("Data for key: {} has been cached.", cacheKey);
+        logger.info("Current cache size: {}", dataCache.getSize());
+        
+        return coverageMaps;
+    }
+    
+    private Date getPreviousMonth(int months) {
+        // Logic to get the date for the previous month(s)
+        // This is a placeholder, implement as needed
+        return new Date();
+    }
+    
+    private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
+        // Logic to process the asset list and return the map
+        // This is a placeholder, implement as needed
+        return Map.of();
+    }
+    
     public void shutdown() {
         if (timer != null) {
             timer.cancel();
@@ -192,53 +226,3 @@ public class CacheService {
         this.viewNameMap = viewNameMap;
     }
 }
-
-
-package com.app.dev.cmon.cache;
-
-import com.arabbank.dev.utility.Pair;
-import java.util.Map;
-
-public class CoverageMaps {
-    private Map<String, Pair<Integer, Integer>> oneMonthMap;
-    private Map<String, Pair<Integer, Integer>> twoMonthMap;
-
-    public CoverageMaps(Map<String, Pair<Integer, Integer>> oneMonthMap, Map<String, Pair<Integer, Integer>> twoMonthMap) {
-        this.oneMonthMap = oneMonthMap;
-        this.twoMonthMap = twoMonthMap;
-    }
-
-    public Map<String, Pair<Integer, Integer>> getOneMonthMap() {
-        return oneMonthMap;
-    }
-
-    public Map<String, Pair<Integer, Integer>> getTwoMonthMap() {
-        return twoMonthMap;
-    }
-}
-
-
-
-i want to cache also 
-
-		public List<ViewInfo> getCompCircleScore(String type) {
-			if (circleExiCompDetails == null || circleExiCompDetails.size() < 1) {
-				circleExiCompDetails = da.getComplyCirclePerScore(viewId, subViewId,
-						country.equalsIgnoreCase("all") ? "" : country, type, viewText,
-						sdf.format(radar.getDate1()).trim());
-			}
-			return circleExiCompDetails;
-
-		} 
-
-
-
-	private void processAndMapData() {
-	    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-	    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-	    
-	    oneMonthMap = processAssetList(listOne);
-
-	    twoMonthMap = processAssetList(listTwo);
-	    coverageAll = da.getAllCoverage(viewId, subViewId, country ,sdf.format(radar.getDate1()).trim());
-	}
