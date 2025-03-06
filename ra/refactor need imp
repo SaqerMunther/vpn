@@ -1,0 +1,6 @@
+CacheService cacheService = CacheService.getInstance();
+String currentDate = new SimpleDateFormat("yyyy-MM-dd").format(radar.getDate1());
+// Immediately load the current view synchronously…
+cacheService.getDataPerWeek("Cov", "false", viewId, subViewId, country, viewText, currentDate);
+// And then kick off asynchronous preloading:
+cacheService.preloadCacheBackground(currentDate);
