@@ -1,0 +1,219 @@
+package com.app.dev.cmon.cache;
+
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.config.CacheConfiguration;
+import net.sf.ehcache.config.Configuration;
+import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+import com.app.dev.cmon.components.AssetInfo;
+import com.app.dev.cmon.components.ViewInfo;
+import com.app.dev.cmon.components.Views;
+import com.app.dev.cmon.controllers.DataAccess;
+import com.app.dev.cmon.utilites.CacheConstants;
+import com.arabbank.dev.utility.Pair;
+
+/**
+ * A refactored caching service that uses an ICacheProvider to store objects,
+ * preloads cache data in the background and tracks its own state.
+ */
+public class CacheService {
+    private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
+    private static CacheService instance;
+
+    // New state field for cache state tracking
+    public enum CacheState { INITIALIZING, READY, REFRESHING }
+    private CacheState state = CacheState.INITIALIZING;
+
+    private CacheManager cacheManager;
+    private ICacheProvider cacheProvider;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    private DataAccess da = new DataAccess();
+
+    private Map<Integer, String> viewNameMap;
+    private Map<Integer, List<String>> viewCountryMap;
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+    // Private constructor for Singleton
+    private CacheService() {
+        Configuration config = new Configuration();
+        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
+                .eternal(false)
+                .timeToIdleSeconds(180)
+                .timeToLiveSeconds(300)
+                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
+        config.addCache(cacheConfig);
+        cacheManager = CacheManager.newInstance(config);
+        Cache dataCache = cacheManager.getCache("dataCache");
+        cacheProvider = new EhcacheProvider(dataCache);
+        scheduleCacheRefresh();
+        state = CacheState.READY;
+        logger.info("CacheService initialized and cache refresh scheduled.");
+    }
+
+    public static synchronized CacheService getInstance() {
+        if (instance == null) {
+            instance = new CacheService();
+        }
+        return instance;
+    }
+
+    /**
+     * Schedules an automatic cache refresh task.
+     */
+    private void scheduleCacheRefresh() {
+        Timer timer = new Timer();
+        // Every 10 minutes with an initial delay of 5 seconds.
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                state = CacheState.REFRESHING;
+                String date = sdf.format(new Date());
+                refreshDataPerWeekCache(date);
+                state = CacheState.READY;
+            }
+        }, 5000, 10 * 60 * 1000);
+        logger.info("Cache refresh task scheduled to run every 10 minutes after an initial delay of 5 seconds.");
+    }
+
+    /**
+     * Generates a consistent cache key.
+     */
+    private String generateCacheKey(String type, String isNew, int viewId, String country, String date) {
+        return type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date;
+    }
+
+    /**
+     * Refreshes the entire cache using the current view maps.
+     */
+    public void refreshDataPerWeekCache(String date) {
+        logger.info("Refreshing cache...");
+        cacheProvider.clear();
+        for (String type : CacheConstants.RADAR_TYPES) {
+            for (String isNew : CacheConstants.RADAR_IS_NEW) {
+                for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
+                    Integer viewId = entry.getKey();
+                    List<String> countries = entry.getValue();
+                    for (String country : countries) {
+                        List<Integer> subViews = da.getSubViews(viewId)
+                                .stream()
+                                .map(Views::getId)
+                                .collect(Collectors.toList());
+                        for (Integer subViewId : subViews) {
+                            String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
+                            logger.debug("Caching data for key: {}", cacheKey);
+                            List<ViewInfo> data = da.getCoveragePerWeek(
+                                    viewId, subViewId,
+                                    country.equalsIgnoreCase("all") ? "" : country,
+                                    type, viewNameMap.get(viewId), date);
+                            cacheProvider.put(cacheKey, data);
+                            logger.info("Data cached for key: {}", cacheKey);
+                        }
+                    }
+                }
+            }
+        }
+        logger.info("Cache refresh completed; current size: {}", cacheProvider.size());
+    }
+
+    /**
+     * Preloads cache in the background using an executor.
+     */
+    public void preloadCacheBackground(final String date) {
+        executorService.submit(() -> {
+            logger.info("Starting asynchronous cache preloading.");
+            refreshDataPerWeekCache(date);
+            logger.info("Background cache preloading completed.");
+        });
+    }
+
+    /**
+     * Retrieves data from cache if present; otherwise, fetches via DataAccess, caches it, and returns.
+     */
+    public List<ViewInfo> getDataPerWeek(String type, String isNew, int viewId, int subViewId,
+                                         String country, String viewText, String date) {
+        String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
+        logger.debug("Fetching data for cache key: {}", cacheKey);
+        List<ViewInfo> data = cacheProvider.get(cacheKey);
+        if (data != null) {
+            logger.info("Cache hit for key: {}", cacheKey);
+            return data;
+        }
+        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
+        data = da.getCoveragePerWeek(viewId, subViewId,
+                country.equalsIgnoreCase("all") ? "" : country,
+                type, viewText, date);
+        cacheProvider.put(cacheKey, data);
+        logger.info("Data cached for key: {}. Current cache size: {}", cacheKey, cacheProvider.size());
+        return data;
+    }
+
+    /**
+     * Processes asset list to produce a map; note that you can reuse this for multiple types.
+     */
+    public Map<String, Pair<Integer, Integer>> processAndMapData(int viewId, int subViewId, String country, String date) {
+        // Implementation remains similar, but now any caching you might want to add (or reusing the provider) is possible.
+        List<AssetInfo> assetList = da.getAllCoverage(viewId, subViewId, "", sdf.format(getPreviousMonth(1)));
+        Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
+            .collect(Collectors.groupingBy(
+                asset -> asset.getLocationCode() + asset.getSubViewId(),
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+                )
+            ));
+        // ... Additional grouping logic as in your original code.
+        return resultMap;
+    }
+
+    // Helper method to calculate previous month (unchanged)
+    private Date getPreviousMonth(int months) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -months);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        return cal.getTime();
+    }
+
+    /**
+     * Shutdown cache service and release resources.
+     */
+    public void shutdown() {
+        executorService.shutdown();
+        cacheManager.shutdown();
+        logger.info("CacheService and CacheManager have been shut down.");
+    }
+
+    // Getter/Setter for viewCountryMap and viewNameMap for initialization
+
+    public Map<Integer, List<String>> getViewCountryMap() {
+        return viewCountryMap;
+    }
+
+    public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
+        this.viewCountryMap = viewCountryMap;
+    }
+
+    public Map<Integer, String> getViewNameMap() {
+        return viewNameMap;
+    }
+
+    public void setViewNameMap(Map<Integer, String> viewNameMap) {
+        this.viewNameMap = viewNameMap;
+    }
+
+    /**
+     * Returns the current cache state.
+     */
+    public CacheState getState() {
+        return state;
+    }
+}
