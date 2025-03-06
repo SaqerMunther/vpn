@@ -4,7 +4,7 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
 
 /**
- * Wraps an Ehcache instance so that it fits the ICacheProvider interface.
+ * An Ehcache–based implementation of ICacheProvider.
  */
 public class EhcacheProvider implements ICacheProvider {
 
