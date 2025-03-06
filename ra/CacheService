@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.Arrays;
 import java.util.Date;
 
 import com.app.dev.cmon.components.ViewInfo;
@@ -59,36 +60,50 @@ public class CacheService {
     // In a real scenario, you might load these from configuration or initialize them once.
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
+    private Date date = new Date();
     
     // Default dynamic parameter values.
-    private final int defaultViewId = 1;
-    private final int defaultSubViewId = 10;
-    private final String defaultCountry = "all";
-    private final String defaultViewText = "sampleview";
+    private int defaultViewId;
+    private int defaultSubViewId = -1;
+    private String defaultCountry;
+    private String defaultViewText;
     
-    // Private constructor.
-    private CacheService() {
-        // Initialize cache configuration.
-        Configuration config = new Configuration();
-        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
-                .eternal(false)
-                .timeToIdleSeconds(1200) // 20 minutes
-                .timeToLiveSeconds(1200) // 20 minutes
-                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
-        config.addCache(cacheConfig);
-        cacheManager = CacheManager.newInstance(config);
-        Cache dataCache = cacheManager.getCache("dataCache");
-        cacheProvider = new EhcacheProvider(dataCache);
-        logger.info("CacheService initialized.");
-        
-        // Set default dynamic parameters.
-        // In your application, these could be loaded from a DB or configuration.
-        viewCountryMap = DataAccess.getDefaultViewCountryMap(); // static method for default values
-        viewNameMap = DataAccess.getDefaultViewNameMap();         // static method for default values
-        
-        // Automatically start the cache startup flow.
-        startupFlow(defaultViewId, defaultSubViewId, defaultCountry, defaultViewText);
-    }
+	// Private constructor.
+	private CacheService() {
+		// Initialize cache configuration.
+		Configuration config = new Configuration();
+		CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000).eternal(false)
+				.timeToIdleSeconds(1200) // 20 minutes
+				.timeToLiveSeconds(1200) // 20 minutes
+				.memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
+		config.addCache(cacheConfig);
+		cacheManager = CacheManager.newInstance(config);
+		Cache dataCache = cacheManager.getCache("dataCache");
+		cacheProvider = new EhcacheProvider(dataCache);
+		logger.info("CacheService initialized.");
+
+		List<Views> viewList = da.getViews("all");
+		for (Views view : viewList) {
+			List<String> countries = Arrays.asList(view.getCountry().split("\\s*,\\s*"));
+			viewCountryMap.put(view.getId(), countries);
+			viewNameMap.put(view.getId(), view.getName());
+		}
+
+		if (!viewList.isEmpty()) {
+			List<String> countries = Arrays.asList(viewList.get(0).getCountry().split(",\\s*"));
+			defaultCountry = countries.get(0).equalsIgnoreCase("ALL") ? "" : countries.get(0);
+			defaultViewText = viewList.get(0).getName();
+			defaultViewId = viewList.get(0).getId();
+		}
+
+		List<Date> lastDates = da.getLastDate();
+		if (!lastDates.isEmpty()) {
+			setDate(lastDates.get(0));
+		}
+
+		// Automatically start the cache startup flow.
+		startupFlow(defaultViewId, defaultSubViewId, defaultCountry, defaultViewText);
+	}
     
     public static synchronized CacheService getInstance() {
         if (instance == null) {
@@ -106,7 +121,11 @@ public class CacheService {
         this.viewNameMap = viewNameMap;
     }
     
-    /**
+    public void setDate(Date date) {
+		this.date = date;
+	}
+
+	/**
      * Returns a consistent cache key using the following format:
      *   (methodName + "_" + extra + "_" + viewId + "_" + country + "_" + date).toLowerCase()
      */
