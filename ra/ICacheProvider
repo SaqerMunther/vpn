@@ -1,26 +1,11 @@
 package com.app.dev.cmon.cache;
 
 /**
- * A generic cache provider interface for storing and retrieving objects.
+ * A simple generic interface for caching operations.
  */
 public interface ICacheProvider {
-    /**
-     * Returns the cached object associated with the given key, or null if not present.
-     */
     <T> T get(String key);
-
-    /**
-     * Stores a value in the cache under the given key.
-     */
     <T> void put(String key, T value);
-
-    /**
-     * Clears all entries from the cache.
-     */
     void clear();
-
-    /**
-     * Returns the current number of objects in the cache.
-     */
     int size();
 }
