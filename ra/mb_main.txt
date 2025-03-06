@@ -37,12 +37,6 @@ import javax.faces.context.FacesContext;
 import javax.faces.event.AjaxBehaviorEvent;
 import javax.servlet.http.HttpServletResponse;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ViewScoped;
-
-
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
@@ -55,7 +49,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import com.app.dev.cmon.cache.CacheService;
 import com.app.dev.cmon.components.AllRadarData;
 import com.app.dev.cmon.components.AssetInfo;
 import com.app.dev.cmon.components.ComplianceInfo;
@@ -199,11 +192,8 @@ public class MB_Main extends CmonManagedBean {
 	public List<ComplianceInfo> excludedCompList;
 	List<String> colorTypes = Arrays.asList("Orange-Exist", "Orange-New", "Red-Exist", "Red-New");
 	
-	private CacheService cacheService;
-    
 	@PostConstruct
 	public void init() {
-		cacheService = CacheService.getInstance();
 		radarValidation = da.getRadarDashValidation();
 		date1 = checkDateValidations(radarValidation);		
 		listOfTodayData = da.getHistoryData(radar.getUsername(),sdf.format(radar.getDate1()).trim());
@@ -779,11 +769,20 @@ public class MB_Main extends CmonManagedBean {
 		return date;
 	}
 
-    public List<ViewInfo> getDataPerWeek(String type, String isNew) {
-        String date = sdf.format(radar.getDate1()).trim(); // Format the date as needed
-        return cacheService.getDataPerWeek(type, isNew, viewId, subViewId, country, viewText, date);
-    }
-	
+	public List<ViewInfo> getDataPerWeek(String type, String isNew) {
+
+		if (type.equalsIgnoreCase("Cov")) {
+			if (circleCovPerWeek == null || circleCovPerWeek.size() < 1) {
+				circleCovPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
+			}
+			return circleCovPerWeek;
+		} else {
+			if (circleCompPerWeek == null || circleCompPerWeek.size() < 1) {
+				circleCompPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
+			}
+			return circleCompPerWeek;
+		}
+	}
 	public List<Date> getDistinctDate() {
 		List<ViewInfo> veiwData = da.getAvailabelDate();
 			List<ViewInfo> lst = veiwData.stream().filter(o -> o.getType().contains("Comp"))
@@ -847,8 +846,13 @@ public class MB_Main extends CmonManagedBean {
 		}
 
 		public List<ViewInfo> getCompCircleScore(String type) {
-		    String date = sdf.format(radar.getDate1()).trim();
-		    return CacheService.getInstance().getCompCircleScore(type, viewId, subViewId, country, viewText, date);
+			if (circleExiCompDetails == null || circleExiCompDetails.size() < 1) {
+				circleExiCompDetails = da.getComplyCirclePerScore(viewId, subViewId,
+						country.equalsIgnoreCase("all") ? "" : country, type, viewText,
+						sdf.format(radar.getDate1()).trim());
+			}
+			return circleExiCompDetails;
+
 		}
 	
 	AllRadarData greenExist = new AllRadarData();
@@ -1253,10 +1257,12 @@ public class MB_Main extends CmonManagedBean {
 	}
 	
 	private void processAndMapData() {
-	    String date = sdf.format(radar.getDate1()).trim();
-	    Map<String, Pair<Integer, Integer>> oneMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
-	    this.oneMonthMap = oneMonthMap;
-	    this.twoMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
+	    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
+	    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
+	    
+	    oneMonthMap = processAssetList(listOne);
+
+	    twoMonthMap = processAssetList(listTwo);
 	}
 
 	private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
