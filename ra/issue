@@ -1,14 +1,65 @@
-    private Date getPreviousMonth(int months) {
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.add(java.util.Calendar.MONTH, -months);
-        cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
-        return cal.getTime();
+@ManagedBean(name = "mbMain")
+@ViewScoped
+public class MB_Main extends CmonManagedBean {
+    
+    private DataAccess da = new DataAccess();
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    
+    // Dynamic parameters (these should come from your application logic)
+    private int viewId;
+    private int subViewId;
+    private String country;
+    private String viewText;
+    private Map<Integer, List<String>> viewCountryMap;
+    private Map<Integer, String> viewNameMap;
+    
+    // Cached fields (if needed)
+    private List<ViewInfo> circleExiCompDetails;
+    private List<ViewInfo> circleCovPerWeek;
+    private List<ViewInfo> circleCompPerWeek;
+    
+    @PostConstruct
+    public void init() {
+        // Initialize dynamic parameters – replace these with your actual logic.
+        viewId = 1;
+        subViewId = 10;
+        country = "all";
+        viewText = "SampleView";
+        viewCountryMap = da.getViewCountryMap();
+        viewNameMap = da.getViewNameMap();
+        
+        // Pass these dynamic parameters to CacheService.
+        CacheService cache = CacheService.getInstance();
+        cache.setViewCountryMap(viewCountryMap);
+        cache.setViewNameMap(viewNameMap);
+        
+        // Synchronously load first view data.
+        List<ViewInfo> firstCompCircle = getCompCircleScore("Comp");
+        List<ViewInfo> firstDataWeek = getDataPerWeek("Cov", "false");
+        processAndMapData();
+        
+        // Let CacheService handle the startup flow.
+        cache.startupFlow(viewId, subViewId, country, viewText);
     }
-
+    
+    public List<ViewInfo> getCompCircleScore(String type) {
+        String dateStr = sdf.format(radar.getDate1()).trim();
+        String key = CacheService.getInstance().getCacheKey("CompCircleScore", type, viewId, country, dateStr);
+        
+        List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
+        if (cachedResult != null && !cachedResult.isEmpty()) {
+            return cachedResult;
+        }
+        
+        List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
+                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
+        CacheService.getInstance().putInCache(key, data);
+        return data;
+    }
+    
     public List<ViewInfo> getDataPerWeek(String type, String isNew) {
         String dateStr = sdf.format(radar.getDate1()).trim();
-        String key = "DataPerWeek_".toLowerCase() + type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country.toLowerCase()) + "_" + viewText + "_" + dateStr;
+        String key = CacheService.getInstance().getCacheKey("DataPerWeek", type + "_" + isNew, viewId, country, dateStr);
         
         List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
         if (cachedResult != null && !cachedResult.isEmpty()) {
@@ -20,43 +71,27 @@
         CacheService.getInstance().putInCache(key, data);
         return data;
     }
-	
-
-
-
-	    public List<ViewInfo> getCompCircleScore(String type) {
-	        String dateStr = sdf.format(radar.getDate1()).trim();
-	        String key = "CompCircleScore_".toLowerCase() + viewId + "_" + subViewId + "_" +
-	                (country.equalsIgnoreCase("all") ? "all" : country.toLowerCase()) + "_" +
-	                type.toLowerCase() + "_" + viewText.toLowerCase() + "_" + dateStr;
-	        
-	        List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
-	        if (cachedResult != null && !cachedResult.isEmpty()) {
-	            return cachedResult;
-	        }
-	        
-	        List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
-	                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
-	        CacheService.getInstance().putInCache(key, data);
-	        return data;
-	    }
-
-
-
-
+    
     private void processAndMapData() {
         String dateStr = sdf.format(new Date());
         
         List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
         Map<String, Pair<Integer, Integer>> oneMonth = processAssetList(listOne);
-        String keyOneMonth = "ProcessMap_OneMonth_".toLowerCase() + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country.toLowerCase()) + "_" + dateStr;
+        String keyOneMonth = CacheService.getInstance().getCacheKey("ProcessMap_OneMonth", "", viewId, country, dateStr);
         CacheService.getInstance().putInCache(keyOneMonth, oneMonth);
         
         List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
         Map<String, Pair<Integer, Integer>> twoMonth = processAssetList(listTwo);
-        String keyTwoMonth = "ProcessMap_TwoMonth_".toLowerCase() + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
+        String keyTwoMonth = CacheService.getInstance().getCacheKey("ProcessMap_TwoMonth", "", viewId, country, dateStr);
         CacheService.getInstance().putInCache(keyTwoMonth, twoMonth);
     }
-	
+    
+    private Date getPreviousMonth(int months) {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.MONTH, -months);
+        cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
+        return cal.getTime();
+    }
+    
+    // ... other controller methods ...
+}
