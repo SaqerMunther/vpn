@@ -5,7 +5,7 @@ public class MB_Main extends CmonManagedBean {
     private DataAccess da = new DataAccess();
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     
-    // Dynamic parameters (these should come from your application logic)
+    // Dynamic parameters shared by all users.
     private int viewId;
     private int subViewId;
     private String country;
@@ -13,33 +13,34 @@ public class MB_Main extends CmonManagedBean {
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
     
-    // Cached fields (if needed)
+    // Example cached fields.
     private List<ViewInfo> circleExiCompDetails;
     private List<ViewInfo> circleCovPerWeek;
     private List<ViewInfo> circleCompPerWeek;
     
     @PostConstruct
     public void init() {
-        // Initialize dynamic parameters – replace these with your actual logic.
+        // Initialize dynamic parameters.
         viewId = 1;
         subViewId = 10;
         country = "all";
-        viewText = "SampleView";
+        viewText = "sampleview";
         viewCountryMap = da.getViewCountryMap();
         viewNameMap = da.getViewNameMap();
         
-        // Pass these dynamic parameters to CacheService.
+        // Pass these parameters to CacheService.
         CacheService cache = CacheService.getInstance();
         cache.setViewCountryMap(viewCountryMap);
         cache.setViewNameMap(viewNameMap);
         
-        // Synchronously load first view data.
+        // Synchronously load initial data.
         List<ViewInfo> firstCompCircle = getCompCircleScore("Comp");
         List<ViewInfo> firstDataWeek = getDataPerWeek("Cov", "false");
         processAndMapData();
         
-        // Let CacheService handle the startup flow.
-        cache.startupFlow(viewId, subViewId, country, viewText);
+        // The CacheService startupFlow() is already called automatically inside the singleton's constructor.
+        // If you wish to update the parameters, you could call:
+        // cache.startupFlow(viewId, subViewId, country, viewText);
     }
     
     public List<ViewInfo> getCompCircleScore(String type) {
@@ -93,5 +94,5 @@ public class MB_Main extends CmonManagedBean {
         return cal.getTime();
     }
     
-    // ... other controller methods ...
+    // ... additional controller methods ...
 }
