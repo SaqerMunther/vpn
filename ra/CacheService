@@ -33,7 +33,10 @@ import com.arabbank.dev.utility.Pair;
  *   - A dynamic refresh that loops through all key combinations.
  *   - A one–time asynchronous preload.
  *   - Automatic periodic refresh every 20 minutes.
- *   - A startupFlow() method so that CacheService handles its own initialization.
+ *   - A startupFlow() that is called internally so that the cache service handles its own initialization.
+ *
+ * This implementation assumes that the dynamic parameters (viewCountryMap and viewNameMap)
+ * are global (or have default values) shared by all users.
  */
 public class CacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
@@ -52,12 +55,20 @@ public class CacheService {
     // DataAccess instance for fetching data.
     private DataAccess da = new DataAccess();
     
-    // Dynamic parameters provided by the application.
+    // Dynamic parameters shared by all users.
+    // In a real scenario, you might load these from configuration or initialize them once.
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
     
+    // Default dynamic parameter values.
+    private final int defaultViewId = 1;
+    private final int defaultSubViewId = 10;
+    private final String defaultCountry = "all";
+    private final String defaultViewText = "sampleview";
+    
     // Private constructor.
     private CacheService() {
+        // Initialize cache configuration.
         Configuration config = new Configuration();
         CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
                 .eternal(false)
@@ -69,6 +80,14 @@ public class CacheService {
         Cache dataCache = cacheManager.getCache("dataCache");
         cacheProvider = new EhcacheProvider(dataCache);
         logger.info("CacheService initialized.");
+        
+        // Set default dynamic parameters.
+        // In your application, these could be loaded from a DB or configuration.
+        viewCountryMap = DataAccess.getDefaultViewCountryMap(); // static method for default values
+        viewNameMap = DataAccess.getDefaultViewNameMap();         // static method for default values
+        
+        // Automatically start the cache startup flow.
+        startupFlow(defaultViewId, defaultSubViewId, defaultCountry, defaultViewText);
     }
     
     public static synchronized CacheService getInstance() {
@@ -78,7 +97,7 @@ public class CacheService {
         return instance;
     }
     
-    // Setter methods for dynamic parameters.
+    // Setter methods in case you need to update dynamic parameters later.
     public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
         this.viewCountryMap = viewCountryMap;
     }
@@ -268,7 +287,7 @@ public class CacheService {
     }
     
     /**
-     * Stops the automatic refresh.
+     * stopAutoRefresh() stops the automatic refresh scheduler.
      */
     public void stopAutoRefresh() {
         if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
@@ -301,9 +320,9 @@ public class CacheService {
     
     /**
      * startupFlow() encapsulates the complete startup logic inside CacheService.
-     * It should be called once during application startup.
+     * It is called once during application startup.
      * Dynamic parameters (viewId, subViewId, country, viewText) are provided by the controller
-     * via setters before calling startupFlow().
+     * via setters before calling startupFlow(), but you can also rely on default values.
      */
     public void startupFlow(final int viewId, final int subViewId, final String country, final String viewText) {
         preloadCacheBackground(viewId, subViewId, country, viewText);
