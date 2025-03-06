@@ -33,10 +33,7 @@ import com.arabbank.dev.utility.Pair;
  *   - A dynamic refresh that loops through all key combinations.
  *   - A one–time asynchronous preload.
  *   - Automatic periodic refresh every 20 minutes.
- *   - A startupFlow() that is invoked on instantiation so that the service handles its own initialization.
- *
- * This implementation assumes that the dynamic parameters (viewCountryMap and viewNameMap)
- * are global and shared by all users.
+ *   - A startupFlow() method so that CacheService handles its own initialization.
  */
 public class CacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
@@ -58,12 +55,7 @@ public class CacheService {
     // Dynamic parameters provided by the application.
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
-    
-    // Default dynamic parameters (global values shared by all users).
-    private final int defaultViewId = 1;
-    private final int defaultSubViewId = 10;
-    private final String defaultCountry = "all";
-    private final String defaultViewText = "sampleview";
+    private Date date = new Date();
     
     // Private constructor.
     private CacheService() {
@@ -78,14 +70,6 @@ public class CacheService {
         Cache dataCache = cacheManager.getCache("dataCache");
         cacheProvider = new EhcacheProvider(dataCache);
         logger.info("CacheService initialized.");
-        
-        // Set default dynamic parameters.
-        // In a real application these might be loaded from a DB or configuration.
-        viewCountryMap = DataAccess.getDefaultViewCountryMap(); // static helper returning a Map
-        viewNameMap = DataAccess.getDefaultViewNameMap();         // static helper returning a Map
-        
-        // Automatically start the cache startup flow.
-        startupFlow(defaultViewId, defaultSubViewId, defaultCountry, defaultViewText);
     }
     
     public static synchronized CacheService getInstance() {
@@ -95,7 +79,7 @@ public class CacheService {
         return instance;
     }
     
-    // Setter methods (in case the application wants to update parameters later).
+    // Setter methods for dynamic parameters.
     public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
         this.viewCountryMap = viewCountryMap;
     }
@@ -104,7 +88,11 @@ public class CacheService {
         this.viewNameMap = viewNameMap;
     }
     
-    /**
+    public void setDate(Date date) {
+		this.date = date;
+	}
+
+	/**
      * Returns a consistent cache key using the following format:
      *   (methodName + "_" + extra + "_" + viewId + "_" + country + "_" + date).toLowerCase()
      */
@@ -130,7 +118,7 @@ public class CacheService {
      */
     public <T> void putInCache(String key, T value) {
         cacheProvider.put(key, value);
-        logger.info("Cached data for key: {} (cache size: {})", key, cacheProvider.size());
+        logger.info("Cached value for key: {} (cache size: {})", key, cacheProvider.size());
     }
     
     /**
@@ -261,7 +249,7 @@ public class CacheService {
      */
     public void preloadCacheBackground(final int viewId, final int subViewId,
                                          final String country, final String viewText) {
-        final String dateStr = sdf.format(new Date());
+        final String dateStr = sdf.format(date);
         executorService.submit(() -> {
             logger.info("Asynchronous cache preloading started.");
             refreshAllCacheData(dateStr);
@@ -278,14 +266,14 @@ public class CacheService {
             scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
         }
         scheduledExecutor.scheduleAtFixedRate(() -> {
-            String dateStr = sdf.format(new Date());
+            String dateStr = sdf.format(date);
             logger.info("Automatic periodic cache refresh triggered.");
             refreshAllCacheData(dateStr);
         }, 20, 20, TimeUnit.MINUTES);
     }
     
     /**
-     * stopAutoRefresh() stops the automatic refresh scheduler.
+     * Stops the automatic refresh.
      */
     public void stopAutoRefresh() {
         if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
