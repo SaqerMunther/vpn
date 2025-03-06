@@ -5,18 +5,34 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
+import net.sf.ehcache.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.Date;
 
+import com.app.dev.cmon.components.ViewInfo;
+import com.app.dev.cmon.components.AssetInfo;
+import com.app.dev.cmon.components.Views;
+import com.app.dev.cmon.controllers.DataAccess;
+import com.app.dev.cmon.utilites.CacheConstants;
+import com.arabbank.dev.utility.Pair;
+
 /**
- * CacheService is a singleton that provides caching operations.
- * It supports synchronous get/put operations and asynchronous preloading.
+ * CacheService provides a dynamic caching layer. It uses an Ehcache instance (via ICacheProvider)
+ * and supports:
+ *   - Synchronous get/put operations with unique keys.
+ *   - A dynamic refresh method that loops over all key combinations.
+ *   - A one–time asynchronous preload.
+ *   - Automatic periodic refresh every 20 minutes.
  */
 public class CacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
@@ -24,10 +40,22 @@ public class CacheService {
     
     private CacheManager cacheManager;
     private ICacheProvider cacheProvider;
+    
+    // Executor for one–time asynchronous tasks.
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    // Scheduled executor for periodic auto–refresh.
+    private ScheduledExecutorService scheduledExecutor;
+    
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-    // Private constructor for singleton pattern.
+    
+    // DataAccess instance for fetching data.
+    private DataAccess da = new DataAccess();
+    
+    // Dynamic parameters that need to be set by the controller.
+    private Map<Integer, List<String>> viewCountryMap;
+    private Map<Integer, String> viewNameMap;
+    
+    // Private constructor.
     private CacheService() {
         Configuration config = new Configuration();
         CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
@@ -49,8 +77,17 @@ public class CacheService {
         return instance;
     }
     
+    // Setter methods for dynamic parameters.
+    public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
+        this.viewCountryMap = viewCountryMap;
+    }
+    
+    public void setViewNameMap(Map<Integer, String> viewNameMap) {
+        this.viewNameMap = viewNameMap;
+    }
+    
     /**
-     * Returns the cached object for a given key.
+     * Retrieves an object from the cache by key.
      */
     public <T> T getFromCache(String key) {
         T value = cacheProvider.get(key);
@@ -63,7 +100,7 @@ public class CacheService {
     }
     
     /**
-     * Puts a value in the cache using the specified key.
+     * Puts a value into the cache under the given key.
      */
     public <T> void putInCache(String key, T value) {
         cacheProvider.put(key, value);
@@ -79,84 +116,179 @@ public class CacheService {
     }
     
     /**
-     * refreshAllCacheData() simulates refreshing multiple cache entries.
-     * Replace the simulated calls with your actual DataAccess calls.
+     * Generates a unique cache key based on parameters.
      */
-    public void refreshAllCacheData(
-            int viewId, int subViewId, String country, String viewText) {
-        logger.info("Starting full cache refresh...");
-        String dateStr = sdf.format(new Date());
-        
-        // Preload circle score data for "Comp"
-        String keyCompCircle = "CompCircleScore_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_Comp_" +
-                viewText + "_" + dateStr;
-        // Simulate fetching data from DataAccess:
-        // In your real code, call: da.getComplyCirclePerScore(...)
-        Object compCircleData = simulateDataAccess("ComplyCirclePerScore", keyCompCircle);
-        cacheProvider.put(keyCompCircle, compCircleData);
-        
-        // Preload weekly coverage data for "Cov"
-        String keyDataPerWeekCov = "DataPerWeek_Cov_false_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" +
-                viewText + "_" + dateStr;
-        Object weeklyCovData = simulateDataAccess("CoveragePerWeek", keyDataPerWeekCov);
-        cacheProvider.put(keyDataPerWeekCov, weeklyCovData);
-        
-        // Preload weekly compliance data for "Comp"
-        String keyDataPerWeekComp = "DataPerWeek_Comp_true_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" +
-                viewText + "_" + dateStr;
-        Object weeklyCompData = simulateDataAccess("CoveragePerWeek", keyDataPerWeekComp);
-        cacheProvider.put(keyDataPerWeekComp, weeklyCompData);
-        
-        // Preload processed maps (one-month and two-month)
-        String keyOneMonth = "ProcessMap_OneMonth_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
-        Object oneMonthMap = simulateDataAccess("ProcessMap_OneMonth", keyOneMonth);
-        cacheProvider.put(keyOneMonth, oneMonthMap);
-        
-        String keyTwoMonth = "ProcessMap_TwoMonth_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
-        Object twoMonthMap = simulateDataAccess("ProcessMap_TwoMonth", keyTwoMonth);
-        cacheProvider.put(keyTwoMonth, twoMonthMap);
-        
-        logger.info("Full cache refresh completed.");
+    private String generateCacheKey(String methodName, String extra, int viewId, String country, String date) {
+        // methodName: e.g., "CoveragePerWeek", "CompCircleScore", "ProcessMap_OneMonth"
+        // extra: may be used for additional info (e.g., "cov" or "comp" or "true"/"false")
+        return methodName.toLowerCase() + "_" + extra.toLowerCase() + "_" + viewId + "_" +
+                country.toLowerCase() + "_" + date;
     }
     
     /**
-     * preloadCacheBackground() launches the refreshAllCacheData routine asynchronously.
-     * You must pass in the current view parameters.
+     * Dynamic refresh method: Loops through all combinations of parameters for all methods.
+     * In this example, we refresh keys for:
+     *   (a) Coverage Per Week (used in getDataPerWeek)
+     *   (b) Comply Circle Score (used in getCompCircleScore)
+     *   (c) Process Map (for one-month and two-month data)
+     * 
+     * @param date The current date string.
      */
-    public void preloadCacheBackground(
-            final int viewId, final int subViewId, final String country, final String viewText) {
+    public void refreshAllCacheData(String date) {
+        logger.info("Refreshing dataCache dynamically...");
+        clearCache(); // Optionally clear cache first.
+        
+        // (a) Refresh Coverage Per Week for all combinations.
+        for (String type : CacheConstants.RADAR_TYPES) {
+            for (String isNew : CacheConstants.RADAR_IS_NEW) {
+                for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
+                    int vid = entry.getKey();
+                    List<String> countries = entry.getValue();
+                    for (String country : countries) {
+                        // For each view, get subviews.
+                        List<Integer> subViews = da.getSubViews(vid)
+                                .stream()
+                                .map(Views::getId)
+                                .collect(Collectors.toList());
+                        for (Integer subViewId : subViews) {
+                            String key = generateCacheKey("CoveragePerWeek", type + "_" + isNew, vid, country, date);
+                            logger.debug("Populating CoveragePerWeek cache for key: {}", key);
+                            List<ViewInfo> data = da.getCoveragePerWeek(vid, subViewId,
+                                    country.equalsIgnoreCase("all") ? "" : country,
+                                    type, viewNameMap.get(vid), date);
+                            cacheProvider.put(key, data);
+                            logger.info("Cached CoveragePerWeek for key: {}", key);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // (b) Refresh Comply Circle Score data.
+        // Assume we want to refresh for a fixed type (e.g., "Comp").
+        String compType = "Comp";
+        for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
+            int vid = entry.getKey();
+            List<String> countries = entry.getValue();
+            for (String country : countries) {
+                // Again, loop through subviews.
+                List<Integer> subViews = da.getSubViews(vid)
+                        .stream()
+                        .map(Views::getId)
+                        .collect(Collectors.toList());
+                for (Integer subViewId : subViews) {
+                    String key = generateCacheKey("CompCircleScore", compType, vid, country, date);
+                    logger.debug("Populating CompCircleScore cache for key: {}", key);
+                    List<ViewInfo> data = da.getComplyCirclePerScore(vid, subViewId,
+                            country.equalsIgnoreCase("all") ? "" : country,
+                            compType, viewNameMap.get(vid), date);
+                    cacheProvider.put(key, data);
+                    logger.info("Cached CompCircleScore for key: {}", key);
+                }
+            }
+        }
+        
+        // (c) Refresh Process Map for one-month and two-month data.
+        for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
+            int vid = entry.getKey();
+            List<String> countries = entry.getValue();
+            for (String country : countries) {
+                // For process maps, subViewId is -1 (aggregated).
+                String keyOne = generateCacheKey("ProcessMap_OneMonth", "", vid, country, date);
+                List<AssetInfo> listOne = da.getAllCoverage(vid, -1, "", sdf.format(getPreviousMonth(1)));
+                Map<String, Pair<Integer, Integer>> oneMap = processAssetList(listOne);
+                cacheProvider.put(keyOne, oneMap);
+                logger.info("Cached ProcessMap_OneMonth for key: {}", keyOne);
+                
+                String keyTwo = generateCacheKey("ProcessMap_TwoMonth", "", vid, country, date);
+                List<AssetInfo> listTwo = da.getAllCoverage(vid, -1, "", sdf.format(getPreviousMonth(2)));
+                Map<String, Pair<Integer, Integer>> twoMap = processAssetList(listTwo);
+                cacheProvider.put(keyTwo, twoMap);
+                logger.info("Cached ProcessMap_TwoMonth for key: {}", keyTwo);
+            }
+        }
+        
+        logger.info("Dynamic cache refresh complete. Current cache size: {}", cacheProvider.size());
+    }
+    
+    /**
+     * A helper to process an asset list into a map.
+     * (This is similar to your original processAssetList.)
+     */
+    private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
+        Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
+            .collect(Collectors.groupingBy(
+                asset -> asset.getLocationCode() + asset.getSubViewId(),
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
+                )
+            ));
+        // Additional grouping logic (for "ALL" groups) can be added here if needed.
+        return resultMap;
+    }
+    
+    /**
+     * Preloads cache in the background (one–time asynchronous preload).
+     * Typically called after serving the first view.
+     */
+    public void preloadCacheBackground(final int viewId, final int subViewId,
+                                         final String country, final String viewText) {
+        final String dateStr = sdf.format(new Date());
         executorService.submit(() -> {
             logger.info("Asynchronous cache preloading started.");
-            refreshAllCacheData(viewId, subViewId, country, viewText);
+            refreshAllCacheData(dateStr);
             logger.info("Asynchronous cache preloading completed.");
         });
     }
     
     /**
-     * A helper simulation method. Replace this with your real DataAccess calls.
+     * Starts an automatic periodic refresh every 20 minutes.
+     * Call this once (e.g. at application startup or after serving the first view).
      */
-    private Object simulateDataAccess(String methodName, String key) {
-        try {
-            // Simulate a delay (e.g. 2 seconds) to represent a long data fetch.
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    public void startAutoRefresh(final int viewId, final int subViewId,
+                                 final String country, final String viewText) {
+        if (scheduledExecutor == null || scheduledExecutor.isShutdown()) {
+            scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
         }
-        // For simulation purposes, return a string indicating which data was fetched.
-        return "Data[" + methodName + "] for key: " + key;
+        // Schedule the refresh every 20 minutes (initial delay 20 minutes).
+        scheduledExecutor.scheduleAtFixedRate(() -> {
+            String dateStr = sdf.format(new Date());
+            logger.info("Automatic periodic cache refresh triggered.");
+            refreshAllCacheData(dateStr);
+        }, 20, 20, TimeUnit.MINUTES);
     }
     
     /**
-     * Shuts down the executor and cache manager.
+     * Stops the automatic refresh.
+     */
+    public void stopAutoRefresh() {
+        if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
+            scheduledExecutor.shutdown();
+            logger.info("Automatic cache auto-refresh stopped.");
+        }
+    }
+    
+    /**
+     * Shuts down all executors and the cache manager.
      */
     public void shutdown() {
         executorService.shutdown();
+        if (scheduledExecutor != null) {
+            scheduledExecutor.shutdown();
+        }
         cacheManager.shutdown();
         logger.info("CacheService shutdown.");
+    }
+    
+    /**
+     * Helper: Returns a Date corresponding to "months" ago (using current date).
+     */
+    private Date getPreviousMonth(int months) {
+        // (Simplified using Calendar)
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.MONTH, -months);
+        cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
+        return cal.getTime();
     }
 }
