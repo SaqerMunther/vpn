@@ -1,0 +1,34 @@
+		public List<ViewInfo> getCompCircleScore(String type) {
+			if (circleExiCompDetails == null || circleExiCompDetails.size() < 1) {
+				circleExiCompDetails = da.getComplyCirclePerScore(viewId, subViewId,
+						country.equalsIgnoreCase("all") ? "" : country, type, viewText,
+						sdf.format(radar.getDate1()).trim());
+			}
+			return circleExiCompDetails;
+
+		}
+
+	private void processAndMapData() {
+	    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
+	    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
+	    
+	    oneMonthMap = processAssetList(listOne);
+
+	    twoMonthMap = processAssetList(listTwo);
+	}
+
+
+	public List<ViewInfo> getDataPerWeek(String type, String isNew) {
+
+		if (type.equalsIgnoreCase("Cov")) {
+			if (circleCovPerWeek == null || circleCovPerWeek.size() < 1) {
+				circleCovPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
+			}
+			return circleCovPerWeek;
+		} else {
+			if (circleCompPerWeek == null || circleCompPerWeek.size() < 1) {
+				circleCompPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
+			}
+			return circleCompPerWeek;
+		}
+	}
