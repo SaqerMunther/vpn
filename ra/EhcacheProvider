@@ -1,0 +1,37 @@
+package com.app.dev.cmon.cache;
+
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.Element;
+
+/**
+ * Wraps an Ehcache instance so that it fits the ICacheProvider interface.
+ */
+public class EhcacheProvider implements ICacheProvider {
+
+    private final Cache cache;
+
+    public EhcacheProvider(Cache cache) {
+        this.cache = cache;
+    }
+
+    @Override
+    public <T> T get(String key) {
+        Element element = cache.get(key);
+        return element != null ? (T) element.getObjectValue() : null;
+    }
+
+    @Override
+    public <T> void put(String key, T value) {
+        cache.put(new Element(key, value));
+    }
+
+    @Override
+    public void clear() {
+        cache.removeAll();
+    }
+
+    @Override
+    public int size() {
+        return cache.getSize();
+    }
+}
