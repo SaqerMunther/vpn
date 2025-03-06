@@ -17,7 +17,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.Arrays;
 import java.util.Date;
 
 import com.app.dev.cmon.components.ViewInfo;
@@ -34,10 +33,10 @@ import com.arabbank.dev.utility.Pair;
  *   - A dynamic refresh that loops through all key combinations.
  *   - A one–time asynchronous preload.
  *   - Automatic periodic refresh every 20 minutes.
- *   - A startupFlow() that is called internally so that the cache service handles its own initialization.
+ *   - A startupFlow() that is invoked on instantiation so that the service handles its own initialization.
  *
  * This implementation assumes that the dynamic parameters (viewCountryMap and viewNameMap)
- * are global (or have default values) shared by all users.
+ * are global and shared by all users.
  */
 public class CacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
@@ -56,54 +55,38 @@ public class CacheService {
     // DataAccess instance for fetching data.
     private DataAccess da = new DataAccess();
     
-    // Dynamic parameters shared by all users.
-    // In a real scenario, you might load these from configuration or initialize them once.
+    // Dynamic parameters provided by the application.
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
-    private Date date = new Date();
     
-    // Default dynamic parameter values.
-    private int defaultViewId;
-    private int defaultSubViewId = -1;
-    private String defaultCountry;
-    private String defaultViewText;
+    // Default dynamic parameters (global values shared by all users).
+    private final int defaultViewId = 1;
+    private final int defaultSubViewId = 10;
+    private final String defaultCountry = "all";
+    private final String defaultViewText = "sampleview";
     
-	// Private constructor.
-	private CacheService() {
-		// Initialize cache configuration.
-		Configuration config = new Configuration();
-		CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000).eternal(false)
-				.timeToIdleSeconds(1200) // 20 minutes
-				.timeToLiveSeconds(1200) // 20 minutes
-				.memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
-		config.addCache(cacheConfig);
-		cacheManager = CacheManager.newInstance(config);
-		Cache dataCache = cacheManager.getCache("dataCache");
-		cacheProvider = new EhcacheProvider(dataCache);
-		logger.info("CacheService initialized.");
-
-		List<Views> viewList = da.getViews("all");
-		for (Views view : viewList) {
-			List<String> countries = Arrays.asList(view.getCountry().split("\\s*,\\s*"));
-			viewCountryMap.put(view.getId(), countries);
-			viewNameMap.put(view.getId(), view.getName());
-		}
-
-		if (!viewList.isEmpty()) {
-			List<String> countries = Arrays.asList(viewList.get(0).getCountry().split(",\\s*"));
-			defaultCountry = countries.get(0).equalsIgnoreCase("ALL") ? "" : countries.get(0);
-			defaultViewText = viewList.get(0).getName();
-			defaultViewId = viewList.get(0).getId();
-		}
-
-		List<Date> lastDates = da.getLastDate();
-		if (!lastDates.isEmpty()) {
-			setDate(lastDates.get(0));
-		}
-
-		// Automatically start the cache startup flow.
-		startupFlow(defaultViewId, defaultSubViewId, defaultCountry, defaultViewText);
-	}
+    // Private constructor.
+    private CacheService() {
+        Configuration config = new Configuration();
+        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
+                .eternal(false)
+                .timeToIdleSeconds(1200) // 20 minutes
+                .timeToLiveSeconds(1200) // 20 minutes
+                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
+        config.addCache(cacheConfig);
+        cacheManager = CacheManager.newInstance(config);
+        Cache dataCache = cacheManager.getCache("dataCache");
+        cacheProvider = new EhcacheProvider(dataCache);
+        logger.info("CacheService initialized.");
+        
+        // Set default dynamic parameters.
+        // In a real application these might be loaded from a DB or configuration.
+        viewCountryMap = DataAccess.getDefaultViewCountryMap(); // static helper returning a Map
+        viewNameMap = DataAccess.getDefaultViewNameMap();         // static helper returning a Map
+        
+        // Automatically start the cache startup flow.
+        startupFlow(defaultViewId, defaultSubViewId, defaultCountry, defaultViewText);
+    }
     
     public static synchronized CacheService getInstance() {
         if (instance == null) {
@@ -112,7 +95,7 @@ public class CacheService {
         return instance;
     }
     
-    // Setter methods in case you need to update dynamic parameters later.
+    // Setter methods (in case the application wants to update parameters later).
     public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
         this.viewCountryMap = viewCountryMap;
     }
@@ -121,11 +104,7 @@ public class CacheService {
         this.viewNameMap = viewNameMap;
     }
     
-    public void setDate(Date date) {
-		this.date = date;
-	}
-
-	/**
+    /**
      * Returns a consistent cache key using the following format:
      *   (methodName + "_" + extra + "_" + viewId + "_" + country + "_" + date).toLowerCase()
      */
@@ -151,7 +130,7 @@ public class CacheService {
      */
     public <T> void putInCache(String key, T value) {
         cacheProvider.put(key, value);
-        logger.info("Cached value for key: {} (cache size: {})", key, cacheProvider.size());
+        logger.info("Cached data for key: {} (cache size: {})", key, cacheProvider.size());
     }
     
     /**
@@ -339,9 +318,9 @@ public class CacheService {
     
     /**
      * startupFlow() encapsulates the complete startup logic inside CacheService.
-     * It is called once during application startup.
+     * It should be called once during application startup.
      * Dynamic parameters (viewId, subViewId, country, viewText) are provided by the controller
-     * via setters before calling startupFlow(), but you can also rely on default values.
+     * via setters before calling startupFlow().
      */
     public void startupFlow(final int viewId, final int subViewId, final String country, final String viewText) {
         preloadCacheBackground(viewId, subViewId, country, viewText);
