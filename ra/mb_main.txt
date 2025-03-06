@@ -49,6 +49,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.app.dev.cmon.cache.CacheService;
 import com.app.dev.cmon.components.AllRadarData;
 import com.app.dev.cmon.components.AssetInfo;
 import com.app.dev.cmon.components.ComplianceInfo;
@@ -744,45 +745,29 @@ public class MB_Main extends CmonManagedBean {
 	    veiwDataCovOneMonth = dataByDateAndType.getOrDefault(oneMonth + "_Cov", Collections.emptyList());
 	}
 	
-	public Date getPreviousMonth(int month) {
-		LocalDate today = LocalDate.now();
-		Date date;
-		if (month < 0 || month > 3) {
-			throw new IllegalArgumentException("Invalid month value: " + month);
-		}
-		LocalDate resultDate = today.withDayOfMonth(1);
-		switch (month) {
-		case 0:
-			resultDate = today.withDayOfMonth(1);
-			break;
-		case 1:
-			resultDate = resultDate.minusMonths(1);
-			break;
-		case 2:
-			resultDate = resultDate.minusMonths(2);
-			break;
-		case 3:
-			resultDate = resultDate.minusMonths(3);
-			break;
-		}
-		date =  Date.from(resultDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-		return date;
-	}
+    private Date getPreviousMonth(int months) {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.MONTH, -months);
+        cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
+        return cal.getTime();
+    }
 
-	public List<ViewInfo> getDataPerWeek(String type, String isNew) {
-
-		if (type.equalsIgnoreCase("Cov")) {
-			if (circleCovPerWeek == null || circleCovPerWeek.size() < 1) {
-				circleCovPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
-			}
-			return circleCovPerWeek;
-		} else {
-			if (circleCompPerWeek == null || circleCompPerWeek.size() < 1) {
-				circleCompPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
-			}
-			return circleCompPerWeek;
-		}
-	}
+    public List<ViewInfo> getDataPerWeek(String type, String isNew) {
+        String dateStr = sdf.format(radar.getDate1()).trim();
+        String key = CacheService.getInstance().getCacheKey("DataPerWeek", type + "_" + isNew, viewId, country, dateStr);
+        
+        List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
+        if (cachedResult != null && !cachedResult.isEmpty()) {
+            return cachedResult;
+        }
+        
+        List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId, 
+                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
+        CacheService.getInstance().putInCache(key, data);
+        return data;
+    }
+	
+	
 	public List<Date> getDistinctDate() {
 		List<ViewInfo> veiwData = da.getAvailabelDate();
 			List<ViewInfo> lst = veiwData.stream().filter(o -> o.getType().contains("Comp"))
@@ -845,15 +830,20 @@ public class MB_Main extends CmonManagedBean {
 			return maxDate.orElse(null);
 		}
 
-		public List<ViewInfo> getCompCircleScore(String type) {
-			if (circleExiCompDetails == null || circleExiCompDetails.size() < 1) {
-				circleExiCompDetails = da.getComplyCirclePerScore(viewId, subViewId,
-						country.equalsIgnoreCase("all") ? "" : country, type, viewText,
-						sdf.format(radar.getDate1()).trim());
-			}
-			return circleExiCompDetails;
-
-		}
+	    public List<ViewInfo> getCompCircleScore(String type) {
+	        String dateStr = sdf.format(radar.getDate1()).trim();
+	        String key = CacheService.getInstance().getCacheKey("CompCircleScore", type, viewId, country, dateStr);
+	        
+	        List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
+	        if (cachedResult != null && !cachedResult.isEmpty()) {
+	            return cachedResult;
+	        }
+	        
+	        List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
+	                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
+	        CacheService.getInstance().putInCache(key, data);
+	        return data;
+	    }
 	
 	AllRadarData greenExist = new AllRadarData();
 	AllRadarData greenNew = new AllRadarData();
@@ -1256,14 +1246,19 @@ public class MB_Main extends CmonManagedBean {
 			return "85%-90%";
 	}
 	
-	private void processAndMapData() {
-	    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-	    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-	    
-	    oneMonthMap = processAssetList(listOne);
-
-	    twoMonthMap = processAssetList(listTwo);
-	}
+    private void processAndMapData() {
+        String dateStr = sdf.format(new Date());
+        
+        List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
+        Map<String, Pair<Integer, Integer>> oneMonth = processAssetList(listOne);
+        String keyOneMonth = CacheService.getInstance().getCacheKey("ProcessMap_OneMonth", "", viewId, country == "" || country == null ? "all" : country, dateStr);
+        CacheService.getInstance().putInCache(keyOneMonth, oneMonth);
+        
+        List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
+        Map<String, Pair<Integer, Integer>> twoMonth = processAssetList(listTwo);
+        String keyTwoMonth = CacheService.getInstance().getCacheKey("ProcessMap_TwoMonth", "", viewId, country == "" || country == null ? "all" : country, dateStr);
+        CacheService.getInstance().putInCache(keyTwoMonth, twoMonth);
+    }
 
 	private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
 		// Group by LocationCode + SubViewId
