@@ -215,6 +215,7 @@ public class MB_Main extends CmonManagedBean {
 		viewText = radar.getViewText();
 		subViewId = radar.getSubViewId();
 		processAndMapData();
+		coverageAll = da.getAllCoverage(viewId, subViewId, country ,sdf.format(radar.getDate1()).trim());
 		getDate();
 		getHistoricalForUpperData();
 		getLeftCardInfo();
@@ -846,13 +847,8 @@ public class MB_Main extends CmonManagedBean {
 		}
 
 		public List<ViewInfo> getCompCircleScore(String type) {
-			if (circleExiCompDetails == null || circleExiCompDetails.size() < 1) {
-				circleExiCompDetails = da.getComplyCirclePerScore(viewId, subViewId,
-						country.equalsIgnoreCase("all") ? "" : country, type, viewText,
-						sdf.format(radar.getDate1()).trim());
-			}
-			return circleExiCompDetails;
-
+		    String date = sdf.format(radar.getDate1()).trim();
+		    return CacheService.getInstance().getCompCircleScore(type, viewId, subViewId, country, viewText, date);
 		}
 	
 	AllRadarData greenExist = new AllRadarData();
@@ -1257,13 +1253,10 @@ public class MB_Main extends CmonManagedBean {
 	}
 	
 	private void processAndMapData() {
-	    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-	    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-	    
-	    oneMonthMap = processAssetList(listOne);
-
-	    twoMonthMap = processAssetList(listTwo);
-	    coverageAll = da.getAllCoverage(viewId, subViewId, country ,sdf.format(radar.getDate1()).trim());
+	    String date = sdf.format(radar.getDate1()).trim();
+	    Map<String, Pair<Integer, Integer>> oneMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
+	    this.oneMonthMap = oneMonthMap;
+	    this.twoMonthMap = cacheService.processAndMapData(viewId, subViewId, country, date);
 	}
 
 	private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
