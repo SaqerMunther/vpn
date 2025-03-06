@@ -123,18 +123,14 @@ public void init() {
 
 /////////////////////////////////////////////////////////////////////
 
-
-// Imports and package declarations omitted for brevity
-
 @ManagedBean(name = "mbMain")
 @ViewScoped
 public class MB_Main extends CmonManagedBean {
     
-    // ... other fields ...
     private DataAccess da = new DataAccess();
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     
-    // Example dynamic parameters.
+    // Dynamic parameters
     private int viewId;
     private int subViewId;
     private String country;
@@ -142,38 +138,33 @@ public class MB_Main extends CmonManagedBean {
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
     
-    // Cached variables (if any).
-    // These can be removed if you want all data always from cache.
+    // Cached methods
     private List<ViewInfo> circleExiCompDetails;
     private List<ViewInfo> circleCovPerWeek;
     private List<ViewInfo> circleCompPerWeek;
     
-    // Reference to another controller (e.g. RadarController) and others...
-    
     @PostConstruct
     public void init() {
-        // Initialize your dynamic parameters – for example:
+        // Initialize dynamic parameters (these may come from DataAccess or configuration)
         viewId = 1;
         subViewId = 10;
         country = "all";
         viewText = "SampleView";
-        // Populate the maps – in your actual code these might come from DataAccess.
-        viewCountryMap = da.getViewCountryMap();  // e.g., returns a Map<Integer, List<String>>
-        viewNameMap = da.getViewNameMap();          // e.g., returns a Map<Integer, String>
+        viewCountryMap = da.getViewCountryMap();
+        viewNameMap = da.getViewNameMap();
         
-        // Set these maps in CacheService so that dynamic refresh has access.
-        CacheService.getInstance().setViewCountryMap(viewCountryMap);
-        CacheService.getInstance().setViewNameMap(viewNameMap);
+        // Provide these parameters to CacheService.
+        CacheService cache = CacheService.getInstance();
+        cache.setViewCountryMap(viewCountryMap);
+        cache.setViewNameMap(viewNameMap);
         
-        // Synchronously load the first view’s data using your methods.
+        // Synchronously load first view data.
         List<ViewInfo> firstCompCircle = getCompCircleScore("Comp");
         List<ViewInfo> firstDataWeek = getDataPerWeek("Cov", "false");
         processAndMapData();
         
-        // After serving the first view, trigger asynchronous background preloading.
-        CacheService.getInstance().preloadCacheBackground(viewId, subViewId, country, viewText);
-        // And start automatic periodic refresh every 20 minutes.
-        CacheService.getInstance().startAutoRefresh(viewId, subViewId, country, viewText);
+        // Let CacheService handle the startup flow.
+        cache.startupFlow(viewId, subViewId, country, viewText);
     }
     
     public List<ViewInfo> getCompCircleScore(String type) {
@@ -201,14 +192,12 @@ public class MB_Main extends CmonManagedBean {
         String keyOneMonth = "ProcessMap_OneMonth_" + viewId + "_" + subViewId + "_" +
                 (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
         CacheService.getInstance().putInCache(keyOneMonth, oneMonth);
-        // Update local field if needed.
         
         List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
         Map<String, Pair<Integer, Integer>> twoMonth = processAssetList(listTwo);
         String keyTwoMonth = "ProcessMap_TwoMonth_" + viewId + "_" + subViewId + "_" +
                 (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
         CacheService.getInstance().putInCache(keyTwoMonth, twoMonth);
-        // Update local field if needed.
     }
     
     public List<ViewInfo> getDataPerWeek(String type, String isNew) {
@@ -227,9 +216,6 @@ public class MB_Main extends CmonManagedBean {
         return data;
     }
     
-    /**
-     * Helper: Returns a Date corresponding to "months" ago.
-     */
     private Date getPreviousMonth(int months) {
         java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.add(java.util.Calendar.MONTH, -months);
@@ -237,6 +223,5 @@ public class MB_Main extends CmonManagedBean {
         return cal.getTime();
     }
     
-    // ... other methods, getters, setters, etc.
+    // ... additional controller methods ...
 }
-
