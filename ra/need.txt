@@ -32,3 +32,90 @@
 			return circleCompPerWeek;
 		}
 	}
+
+/////////////////////////////////////////////////////////////////////////
+
+public List<ViewInfo> getCompCircleScore(String type) {
+    String dateStr = sdf.format(radar.getDate1()).trim();
+    String key = "CompCircleScore_" + viewId + "_" + subViewId + "_" +
+            (country.equalsIgnoreCase("all") ? "all" : country) + "_" +
+            type + "_" + viewText + "_" + dateStr;
+    
+    // Attempt to retrieve from cache.
+    List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
+    if (cachedResult != null && !cachedResult.isEmpty()) {
+        return cachedResult;
+    }
+    
+    // Otherwise, fetch the data.
+    List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
+            country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
+    
+    // Cache the fetched data.
+    CacheService.getInstance().putInCache(key, data);
+    return data;
+}
+
+
+/////////////////////////////////////////////
+
+private void processAndMapData() {
+    String dateStr = sdf.format(new Date());
+    
+    // One month map
+    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
+    Map<String, Pair<Integer, Integer>> oneMonth = processAssetList(listOne);
+    String keyOneMonth = "ProcessMap_OneMonth_" + viewId + "_" + subViewId + "_" +
+            (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
+    CacheService.getInstance().putInCache(keyOneMonth, oneMonth);
+    oneMonthMap = oneMonth; // update local field if needed
+
+    // Two month map
+    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
+    Map<String, Pair<Integer, Integer>> twoMonth = processAssetList(listTwo);
+    String keyTwoMonth = "ProcessMap_TwoMonth_" + viewId + "_" + subViewId + "_" +
+            (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
+    CacheService.getInstance().putInCache(keyTwoMonth, twoMonth);
+    twoMonthMap = twoMonth; // update local field if needed
+}
+
+
+////////////////////////////////////////////////////////
+
+public List<ViewInfo> getDataPerWeek(String type, String isNew) {
+    String dateStr = sdf.format(radar.getDate1()).trim();
+    String key = "DataPerWeek_" + type + "_" + isNew + "_" + viewId + "_" + subViewId + "_" +
+            (country.equalsIgnoreCase("all") ? "all" : country) + "_" + viewText + "_" + dateStr;
+    
+    // Try cache first.
+    List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
+    if (cachedResult != null && !cachedResult.isEmpty()) {
+        return cachedResult;
+    }
+    
+    // Fetch the data if not cached.
+    List<ViewInfo> data;
+    if (type.equalsIgnoreCase("Cov")) {
+        data = da.getCoveragePerWeek(viewId, subViewId, 
+                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
+    } else {
+        data = da.getCoveragePerWeek(viewId, subViewId, 
+                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
+    }
+    
+    // Store in cache.
+    CacheService.getInstance().putInCache(key, data);
+    return data;
+}
+
+
+/////////////////////////////////////////////////////////
+
+@PostConstruct
+public void init() {
+    // ... your existing initialization code ...
+    // Synchronously load the first view’s data (via getCompCircleScore, getDataPerWeek, etc.)
+    // Then trigger asynchronous preloading:
+    CacheService.getInstance().preloadCacheBackground(viewId, subViewId, country, viewText);
+}
+
