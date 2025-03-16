@@ -218,3 +218,84 @@ public class CacheService {
         }
     }
 }
+
+
+
+//////////////////////////////////////////////////////////////////
+
+
+
+package com.app.dev.cmon.cache;
+
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.config.CacheConfiguration;
+import net.sf.ehcache.config.Configuration;
+import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+public class CacheConfig {
+    private static final Logger logger = LoggerFactory.getLogger(CacheConfig.class);
+    private CacheManager cacheManager;
+    private Properties properties = new Properties();
+    private int autoRefreshInterval;
+    private int errorLimit = 10;
+
+    public CacheConfig() {
+        loadProperties();
+        Configuration config = new Configuration();
+        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 2000)
+                .eternal(false)
+                .timeToIdleSeconds(1800) // 30 minutes
+                .timeToLiveSeconds(1800) // 30 minutes
+                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
+        config.addCache(cacheConfig);
+        cacheManager = CacheManager.newInstance(config);
+        logger.debug("CacheConfig initialized.");
+    }
+
+    private void loadProperties() {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("application.properties")) {
+            if (input == null) {
+                logger.warn("Sorry, unable to find application.properties");
+                autoRefreshInterval = 30;
+                return;
+            }
+            properties.load(input);
+            String interval = properties.getProperty("cache.autoRefresh.interval", "30"); // Default to 30 minutes
+            String erorr = properties.getProperty("cache.errorLimit.interval", "10"); 
+            autoRefreshInterval = Integer.parseInt(interval);
+            errorLimit = Integer.parseInt(erorr);
+        } catch (IOException ex) {
+            logger.error("Error loading properties: {}", ex.getMessage());
+            autoRefreshInterval = 30;
+            errorLimit = 10;
+        }
+    }
+
+    public Cache getDataCache() {
+        return cacheManager.getCache("dataCache");
+    }
+
+    public int getAutoRefreshInterval() {
+        return autoRefreshInterval;
+    }
+
+    public int getErrorLimit() {
+		return errorLimit;
+	}
+
+	public void setErrorLimit(int errorLimit) {
+		this.errorLimit = errorLimit;
+	}
+
+    public void shutdown() {
+        cacheManager.shutdown();
+        logger.debug("CacheConfig shutdown.");
+    }
+}
