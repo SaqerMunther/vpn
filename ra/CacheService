@@ -66,12 +66,12 @@ public class CacheService {
     }
 
     public String getCacheKey(String methodName, String extra, int viewId, String country, String date) {
-        return (methodName + "_" + extra + "_" + viewId + "_" + (country.equalsIgnoreCase("") ? "all" : country) + "_" + date).toLowerCase();
+        return (methodName + "_" + extra + "_" + viewId + "_" +
+               (country.equalsIgnoreCase("") ? "all" : country) + "_" + date).toLowerCase();
     }
 
     public <T> T getFromCache(String key) {
-        T value = cacheProvider.get(key);
-        return value;
+        return cacheProvider.get(key);
     }
 
     public <T> void putInCache(String key, T value) {
@@ -90,12 +90,12 @@ public class CacheService {
         logger.info("Refreshing dataCache dynamically...");
         clearCache();
 
-        // Process DataPerWeek caches in parallel for RADAR_TYPES and RADAR_IS_NEW combinations.
+        // Iterate over RADAR_TYPES and RADAR_IS_NEW (which are string arrays)
         Arrays.stream(CacheConstants.RADAR_TYPES).forEach(type ->
             Arrays.stream(CacheConstants.RADAR_IS_NEW).forEach(isNew -> {
                 viewCountryMap.forEach((vid, countries) -> {
-                    // Retrieve or cache the subviews list
-                    List<Integer> subViews = subViewsCache.computeIfAbsent(vid, v -> 
+                    // Retrieve or cache the subViews list for the current viewId
+                    List<Integer> subViews = subViewsCache.computeIfAbsent(vid, v ->
                         da.getSubViews(v).stream().map(Views::getId).collect(Collectors.toList())
                     );
                     countries.forEach(country -> {
@@ -107,12 +107,13 @@ public class CacheService {
                             try {
                                 String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, country, dateStr);
                                 List<ViewInfo> data = da.getCoveragePerWeek(
-                                        vid, subViewId,
-                                        country.equalsIgnoreCase("all") ? "" : country,
-                                        type, viewNameMap.get(vid), dateStr);
+                                    vid, subViewId,
+                                    country.equalsIgnoreCase("all") ? "" : country,
+                                    type, viewNameMap.get(vid), dateStr);
                                 cacheProvider.put(key, data);
                             } catch (Exception e) {
-                                logger.error("Error refreshing DataPerWeek for viewId {} country {}: {}", vid, country, e.getMessage());
+                                logger.error("Error refreshing DataPerWeek for viewId {} country {}: {}",
+                                             vid, country, e.getMessage());
                                 incrementErrorCount();
                             }
                         });
@@ -121,9 +122,8 @@ public class CacheService {
             })
         );
 
-        // Process CompCircleScore caches in parallel.
+        // Process CompCircleScore caches in a similar manner
         viewCountryMap.forEach((vid, countries) -> {
-            // Retrieve or cache the subviews list
             List<Integer> subViews = subViewsCache.computeIfAbsent(vid, v ->
                 da.getSubViews(v).stream().map(Views::getId).collect(Collectors.toList())
             );
@@ -136,12 +136,13 @@ public class CacheService {
                     try {
                         String key = getCacheKey("CompCircleScore", "Comp", vid, country, dateStr);
                         List<ViewInfo> data = da.getComplyCirclePerScore(
-                                vid, subViewId,
-                                country.equalsIgnoreCase("all") ? "" : country,
-                                "Comp", viewNameMap.get(vid), dateStr);
+                            vid, subViewId,
+                            country.equalsIgnoreCase("all") ? "" : country,
+                            "Comp", viewNameMap.get(vid), dateStr);
                         cacheProvider.put(key, data);
                     } catch (Exception e) {
-                        logger.error("Error refreshing CompCircleScore for viewId {} country {}: {}", vid, country, e.getMessage());
+                        logger.error("Error refreshing CompCircleScore for viewId {} country {}: {}",
+                                     vid, country, e.getMessage());
                         incrementErrorCount();
                     }
                 });
@@ -206,6 +207,7 @@ public class CacheService {
         }
     }
 }
+
 
 
 ////////////////////////////////////////////////////////////////////
