@@ -1,3 +1,8 @@
+public class CacheConstants {
+	public final static List<String> RADAR_TYPES = Arrays.asList("cov", "comp");
+	public final static List<String> RADAR_IS_NEW  = Arrays.asList("exist", "new");
+}
+
 package com.app.dev.cmon.cache;
 
 import org.slf4j.Logger;
