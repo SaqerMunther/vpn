@@ -1,77 +1,46 @@
 package com.app.dev.cmon.cache;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.Configuration;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
-import net.sf.ehcache.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.Date;
 
 import com.app.dev.cmon.components.ViewInfo;
-import com.app.dev.cmon.components.AssetInfo;
 import com.app.dev.cmon.components.Views;
 import com.app.dev.cmon.controllers.DataAccess;
 import com.app.dev.cmon.utilites.CacheConstants;
-import com.arabbank.dev.utility.Pair;
 
-/**
- * CacheService provides dynamic caching operations.
- * It wraps an Ehcache instance (via ICacheProvider) and supports:
- *   - Synchronous get/put operations using unique keys.
- *   - A dynamic refresh that loops through all key combinations.
- *   - A one–time asynchronous preload.
- *   - Automatic periodic refresh every 20 minutes.
- *   - A startupFlow() method so that CacheService handles its own initialization.
- */
 public class CacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
     private static CacheService instance;
-    
-    private CacheManager cacheManager;
+
     private ICacheProvider cacheProvider;
-    
-    // Executor for one–time asynchronous tasks.
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    // Scheduled executor for periodic auto–refresh.
     private ScheduledExecutorService scheduledExecutor;
-    
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    
-    // DataAccess instance for fetching data.
     private DataAccess da = new DataAccess();
-    
-    // Dynamic parameters provided by the application.
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
     private Date date = new Date();
+    private CacheConfig cacheConfig;
     
-    // Private constructor.
+    private int errorCount = 0; // Counter for errors
+    private boolean cacheEnabled = true; // Flag to control cache updates
+
     private CacheService() {
-        Configuration config = new Configuration();
-        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
-                .eternal(false)
-                .timeToIdleSeconds(1200) // 20 minutes
-                .timeToLiveSeconds(1200) // 20 minutes
-                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
-        config.addCache(cacheConfig);
-        cacheManager = CacheManager.newInstance(config);
-        Cache dataCache = cacheManager.getCache("dataCache");
-        cacheProvider = new EhcacheProvider(dataCache);
-        logger.info("CacheService initialized.");
+        cacheConfig = new CacheConfig();
+        cacheProvider = new EhcacheProvider(cacheConfig.getDataCache());
+        logger.debug("CacheService initialized.");
     }
-    
+
     public static synchronized CacheService getInstance() {
         if (instance == null) {
             instance = new CacheService();
@@ -79,7 +48,6 @@ public class CacheService {
         return instance;
     }
     
-    // Setter methods for dynamic parameters.
     public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
         this.viewCountryMap = viewCountryMap;
     }
@@ -92,57 +60,35 @@ public class CacheService {
 		this.date = date;
 	}
 
-	/**
-     * Returns a consistent cache key using the following format:
-     *   (methodName + "_" + extra + "_" + viewId + "_" + country + "_" + date).toLowerCase()
-     */
     public String getCacheKey(String methodName, String extra, int viewId, String country, String date) {
-        return (methodName + "_" + extra + "_" + viewId + "_" + country + "_" + date).toLowerCase();
+        return (methodName + "_" + extra + "_" + viewId + "_" + (country.equalsIgnoreCase("") ? "all" : country) + "_" + date).toLowerCase();
     }
-    
-    /**
-     * Retrieves an object from the cache using a given key.
-     */
+
     public <T> T getFromCache(String key) {
         T value = cacheProvider.get(key);
         if (value != null) {
-            logger.debug("Cache hit for key: {}", key);
+//            logger.debug("Cache hit for key: {}", key);
         } else {
-            logger.debug("Cache miss for key: {}", key);
+//            logger.debug("Cache miss for key: {}", key);
         }
         return value;
     }
-    
-    /**
-     * Puts a value into the cache under the specified key.
-     */
+
     public <T> void putInCache(String key, T value) {
         cacheProvider.put(key, value);
-        logger.info("Cached value for key: {} (cache size: {})", key, cacheProvider.size());
+//        logger.debug("Cached value for key: {} (cache size: {})", key, cacheProvider.size());
     }
-    
-    /**
-     * Clears the entire cache.
-     */
+
     public void clearCache() {
         cacheProvider.clear();
         logger.info("Cache cleared.");
     }
-    
-    /**
-     * refreshAllCacheData() loops through all parameter combinations for various caching methods.
-     * In this example, it refreshes:
-     *   (a) CoveragePerWeek data,
-     *   (b) CompCircleScore data, and
-     *   (c) ProcessMap data for one-month and two-month.
-     *
-     * @param date The current date as a string.
-     */
+
     public void refreshAllCacheData(String date) {
         logger.info("Refreshing dataCache dynamically...");
         clearCache();
         
-        // (a) Refresh CoveragePerWeek data.
+        // (A) Refresh CoveragePerWeek data.
         for (String type : CacheConstants.RADAR_TYPES) {
             for (String isNew : CacheConstants.RADAR_IS_NEW) {
                 for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
@@ -154,17 +100,21 @@ public class CacheService {
                                 .map(Views::getId)
                                 .collect(Collectors.toList());
                         for (Integer subViewId : subViews) {
+                        	if (!cacheEnabled) {
+                                logger.error("Cache updates are disabled. Exiting loop.");
+                                return; // Exit the method if cache updates are disabled
+                            }
                             try {
                                 String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, country, date);
-                                logger.debug("Populating DataPerWeek cache for key: {}", key);
+//                                logger.debug("Populating DataPerWeek cache for key: {}", key);
                                 List<ViewInfo> data = da.getCoveragePerWeek(vid, subViewId,
                                         country.equalsIgnoreCase("all") ? "" : country,
                                         type, viewNameMap.get(vid), date);
                                 cacheProvider.put(key, data);
-                                logger.info("Cached DataPerWeek for key: {}", key);
+//                                logger.debug("Cached DataPerWeek for key: {}", key);
                             } catch (Exception e) {
-                                logger.error("Error refreshing DataPerWeek for viewId {} country {}: {}",
-                                        vid, country, e.getMessage());
+                                logger.error("Error refreshing DataPerWeek for viewId {} country {}: {}", vid, country, e.getMessage());
+                                incrementErrorCount();
                             }
                         }
                     }
@@ -172,7 +122,7 @@ public class CacheService {
             }
         }
         
-        // (b) Refresh CompCircleScore data.
+        // (B) Refresh CompCircleScore data.
         String compType = "Comp";
         for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
             int vid = entry.getKey();
@@ -183,136 +133,88 @@ public class CacheService {
                         .map(Views::getId)
                         .collect(Collectors.toList());
                 for (Integer subViewId : subViews) {
+                	if (!cacheEnabled) {
+                        logger.error("Cache updates are disabled. Exiting loop.");
+                        return; // Exit the method if cache updates are disabled
+                    }
                     try {
                         String key = getCacheKey("CompCircleScore", compType, vid, country, date);
-                        logger.debug("Populating CompCircleScore cache for key: {}", key);
+//                        logger.debug("Populating CompCircleScore cache for key: {}", key);
                         List<ViewInfo> data = da.getComplyCirclePerScore(vid, subViewId,
                                 country.equalsIgnoreCase("all") ? "" : country,
                                 compType, viewNameMap.get(vid), date);
                         cacheProvider.put(key, data);
-                        logger.info("Cached CompCircleScore for key: {}", key);
+//                        logger.debug("Cached CompCircleScore for key: {}", key);
                     } catch (Exception e) {
-                        logger.error("Error refreshing CompCircleScore for viewId {} country {}: {}",
-                                vid, country, e.getMessage());
+                        logger.error("Error refreshing CompCircleScore for viewId {} country {}: {}",vid, country, e.getMessage());
+                        incrementErrorCount();
                     }
                 }
             }
         }
         
-        // (c) Refresh ProcessMap data for one-month and two-month.
-        for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
-            int vid = entry.getKey();
-            List<String> countries = entry.getValue();
-            for (String country : countries) {
-                try {
-                    String keyOne = getCacheKey("ProcessMap_OneMonth", "", vid, country, date);
-                    List<AssetInfo> listOne = da.getAllCoverage(vid, -1, "", sdf.format(getPreviousMonth(1)));
-                    Map<String, Pair<Integer, Integer>> oneMap = processAssetList(listOne);
-                    cacheProvider.put(keyOne, oneMap);
-                    logger.info("Cached ProcessMap_OneMonth for key: {}", keyOne);
-                } catch (Exception e) {
-                    logger.error("Error refreshing ProcessMap_OneMonth for viewId {} country {}: {}",
-                            vid, country, e.getMessage());
-                }
-                try {
-                    String keyTwo = getCacheKey("ProcessMap_TwoMonth", "", vid, country, date);
-                    List<AssetInfo> listTwo = da.getAllCoverage(vid, -1, "", sdf.format(getPreviousMonth(2)));
-                    Map<String, Pair<Integer, Integer>> twoMap = processAssetList(listTwo);
-                    cacheProvider.put(keyTwo, twoMap);
-                    logger.info("Cached ProcessMap_TwoMonth for key: {}", keyTwo);
-                } catch (Exception e) {
-                    logger.error("Error refreshing ProcessMap_TwoMonth for viewId {} country {}: {}",
-                            vid, country, e.getMessage());
-                }
-            }
-        }
         logger.info("Dynamic cache refresh complete. Current cache size: {}", cacheProvider.size());
     }
-    
-    /**
-     * Helper method to process an asset list into a map.
-     */
-    private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
-        return assetList.stream()
-            .collect(Collectors.groupingBy(
-                asset -> asset.getLocationCode() + asset.getSubViewId(),
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                )
-            ));
-    }
-    
-    /**
-     * preloadCacheBackground() launches a one–time asynchronous refresh.
-     * Typically called after the first view is served.
-     */
+
     public void preloadCacheBackground(final int viewId, final int subViewId,
                                          final String country, final String viewText) {
         final String dateStr = sdf.format(date);
         executorService.submit(() -> {
+        	errorCount = 0;
+        	cacheEnabled = true;
             logger.info("Asynchronous cache preloading started.");
             refreshAllCacheData(dateStr);
             logger.info("Asynchronous cache preloading completed.");
         });
     }
-    
-    /**
-     * startAutoRefresh() schedules automatic periodic refresh every 20 minutes.
-     */
-    public void startAutoRefresh(final int viewId, final int subViewId,
-                                 final String country, final String viewText) {
+
+    public void startAutoRefresh(final int viewId, final int subViewId, final String country, final String viewText) {
         if (scheduledExecutor == null || scheduledExecutor.isShutdown()) {
             scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
         }
+        int interval = cacheConfig.getAutoRefreshInterval();
         scheduledExecutor.scheduleAtFixedRate(() -> {
             String dateStr = sdf.format(date);
-            logger.info("Automatic periodic cache refresh triggered.");
+            logger.debug("Automatic periodic cache refresh triggered.");
             refreshAllCacheData(dateStr);
-        }, 20, 20, TimeUnit.MINUTES);
+        }, interval, interval, TimeUnit.MINUTES);
     }
-    
-    /**
-     * Stops the automatic refresh.
-     */
+
     public void stopAutoRefresh() {
         if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
             scheduledExecutor.shutdown();
-            logger.info("Automatic cache auto-refresh stopped.");
+            logger.debug("Automatic cache auto-refresh stopped.");
         }
     }
-    
-    /**
-     * shutdown() shuts down all executors and the cache manager.
-     */
+
     public void shutdown() {
         executorService.shutdown();
         if (scheduledExecutor != null) {
             scheduledExecutor.shutdown();
         }
-        cacheManager.shutdown();
-        logger.info("CacheService shutdown.");
+        cacheConfig.shutdown();
+        logger.debug("CacheService shutdown.");
     }
-    
-    /**
-     * Returns a Date corresponding to 'months' ago.
-     */
+
     private Date getPreviousMonth(int months) {
         java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.add(java.util.Calendar.MONTH, -months);
         cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
         return cal.getTime();
     }
-    
-    /**
-     * startupFlow() encapsulates the complete startup logic inside CacheService.
-     * It should be called once during application startup.
-     * Dynamic parameters (viewId, subViewId, country, viewText) are provided by the controller
-     * via setters before calling startupFlow().
-     */
+
     public void startupFlow(final int viewId, final int subViewId, final String country, final String viewText) {
         preloadCacheBackground(viewId, subViewId, country, viewText);
         startAutoRefresh(viewId, subViewId, country, viewText);
-        logger.info("CacheService startup flow completed.");
+        logger.debug("CacheService startup flow completed.");
+    }
+    
+    public void incrementErrorCount() {
+        errorCount++;
+        logger.error("An error occurred. Current error count: {}", errorCount);
+        if (errorCount > cacheConfig.getErrorLimit()) {
+            cacheEnabled = false; // Disable cache updates
+            logger.error("Error limit exceeded. Cache updates are now disabled.");
+        }
     }
 }
