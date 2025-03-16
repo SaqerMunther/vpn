@@ -1,15 +1,9 @@
-public class CacheConstants {
-	public final static List<String> RADAR_TYPES = Arrays.asList("cov", "comp");
-	public final static List<String> RADAR_IS_NEW  = Arrays.asList("exist", "new");
-}
-
 package com.app.dev.cmon.cache;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +36,7 @@ public class CacheService {
     private int errorCount = 0; // Counter for errors
     private boolean cacheEnabled = true; // Flag to control cache updates
 
-    // Cache for subViews, to avoid repeated data source calls.
+    // Cache for subViews to avoid repeated calls to da.getSubViews().
     private final Map<Integer, List<Integer>> subViewsCache = new ConcurrentHashMap<>();
 
     private CacheService() {
@@ -95,11 +89,11 @@ public class CacheService {
         logger.info("Refreshing dataCache dynamically...");
         clearCache();
 
-        // Iterate over RADAR_TYPES and RADAR_IS_NEW (which are string arrays)
-        Arrays.stream(CacheConstants.RADAR_TYPES).forEach(type ->
-            Arrays.stream(CacheConstants.RADAR_IS_NEW).forEach(isNew -> {
+        // Process DataPerWeek caches using the RADAR_TYPES and RADAR_IS_NEW lists.
+        CacheConstants.RADAR_TYPES.forEach(type ->
+            CacheConstants.RADAR_IS_NEW.forEach(isNew -> {
                 viewCountryMap.forEach((vid, countries) -> {
-                    // Retrieve or cache the subViews list for the current viewId
+                    // Retrieve or cache the subViews list for the current viewId.
                     List<Integer> subViews = subViewsCache.computeIfAbsent(vid, v ->
                         da.getSubViews(v).stream().map(Views::getId).collect(Collectors.toList())
                     );
@@ -127,7 +121,7 @@ public class CacheService {
             })
         );
 
-        // Process CompCircleScore caches in a similar manner
+        // Process CompCircleScore caches in a similar manner.
         viewCountryMap.forEach((vid, countries) -> {
             List<Integer> subViews = subViewsCache.computeIfAbsent(vid, v ->
                 da.getSubViews(v).stream().map(Views::getId).collect(Collectors.toList())
@@ -207,12 +201,11 @@ public class CacheService {
         errorCount++;
         logger.error("An error occurred. Current error count: {}", errorCount);
         if (errorCount > cacheConfig.getErrorLimit()) {
-            cacheEnabled = false; // Disable cache updates if too many errors occur
+            cacheEnabled = false; // Disable cache updates if too many errors occur.
             logger.error("Error limit exceeded. Cache updates are now disabled.");
         }
     }
 }
-
 
 
 ////////////////////////////////////////////////////////////////////
