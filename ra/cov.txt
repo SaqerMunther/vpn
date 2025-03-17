@@ -1,724 +1,125 @@
-package com.app.dev.cmon.cache;
-
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.Configuration;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
-
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.stream.Collectors;
-
-import com.app.dev.cmon.components.AssetInfo;
-import com.app.dev.cmon.components.ViewInfo;
-import com.app.dev.cmon.components.Views;
-import com.app.dev.cmon.controllers.DataAccess;
-import com.app.dev.cmon.utilites.CacheConstants;
-import com.arabbank.dev.utility.Pair;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class CacheService {
-    private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
-    private static CacheService instance;
-    
-    private CacheManager cacheManager;
-    private Cache dataCache;
-    private Timer timer;
-    private DataAccess da = new DataAccess();
-    
-    private Map<Integer, String> viewNameMap;
-    private Map<Integer, List<String>> viewCountryMap;
-    
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    
-    // Private constructor for Singleton
-    private CacheService() {
-        Configuration config = new Configuration();
-        // Set maximum entries to 1500 as required
-        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 5000)
-                .eternal(false)
-                .timeToIdleSeconds(180)
-                .timeToLiveSeconds(300)
-                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
-        config.addCache(cacheConfig);
-        cacheManager = CacheManager.newInstance(config);
-        dataCache = cacheManager.getCache("dataCache");
-        scheduleCacheRefresh();
-        logger.info("CacheService initialized and cache refresh scheduled.");
-    }
-
-    public static synchronized CacheService getInstance() {
-        if (instance == null) {
-            instance = new CacheService();
-        }
-        return instance;
-    }
-
-    private void scheduleCacheRefresh() {
-        timer = new Timer();
-        // Schedule cache refresh every 10 minutes with an initial delay of 5 seconds.
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                String date = sdf.format(new Date());
-                refreshDataPerWeekCache(date);
-            }
-        }, 5000, 10 * 60 * 1000);
-        logger.info("Cache refresh task scheduled to run every 10 minutes after an initial delay of 5 seconds.");
-    }
-
-    // Helper method to generate a cache key consistently
-    private String generateCacheKey(String type, String isNew, int viewId, String country, String date) {
-        return type.toLowerCase() + "_" + isNew.toLowerCase() + "_" + viewId + "_" + country.toLowerCase() + "_" + date;
-    }
-    
-    // Refresh the entire cache (for all views) using the instance maps
-    public void refreshDataPerWeekCache(String date) {
-        logger.info("Refreshing dataCache...");
-        dataCache.removeAll();
-        logger.info("dataCache has been cleared.");
-        
-        for (String type : CacheConstants.RADAR_TYPES) {
-            for (String isNew : CacheConstants.RADAR_IS_NEW) {
-                for (Map.Entry<Integer, List<String>> entry : viewCountryMap.entrySet()) {
-                    Integer viewId = entry.getKey();
-                    List<String> countries = entry.getValue();
-                    for (String country : countries) {
-                        List<Integer> subViews = da.getSubViews(viewId)
-                                .stream()
-                                .map(Views::getId)
-                                .collect(Collectors.toList());
-                        for (Integer subViewId : subViews) {
-                            String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
-                            logger.debug("Populating cache for key: {}", cacheKey);
-                            List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId,
-                                    country.equalsIgnoreCase("all") ? "" : country,
-                                    type, viewNameMap.get(viewId), date);
-                            dataCache.put(new Element(cacheKey, data));
-                            logger.info("Data for key: {} has been cached.", cacheKey);
-                        }
-                    }
-                }
-            }
-        }
-        logger.info("Current cache size after refresh: {}", dataCache.getSize());
-    }
-    
-    // Preload cache in background without blocking the initial view load
-    public void preloadCacheBackground(String date) {
-        new Thread(() -> {
-            logger.info("Starting background cache preloading.");
-            refreshDataPerWeekCache(date);
-            logger.info("Background cache preloading completed.");
-        }).start();
-    }
-
-    // Retrieve data from cache or fetch and cache it if missing
-    public List<ViewInfo> getDataPerWeek(String type, String isNew, int viewId, int subViewId, String country, String viewText, String date) {
-        String cacheKey = generateCacheKey(type, isNew, viewId, country, date);
-        logger.debug("Fetching data for cache key: {}", cacheKey);
-        
-        Element cachedElement = dataCache.get(cacheKey);
-        if (cachedElement != null) {
-            logger.info("Cache hit for key: {}", cacheKey);
-            return (List<ViewInfo>) cachedElement.getObjectValue();
-        }
-        
-        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
-        List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId,
-                country.equalsIgnoreCase("all") ? "" : country,
-                type, viewText, date);
-        dataCache.put(new Element(cacheKey, data));
-        logger.info("Data for key: {} has been cached.", cacheKey);
-        logger.info("Current cache size: {}", dataCache.getSize());
-        
-        return data;
-    }
-    
-    // Cache for getCompCircleScore method
-    public List<ViewInfo> getCompCircleScore(String type, int viewId, int subViewId, String country, String viewText, String date) {
-        String cacheKey = "compCircleScore_" + type + "_" + viewId + "_" + subViewId + "_" + country + "_" + date;
-        logger.debug("Fetching data for cache key: {}", cacheKey);
-        
-        Element cachedElement = dataCache.get(cacheKey);
-        if (cachedElement != null) {
-            logger.info("Cache hit for key: {}", cacheKey);
-            return (List<ViewInfo>) cachedElement.getObjectValue();
-        }
-        
-        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
-        List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
-                country.equalsIgnoreCase("all") ? "" : country, type, viewText, date);
-        dataCache.put(new Element(cacheKey, data));
-        logger.info("Data for key: {} has been cached.", cacheKey);
-        logger.info("Current cache size: {}", dataCache.getSize());
-        
-        return data;
-    }
-    
-    // Cache for processAndMapData method
-    public Map<String, Pair<Integer, Integer>> processAndMapData(int viewId, int subViewId, String country, String date) {
-        String cacheKey = "processAndMapData_" + viewId + "_" + subViewId + "_" + country + "_" + date;
-        logger.debug("Fetching data for cache key: {}", cacheKey);
-        
-        Element cachedElement = dataCache.get(cacheKey);
-        if (cachedElement != null) {
-            logger.info("Cache hit for key: {}", cacheKey);
-            return (Map<String, Pair<Integer, Integer>>) cachedElement.getObjectValue();
-        }
-        
-        logger.info("Cache miss for key: {}. Fetching data from DataAccess.", cacheKey);
-        List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-        List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-        
-        Map<String, Pair<Integer, Integer>> oneMonthMap = processAssetList(listOne);
-        Map<String, Pair<Integer, Integer>> twoMonthMap = processAssetList(listTwo);
-        
-        dataCache.put(new Element(cacheKey, oneMonthMap));
-        dataCache.put(new Element(cacheKey, twoMonthMap));
-        logger.info("Data for key: {} has been cached.", cacheKey);
-        logger.info("Current cache size: {}", dataCache.getSize());
-        
-        return oneMonthMap;
-    }
-    
-    private Date getPreviousMonth(int months) {
-        LocalDate today = LocalDate.now();
-        LocalDate resultDate = today.withDayOfMonth(1);
-        switch (months) {
-            case 1:
-                resultDate = resultDate.minusMonths(1);
-                break;
-            case 2:
-                resultDate = resultDate.minusMonths(2);
-                break;
-            case 3:
-                resultDate = resultDate.minusMonths(3);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid month value: " + months);
-        }
-        return Date.from(resultDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-    }
-    
-    private Map<String, Pair<Integer, Integer>> processAssetList(List<AssetInfo> assetList) {
-        // Group by LocationCode + SubViewId
-        Map<String, Pair<Integer, Integer>> resultMap = assetList.stream()
-            .collect(Collectors.groupingBy(
-                asset -> asset.getLocationCode() + asset.getSubViewId(),
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                    )
-            ));
-
-         // Group by "ALL" location per SubViewId
-            Map<String, Pair<Integer, Integer>> allGroupMapBySubViewId = assetList.stream()
-                .collect(Collectors.groupingBy(
-                    asset -> "ALL" + asset.getSubViewId(),
-                    Collectors.collectingAndThen(
-                        Collectors.toList(),
-                        assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                    ) // Added closing parenthesis here
-                ));
-
-
-        // Group by SubViewId = -1 for all locations
-        Map<String, Pair<Integer, Integer>> allLocationsMap = assetList.stream()
-            .collect(Collectors.groupingBy(
-                asset -> asset.getLocationCode() + "-1",
-                Collectors.collectingAndThen(
-                    Collectors.toList(),
-                    assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                    )
-            ));
-
-        // Calculate the total for all data without grouping
-        Pair<Integer, Integer> totalPair = assetList.stream()
-            .collect(Collectors.collectingAndThen(
-                Collectors.toList(),
-                assets -> new Pair<>(assets.stream().mapToInt(AssetInfo::getIsCoveredByControl).sum(), assets.size())
-                )
-            );
-
-        // Add the "ALL" group to the result map
-        resultMap.putAll(allGroupMapBySubViewId);
-
-        // Add the all locations grouped by SubViewId = -1 to the result map
-        resultMap.putAll(allLocationsMap);
-
-        // Add the overall total to the result map
-        resultMap.put("ALL" + "-1", totalPair);
-
-        return resultMap;
-    }
-    
-    public void shutdown() {
-        if (timer != null) {
-            timer.cancel();
-            logger.info("Cache refresh timer cancelled.");
-        }
-        cacheManager.shutdown();
-        logger.info("CacheManager has been shut down.");
-    }
-
-    // Getters and Setters for viewCountryMap and viewNameMap
-    public Map<Integer, List<String>> getViewCountryMap() {
-        return viewCountryMap;
-    }
-
-    public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
-        this.viewCountryMap = viewCountryMap;
-    }
-
-    public Map<Integer, String> getViewNameMap() {
-        return viewNameMap;
-    }
-
-    public void setViewNameMap(Map<Integer, String> viewNameMap) {
-        this.viewNameMap = viewNameMap;
-    }
-} 
-
-
-
-
-package com.app.dev.cmon.controllers;
-
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.SessionScoped;
-
-import com.app.dev.cmon.cache.CacheService;
-import com.app.dev.cmon.components.AssetInfo;
-import com.app.dev.cmon.components.ComplianceInfo;
-import com.app.dev.cmon.components.Countres;
-import com.app.dev.cmon.components.ElementVisibility;
-import com.app.dev.cmon.components.Views;
-import com.arabbank.devf.cmon.controllers.portal.CmonManagedBean;
-
-@ManagedBean(name = "radarController")
-@SessionScoped
-public class RadarController extends CmonManagedBean implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    private DataAccess da;
-    private List<Views> viewList;
-    private List<Countres> countres = new ArrayList<>();
-    private List<Views> symantecList = new ArrayList<>();
-    private String viewText;
-    private int viewId;
-    private int viewIndex = 0;
-    private int subViewId = -1;
-    private String country = "";
-    private Views selectedView;
-    private String curCountry = "ALL";
-    private Map<String, Integer> visibileData = new HashMap<>();
-    private String username;
-    private Map<String, List<Views>> subViewsCache;
-    private Map<Integer, List<String>> countryMap = new HashMap<>();
-    private Map<Integer, String> viewNameMap = new HashMap<>();
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    private Date date1 = new Date();
-    private Date date2 = new Date();
-    private List<AssetInfo> covDataList;
-    private List<ComplianceInfo> compDataList;
-    
-    @PostConstruct
-    public void init() {
-        List<Date> lastDates = da.getLastDate();
-        if (!lastDates.isEmpty()) {
-            setDate1(lastDates.get(0));
-        }
-        // Call refreshCache so that the current view is loaded immediately
-        // and then the cache is preloaded in the background.
-        refreshCache();
-    }
-
-    public RadarController() {
-        this.da = new DataAccess();
-        this.username = ((SubMB_Login) getManagedBeanByName("mbLogin")).getUsername();
-        this.subViewsCache = new HashMap<>();
-    }
-
-    public void setLists() {
-        getElementFromDataAccess();
-        List<Views> newViewList = da.getViews(username);
-        if (viewList == null || viewList.isEmpty() || newViewList.size() - getSymantecList().size() > viewList.size()) {
-            updateViewList();
-            updateSymantecList();
-            if (!viewList.isEmpty()) {
-                setSelectedView(viewList.get(viewIndex));
-            }
-        }
-    }
-
-    private void updateViewList() {
-        viewList = da.getViews(username);
-        setCountryList();
-    }
-
-    private void updateSymantecList() {
-        symantecList.clear();
-        viewList.removeIf(view -> {
-            if (view.getName().contains("Symantec -")) {
-                symantecList.add(view);
-                return true;
-            }
-            return false;
-        });
-    }
-
-    public void setCountryList() {
-        for (Views view : viewList) {
-            List<String> countries = Arrays.asList(view.getCountry().split("\\s*,\\s*"));
-            countryMap.put(view.getId(), countries);
-            viewNameMap.put(view.getId(), view.getName());
-        }
-
-        if (!viewList.isEmpty()) {
-            List<String> countries = Arrays.asList(viewList.get(0).getCountry().split(",\\s*"));
-            country = countries.get(0).equalsIgnoreCase("ALL") ? "" : countries.get(0);
-            curCountry = countries.get(0);
-            viewText = viewList.get(0).getName();
-            viewId = viewList.get(0).getId();
-        }
-    }
-
-    public List<AssetInfo> getCovData(String type, String idName) {
-        covDataList = new ArrayList<>();
-        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-        covDataList = da.getRadarData(viewId, subViewId, country, type, idName, viewText, sdf.format(date).trim());
-        return covDataList;
-    }
-
-    public List<ComplianceInfo> getCompData(String type, String idName) {
-        compDataList = new ArrayList<>();
-        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-        compDataList = da.getCompDetails(viewId, subViewId, country, type, idName, viewText, sdf.format(date).trim());
-        return compDataList;
-    }
-    
-    public List<AssetInfo> getDetailsPerWeek(String type, String week) {
-        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-        covDataList = new ArrayList<>();
-        covDataList = da.getDataPerWeek(viewId, subViewId, country, type, week, "Cov", viewText, sdf.format(date).trim());
-        return covDataList;
-    }
-    
-    public List<ComplianceInfo> getCompDetailsPerWeek(String type, String week) {
-        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-        compDataList = new ArrayList<>();
-        compDataList = da.getCompDetailsPerWeek(viewId, subViewId, country, type, week, "Comp", viewText, sdf.format(date).trim());
-        return compDataList;
-    }
-    
-    public List<ComplianceInfo> getCompDetailsPerScore(String type, String score) {
-        Date date = ((MB_Main) getManagedBeanByName("mbMain")).getDate1();
-        compDataList = new ArrayList<>();
-        compDataList = da.getCompDetailsPerScore(viewId, subViewId, country, type, score, "Comp", viewText, sdf.format(date).trim());
-        return compDataList;
-    }
-    
-    public List<Views> getSubViews(int id) {
-        return subViewsCache.computeIfAbsent(String.valueOf(id), k -> da.getSubViews(id));
-    }
-
-    public void getElementFromDataAccess() {
-        List<ElementVisibility> list = da.getVisibleElement();
-        for (ElementVisibility elem : list) {
-            visibileData.putIfAbsent(elem.getName(), elem.getIsVisible());
-        }
-    }
-    
-    // Refactored refreshCache: load current view synchronously, then preload cache in background.
-    public void refreshCache() {
-        CacheService cacheService = CacheService.getInstance();
-        setLists();
-        setCountryList();
-        cacheService.setViewCountryMap(countryMap);
-        cacheService.setViewNameMap(viewNameMap);
-        String dateStr = sdf.format(getDate1()).trim();
-        // Synchronously fetch data for the current (first) view.
-        cacheService.getDataPerWeek("Cov", "false", viewId, subViewId, country, viewText, dateStr);
-        // Start asynchronous preloading of the full cache.
-        cacheService.preloadCacheBackground(dateStr);
-    }
-
-
-    public String getUsername() {
-		return username;
-	}
-
-	public List<Countres> getCountres() {
-		return countres;
-	}
-
-	public void setCountres(List<Countres> countres) {
-		this.countres = countres;
-	}
-
-	public String getCountry() {
-		return country;
-	}
-
-	public void setCountry(String country) {
-		this.country = country;
-	}
-
-	public String getCurCountry() {
-		return curCountry;
-	}
-
-	public void setCurCountry(String curCountry) {
-		this.curCountry = curCountry;
-	}
-
-	public Date getDate1() {
-		return date1;
-	}
-
-	public void setDate1(Date date1) {
-		this.date1 = date1;
-	}
-	
-	public Date getDate2() {
-		return date2;
-	}
-
-	public void setDate2(Date date2) {
-		this.date2 = date2;
-	}
-
-	public String getViewText() {
-		return viewText;
-	}
-
-	public void setViewText(String viewText) {
-		this.viewText = viewText;
-	}
-
-	public int getViewId() {
-		return viewId;
-	}
-
-	public void setViewId(int viewId) {
-		this.viewId = viewId;
-	}	
-
-	public int getSubViewId() {
-		return subViewId;
-	}
-
-	public void setSubViewId(int subViewId) {
-		this.subViewId = subViewId;
-	}
-
-	public Views getSelectedView() {
-		return selectedView;
-	}
-
-	public void setSelectedView(Views selectedView) {
-		this.selectedView = selectedView;
-	}
-
-	public Map<Integer, List<String>> getCountryMap() {
-		return countryMap;
-	}
-
-	public void setCountryMap(Map<Integer, List<String>> countryMap) {
-		this.countryMap = countryMap;
-	}
-
-	public Map<Integer, String> getViewNameMap() {
-		return viewNameMap;
-	}
-
-	public void setViewNameMap(Map<Integer, String> viewNameMap) {
-		this.viewNameMap = viewNameMap;
-	}
-
-	public List<Views> getSymantecList() {
-		return symantecList;
-	}
-
-	public void setSymantecList(List<Views> symantecList) {
-		this.symantecList = symantecList;
-	}
-
-	public List<Views> getViewList() {
-		return viewList;
-	}
-
-	public void setViewList(List<Views> viewList) {
-		this.viewList = viewList;
-	}
-
-	public Map<String, Integer> getVisibileData() {
-		return visibileData;
-	}
-
-	public void setVisibileData(Map<String, Integer> visibileData) {
-		this.visibileData = visibileData;
-	}
-
-	public List<AssetInfo> getCovDataList() {
-		return covDataList;
-	}
-
-	public List<ComplianceInfo> getCompDataList() {
-		return compDataList;
-	}
-
-	public void setCovDataList(List<AssetInfo> covDataList) {
-		this.covDataList = covDataList;
-	}
-
-	public void setCompDataList(List<ComplianceInfo> compDataList) {
-		this.compDataList = compDataList;
-	}
-
-    @Override
-    public void reset() { }
-
-    @Override
-    public String getAppName() {
-        return "Dashboard";
-    }
-
-    @Override
-    public String getTitle() {
-        return "Arab Bank Radar Dashboard  V.";
-    }
-}
-
-
-
-package com.app.dev.cmon.utilites;
-
-import java.util.Arrays;
-import java.util.List;
-
-public class CacheConstants {
-	public final static List<String> RADAR_TYPES = Arrays.asList("cov", "comp");
-	public final static List<String> RADAR_IS_NEW  = Arrays.asList("exist", "new");
-}
-
-
-
-
-package com.app.dev.cmon.controllers;
-
-import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.bean.SessionScoped;
-import javax.faces.context.ExternalContext;
-import javax.faces.context.FacesContext;
-
-import com.app.dev.cmon.components.AssetInfo;
-import com.app.dev.cmon.components.ComplianceInfo;
-import com.app.dev.cmon.components.LeftCard;
-import com.app.dev.cmon.components.ViewInfo;
-import com.app.dev.cmon.components.Views;
-import com.app.dev.cmon.utilites.Commons;
-import com.arabbank.dev.utility.Pair;
-import com.arabbank.devf.cmon.controllers.portal.CmonManagedBean;
-import com.arabbank.devf.cmon.controllers.portal.MB_Login;
-
-import jakarta.inject.Inject;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-
-
-@ManagedBean(name = "RadarDataSource")
-@SessionScoped
-public class RadarDataSource extends CmonManagedBean{
-
-
-	private DataAccess da;
-	private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-	private Map<String, List<Pair<Integer, Double>>> compUpperValuesCache;
-	private Map<String, List<Pair<Number, String>>> covTotalsCache;
-	private List<Views> viewList;
-	private List<ViewInfo> listOfTodayData;
-
-
-	
-	
-	public RadarDataSource() {
-		da = new DataAccess();
-		reset();
-	}
-
-	@PostConstruct
-	public void init() {
-	}
-	
-	
-	List<Pair<Integer, Double>> getComplianceUpperValue(int month, int viewId, int subViewId, String country,
-			int isRisk) {
-		String key = month + "" + viewId + "" + subViewId + "" + country + "" + isRisk;
-		if (!compUpperValuesCache.containsKey(key)) {
-			synchronized (this) {
-				compUpperValuesCache.put(key, da.getCompUpper(month, viewId, subViewId, country, isRisk));
-			}
-		}
-		return compUpperValuesCache.get(key);
-	}
-
-	public List<Pair<Number, String>> getCoverageTotal(int viewId, int subViewId, int startRange, int endRange,
-			int month, String country) {
-		String key = viewId + "" + subViewId + "" + startRange + "" + endRange + "" + month + "" + country;
-		if (!covTotalsCache.containsKey(key)) {
-			synchronized (this) {
-				covTotalsCache.put(key, da.getCoverageTotal(viewId, subViewId, startRange, endRange, month, country));
-			}
-		}
-		return covTotalsCache.get(key);
-	}
-
-	public List<ViewInfo> getListOfTodayData() {
-		return listOfTodayData;
-	}
-
-	public void setListOfTodayData(List<ViewInfo> listOfTodayData) {
-		this.listOfTodayData = listOfTodayData;
-	}
-	
-	
-
-	@Override
-	public void reset() {
-		compUpperValuesCache = new HashMap<String, List<Pair<Integer, Double>>>();
-		covTotalsCache = new HashMap<String, List<Pair<Number, String>>>();
-		
-	}
-
-}
+ java.util.TimerThread.run(Timer.java:505)
+17-Mar-2025 08:05:27.366 WARNING [ContainerBackgroundProcessor[StandardEngine[Catalina]]] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads The web application [RADAR] appears to have started a thread named [Statistics Thread-__DEFAULT__-1] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ sun.misc.Unsafe.park(Native Method)
+ java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:215)
+ java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:2078)
+ java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1093)
+ java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:809)
+ java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)
+ java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)
+ java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+ java.lang.Thread.run(Thread.java:750)
+17-Mar-2025 08:05:27.369 WARNING [ContainerBackgroundProcessor[StandardEngine[Catalina]]] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads The web application [RADAR] appears to have started a thread named [pool-230-thread-1] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ sun.misc.Unsafe.park(Native Method)
+ java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)
+ java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)
+ java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+ java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)
+ java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)
+ java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+ java.lang.Thread.run(Thread.java:750)
+17-Mar-2025 08:05:27.372 WARNING [ContainerBackgroundProcessor[StandardEngine[Catalina]]] org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads The web application [RADAR] appears to have started a thread named [pool-231-thread-1] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ sun.misc.Unsafe.park(Native Method)
+ java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:215)
+ java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:2078)
+ java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1093)
+ java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:809)
+ java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)
+ java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)
+ java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+ java.lang.Thread.run(Thread.java:750)
+17-Mar-2025 08:05:27.717 INFO [localhost-startStop-13] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive [/data/tomcat/apache-tomcat-8.5.82/webapps/RADAR.war]
+17-Mar-2025 08:05:36.330 INFO [localhost-startStop-13] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+08:05:37.122 [localhost-startStop-13] INFO  c.j.d.datasource.HibernateDataSource - Hibernate: start configurations
+08:05:37.354 [localhost-startStop-13] INFO  org.hibernate.Version - HHH000412: Hibernate Core {5.3.7.Final}
+08:05:37.360 [localhost-startStop-13] INFO  org.hibernate.cfg.Environment - HHH000206: hibernate.properties not found
+08:05:37.691 [localhost-startStop-13] INFO  o.h.annotations.common.Version - HCANN000001: Hibernate Commons Annotations {5.0.4.Final}
+08:05:38.066 [https-jsse-nio-8443-exec-1289] INFO  com.arabbank.devf.cmon.Controller - init()
+08:05:38.081 [https-jsse-nio-8443-exec-1289] INFO  com.arabbank.devf.cmon.Controller - selectedCountries =in ('JORDAN','PALESTINE','EGYPT','UAE')
+08:05:38.081 [https-jsse-nio-8443-exec-1289] INFO  com.arabbank.devf.cmon.Controller - selectedAllCountries =in ('JORDAN','PALESTINE','EGYPT','UAE')
+08:05:38.111 [localhost-startStop-13] INFO  o.h.c.i.C3P0ConnectionProvider - HHH010002: C3P0 using driver: oracle.jdbc.driver.OracleDriver at URL: jdbc:oracle:thin:@10.1.72.77:1599:contdr
+08:05:38.111 [localhost-startStop-13] INFO  o.h.c.i.C3P0ConnectionProvider - HHH10001001: Connection properties: {user=abportal, password=****, autocommit=true, v$session.program=SmartCloud/RADAR}
+08:05:38.111 [localhost-startStop-13] INFO  o.h.c.i.C3P0ConnectionProvider - HHH10001003: Autocommit mode: true
+08:05:38.172 [localhost-startStop-13] WARN  o.h.c.i.C3P0ConnectionProvider - HHH010001: Both hibernate-style property 'hibernate.c3p0.timeout' and c3p0-style property 'hibernate.c3p0.maxIdleTime' have been set in Hibernate properties.  Hibernate-style property 'hibernate.c3p0.timeout' will be used and c3p0-style property 'hibernate.c3p0.maxIdleTime' will be ignored!
+08:05:38.173 [localhost-startStop-13] WARN  o.h.c.i.C3P0ConnectionProvider - HHH010001: Both hibernate-style property '' and c3p0-style property 'hibernate.c3p0.initialPoolSize' have been set in Hibernate properties.  Hibernate-style property '' will be used and c3p0-style property 'hibernate.c3p0.initialPoolSize' will be ignored!
+08:05:38.203 [MLog-Init-Reporter] INFO  com.mchange.v2.log.MLog - MLog clients using slf4j logging.
+17-Mar-2025 08:05:38.333 INFO [pool-223-thread-1] org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading Illegal access: this web application instance has been stopped already. Could not load [java.util.HashMap$KeySet]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+        java.lang.IllegalStateException: Illegal access: this web application instance has been stopped already. Could not load [java.util.HashMap$KeySet]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading(WebappClassLoaderBase.java:1440)
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForClassLoading(WebappClassLoaderBase.java:1428)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1267)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1228)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.loadClass(PackagingDataCalculator.java:204)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.bestEffortLoadClass(PackagingDataCalculator.java:222)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.computeBySTEP(PackagingDataCalculator.java:135)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.populateFrames(PackagingDataCalculator.java:100)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.calculate(PackagingDataCalculator.java:58)
+                at ch.qos.logback.classic.spi.ThrowableProxy.calculatePackagingData(ThrowableProxy.java:142)
+                at ch.qos.logback.classic.spi.LoggingEvent.<init>(LoggingEvent.java:122)
+                at ch.qos.logback.classic.Logger.buildLoggingEventAndAppend(Logger.java:419)
+                at ch.qos.logback.classic.Logger.filterAndLog_0_Or3Plus(Logger.java:383)
+                at ch.qos.logback.classic.Logger.debug(Logger.java:498)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger$DebugLogger.log(Slf4jMLog.java:207)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger.log(Slf4jMLog.java:256)
+                at com.mchange.v2.c3p0.impl.NewPooledConnection.handleThrowable(NewPooledConnection.java:503)
+                at com.mchange.v2.c3p0.impl.NewProxyPreparedStatement.executeQuery(NewProxyPreparedStatement.java:372)
+                at com.jk.db.dataaccess.core.JKDataAccessImpl.getList(JKDataAccessImpl.java:838)
+                at com.arabbank.dev.atm.dashboard.dao.CMonGeneralDao.getList(CMonGeneralDao.java:160)
+                at com.app.dev.cmon.controllers.DataAccess.getCoveragePerWeekCache(DataAccess.java:1124)
+                at com.app.dev.cmon.cache.CacheService.lambda$null$5(CacheService.java:105)
+                at java.util.HashMap$KeySet.forEach(HashMap.java:934)
+                at com.app.dev.cmon.cache.CacheService.lambda$null$6(CacheService.java:101)
+                at java.util.Arrays$ArrayList.forEach(Arrays.java:3880)
+                at com.app.dev.cmon.cache.CacheService.lambda$refreshAllCacheData$7(CacheService.java:100)
+                at java.util.Arrays$ArrayList.forEach(Arrays.java:3880)
+                at com.app.dev.cmon.cache.CacheService.refreshAllCacheData(CacheService.java:99)
+                at com.app.dev.cmon.cache.CacheService.lambda$startAutoRefresh$15(CacheService.java:231)
+                at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+                at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308)
+                at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180)
+                at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294)
+                at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+                at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                at java.lang.Thread.run(Thread.java:750)
+17-Mar-2025 08:05:38.334 INFO [pool-223-thread-1] org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading Illegal access: this web application instance has been stopped already. Could not load [java.util.HashMap$KeySet]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+        java.lang.IllegalStateException: Illegal access: this web application instance has been stopped already. Could not load [java.util.HashMap$KeySet]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading(WebappClassLoaderBase.java:1440)
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForClassLoading(WebappClassLoaderBase.java:1428)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1267)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1228)
+                at java.lang.Class.forName0(Native Method)
+                at java.lang.Class.forName(Class.java:264)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.bestEffortLoadClass(PackagingDataCalculator.java:235)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.computeBySTEP(PackagingDataCalculator.java:135)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.populateFrames(PackagingDataCalculator.java:100)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.calculate(PackagingDataCalculator.java:58)
+                at ch.qos.logback.classic.spi.ThrowableProxy.calculatePackagingData(ThrowableProxy.java:142)
+                at ch.qos.logback.classic.spi.LoggingEvent.<init>(LoggingEvent.java:122)
+                at ch.qos.logback.classic.Logger.buildLoggingEventAndAppend(Logger.java:419)
+                at ch.qos.logback.classic.Logger.filterAndLog_0_Or3Plus(Logger.java:383)
+                at ch.qos.logback.classic.Logger.debug(Logger.java:498)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger$DebugLogger.log(Slf4jMLog.java:207)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger.log(Slf4jMLog.java:256)
+                at com.mchange.v2.c3p0.impl.NewPooledConnection.handleThrowable(NewPooledConnection.java:503)
+                at com.mchange.v2.c3p0.impl.NewProxyPreparedStatement.executeQuery(NewProxyPreparedStatement.java:372)
+                at com.jk.db.dataaccess.core.JKDataAccessImpl.getList(JKDataAccessImpl.java:838)
+                at com.arabbank.dev.atm.dashboard.dao.CMonGeneralDao.getList(CMonGeneralDao.java:160)
+                at com.app.dev.cmon.controllers.DataAccess.getCoveragePerWeekCache(DataAccess.java:1124)
+                at com.app.dev.cmon.cache.CacheService.lambda$null$5(CacheService.java:105)
+                at java.util.HashMap$KeySet.forEach(HashMap.java:934)
+                at com.app.dev.cmon.cache.CacheService.lambda$null$6(CacheService.java:101)
+                at java.util.Arrays$ArrayList.forEach(Arrays.java:3880)
+                at com.app.dev.cmon.cache.CacheService.lambda$refreshAllCacheData$7(CacheService.java:100)
+                at java.util.Arrays$ArrayList.forEach(Arrays.java:3880)
+                at com.app.dev.cmon.cache.CacheService.refreshAllCacheDat  
+
+
+
+Message:com.app.dev.cmon.components.ViewInfo cannot be cast to java.util.List
+Technical description for the problem:
+Type of the exception: java.lang.ClassCastException:Throwable instance: java.lang.ClassCastException: com.app.dev.cmon.components.ViewInfo cannot be cast to java.util.ListException message: com.app.dev.cmon.components.ViewInfo cannot be cast to java.util.ListStack trace: java.lang.ClassCastException: com.app.dev.cmon.components.ViewInfo cannot be cast to java.util.List
+at com.app.dev.cmon.controllers.MB_Main.getDataPerWeek(MB_Main.java:760)
+at sun.reflect.GeneratedMethodAccessor9147.invoke(Unknown Source)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+at javax.el.BeanELResolver.invoke(BeanELResolver.java:165)
