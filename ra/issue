@@ -1,134 +1,39 @@
-select * from (select 'first' as Type,   
-SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenNew ,   
-SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeNew 
-,'all' as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by SubviewID
 
-union 
-
-select 'second' as Type,   
-
-SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenNew ,  
-SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeNew 
-,'all' as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by SubviewID ) query 
-
-union all
-
-select * from (select 'first' as Type,   
-SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenNew ,   
-SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeNew 
-,LocationCode as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by LocationCode,SubviewID
-
-union 
-
-select 'second' as Type,   
-
-SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenNew ,  
-SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeExist ,  
-SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeNew 
-,LocationCode as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by LocationCode,SubviewID ) query 
-
-
-
-
-
-
------------------------------------------------------------------
-
-
-
- select * from (select '>' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-62, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-2, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-3, '2025-03-16')  and ScanDate > DATEADD(day,-152, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-1, '2025-03-16')  and ScanDate > DATEADD(day,-32, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-6, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,'all' as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
-
-union 
-
-select 'W4' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-62, '2025-03-16')  and ScanDate > DATEADD(day,-69, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-9, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-152, '2025-03-16')  and ScanDate > DATEADD(day,-159, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-32, '2025-03-16')  and ScanDate > DATEADD(day,-39, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,'all' as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
-
-union 
-
-select 'W3' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-69, '2025-03-16')  and ScanDate > DATEADD(day,-76, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-9, '2025-03-16')  and ScanDate > DATEADD(day,-16, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-159, '2025-03-16')  and ScanDate > DATEADD(day,-166, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-39, '2025-03-16')  and ScanDate > DATEADD(day,-46, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,'all' as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
-
-union 
-
-select 'W2' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-76, '2025-03-16')  and ScanDate > DATEADD(day,-83, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-16, '2025-03-16')  and ScanDate > DATEADD(day,-23, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-166, '2025-03-16')  and ScanDate > DATEADD(day,-173, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-46, '2025-03-16')  and ScanDate > DATEADD(day,-53, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,'all' as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
-
-union all
-
-select 'W1' as Type,   
-SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-83, '2025-03-16')  and ScanDate > DATEADD(day,-90, '2025-03-16')  then 1 else 0 end)    as GreenExist ,
-SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-23, '2025-03-16')  and ScanDate > DATEADD(day,-30, '2025-03-16')  then 1 else 0 end)    as GreenNew ,
-SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-173, '2025-03-16')  and ScanDate > DATEADD(day,-180, '2025-03-16')  then 1 else 0 end)    as OrangeExist , 
-SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-53, '2025-03-16')  and ScanDate > DATEADD(day,-60, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,
-SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedExist ,
-SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,'all' as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16') group by SubviewID ) query
-
-
-union 
-
- select * from (select '>' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-62, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-2, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-3, '2025-03-16')  and ScanDate > DATEADD(day,-152, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-1, '2025-03-16')  and ScanDate > DATEADD(day,-32, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-6, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,LocationCode as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
-
-union all
-
-select 'W4' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-62, '2025-03-16')  and ScanDate > DATEADD(day,-69, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-9, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-152, '2025-03-16')  and ScanDate > DATEADD(day,-159, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-32, '2025-03-16')  and ScanDate > DATEADD(day,-39, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,LocationCode as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
-
-union all
-
-select 'W3' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-69, '2025-03-16')  and ScanDate > DATEADD(day,-76, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-9, '2025-03-16')  and ScanDate > DATEADD(day,-16, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-159, '2025-03-16')  and ScanDate > DATEADD(day,-166, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-39, '2025-03-16')  and ScanDate > DATEADD(day,-46, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,LocationCode as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
-
-union all
-
-select 'W2' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-76, '2025-03-16')  and ScanDate > DATEADD(day,-83, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-16, '2025-03-16')  and ScanDate > DATEADD(day,-23, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-166, '2025-03-16')  and ScanDate > DATEADD(day,-173, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-46, '2025-03-16')  and ScanDate > DATEADD(day,-53, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,LocationCode as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
-
-union all
-
-select 'W1' as Type,   
-SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-83, '2025-03-16')  and ScanDate > DATEADD(day,-90, '2025-03-16')  then 1 else 0 end)    as GreenExist ,
-SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-23, '2025-03-16')  and ScanDate > DATEADD(day,-30, '2025-03-16')  then 1 else 0 end)    as GreenNew ,
-SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-173, '2025-03-16')  and ScanDate > DATEADD(day,-180, '2025-03-16')  then 1 else 0 end)    as OrangeExist , 
-SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-53, '2025-03-16')  and ScanDate > DATEADD(day,-60, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,
-SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedExist ,
-SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedNew 
-,LocationCode as LocationCode,
-SubviewID as SubviewID
-from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16') group by LocationCode,SubviewID ) query
-
+        at com.jk.db.dataaccess.core.JKDataAccessImpl.getList(JKDataAccessImpl.java:847) ~[smart-cloud-data-2.0.8.jar:na]
+        at com.arabbank.dev.atm.dashboard.dao.CMonGeneralDao.getList(CMonGeneralDao.java:160) ~[cmon-backend-lib-0.0.2-SNAPSHOT.jar:na]
+        at com.app.dev.cmon.controllers.DataAccess.getCoveragePerWeekCache(DataAccess.java:1124) ~[classes/:na]
+        at com.app.dev.cmon.cache.CacheService.lambda$null$5(CacheService.java:83) ~[classes/:na]
+        at java.util.HashMap$KeySet.forEach(HashMap.java:934) ~[na:1.8.0_402]
+        at com.app.dev.cmon.cache.CacheService.lambda$null$6(CacheService.java:80) ~[classes/:na]
+        at java.util.Arrays$ArrayList.forEach(Arrays.java:3880) ~[na:1.8.0_402]
+        at com.app.dev.cmon.cache.CacheService.lambda$refreshAllCacheData$7(CacheService.java:79) ~[classes/:na]
+        at java.util.Arrays$ArrayList.forEach(Arrays.java:3880) ~[na:1.8.0_402]
+        at com.app.dev.cmon.cache.CacheService.refreshAllCacheData(CacheService.java:78) ~[classes/:na]
+        at com.app.dev.cmon.cache.CacheService.lambda$preloadCacheBackground$14(CacheService.java:165) ~[classes/:na]
+        at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) ~[na:1.8.0_402]
+        at java.util.concurrent.FutureTask.run(FutureTask.java:266) ~[na:1.8.0_402]
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
+        at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
+Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: Socket closed
+        at com.microsoft.sqlserver.jdbc.SQLServerConnection.terminate(SQLServerConnection.java:3208) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.TDSChannel.read(IOBuffer.java:2066) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.TDSReader.readPacket(IOBuffer.java:6617) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.TDSCommand.startResponse(IOBuffer.java:7803) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:600) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement$PrepStmtExecCmd.doExecute(SQLServerPreparedStatement.java:524) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7418) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:3274) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:247) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:222) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.executeQuery(SQLServerPreparedStatement.java:446) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        at com.mchange.v2.c3p0.impl.NewProxyPreparedStatement.executeQuery(NewProxyPreparedStatement.java:353) ~[c3p0-0.9.5.2.jar:0.9.5.2]
+        at com.jk.db.dataaccess.core.JKDataAccessImpl.getList(JKDataAccessImpl.java:838) ~[smart-cloud-data-2.0.8.jar:na]
+        ... 15 common frames omitted
+Caused by: java.net.SocketException: Socket closed
+        at java.net.SocketInputStream.socketRead0(Native Method) ~[na:1.8.0_402]
+        at java.net.SocketInputStream.socketRead(SocketInputStream.java:116) ~[na:1.8.0_402]
+        at java.net.SocketInputStream.read(SocketInputStream.java:171) ~[na:1.8.0_402]
+        at java.net.SocketInputStream.read(SocketInputStream.java:141) ~[na:1.8.0_402]
+        at com.microsoft.sqlserver.jdbc.TDSChannel.read(IOBuffer.java:2058) ~[mssql-jdbc-9.2.0.jre8.jar:na]
+        ... 26 common frames omitted
