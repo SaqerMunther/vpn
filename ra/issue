@@ -1,260 +1,134 @@
-/////////////////////////////////////////////////////////////////////
-// Optimized getCoveragePerWeek (no logic change)
-public List<ViewInfo> getCoveragePerWeek(int viewId, int subViewId, String country, String type, String viewName, String date) {
-    QeuryBilder com = new QeuryBilder();
-    final String query = com.getDataPerWeek(viewId, type, viewName, date);
-    
-    return getList(new JKFinder() {
-        @Override
-        public void setParamters(PreparedStatement ps) throws SQLException {
-            // If the query contains four placeholders repeated, set parameters in groups of 4.
-            if (query.contains("?,?,?,?")) {
-                final int groups = 5;
-                for (int i = 0, v1 = 1, v2 = 2, v3 = 3, v4 = 4; i < groups; i++, v1 += 4, v2 += 4, v3 += 4, v4 += 4) {
-                    ps.setInt(v1, viewId);
-                    ps.setInt(v2, subViewId);
-                    ps.setString(v3, country);
-                    ps.setString(v4, date);
-                }
-            }
-        }
+select * from (select 'first' as Type,   
+SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenNew ,   
+SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeNew 
+,'all' as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by SubviewID
 
-        @Override
-        public ViewInfo populate(ResultSet rs) throws SQLException {
-            ViewInfo item = new ViewInfo();
-            item.setType(rs.getString("Type"));
-            item.setGreenExist(rs.getLong("GreenExist"));
-            item.setGreenNew(rs.getLong("GreenNew"));
-            item.setOrangeExist(rs.getLong("OrangeExist"));
-            item.setOrangeNew(rs.getLong("OrangeNew"));
-            item.setRedExist(rs.getLong("RedExist"));
-            item.setRedNew(rs.getLong("RedNew"));
-            return item;
-        }
+union 
 
-        @Override
-        public String getQuery() {
-            return query;
-        }
-    });
-}
+select 'second' as Type,   
 
-/////////////////////////////////////////////////////////////////////
-// Optimized getDataPerWeek without changing the logic
-public String getDataPerWeek(int viewID, String type, String viewName, String dateNew) {
-    int start = 0, end = 0;
-    String date = "day";
-    fillTheData(type + "-" + viewID, viewName);
-    
-    List<String> periodLabels = Arrays.asList(">", "W4", "W3", "W2", "W1");
-    List<Integer> weeks = Arrays.asList(28, 21, 14, 7, 0);
-    List<AllRadarData> types = new ArrayList<>();
-    
-    // Ensure defaults are applied
-    types.add(setDefaultsIfNull(greenExist));
-    types.add(setDefaultsIfNull(greenNew));
-    types.add(setDefaultsIfNull(orangeExist));
-    types.add(setDefaultsIfNull(orangeNew));
-    types.add(setDefaultsIfNull(redExist));
-    types.add(setDefaultsIfNull(redNew));
-    
-    if (types.get(0).getColorType() == null) {
-        query = "select '>' as Type, 0 as GreenExist, 0 as GreenNew, 0 as OrangeExist, 0 as OrangeNew, 0 as RedExist, 0 as RedNew " +
-                "union " +
-                "select 'W4' as Type, 0 as GreenExist, 0 as GreenNew, 0 as OrangeExist, 0 as OrangeExist, 0 as RedExist, 0 as RedNew " +
-                "union " +
-                "select 'W3' as Type, 0 as GreenExist, 0 as GreenNew, 0 as OrangeExist, 0 as OrangeNew, 0 as RedExist, 0 as RedNew " +
-                "union " +
-                "select 'W2' as Type, 0 as GreenExist, 0 as GreenNew, 0 as OrangeExist, 0 as OrangeNew, 0 as RedExist, 0 as RedNew " +
-                "union " +
-                "select 'W1' as Type, 0 as GreenExist, 0 as GreenNew, 0 as OrangeExist, 0 as OrangeNew, 0 as RedExist, 0 as RedNew";
-    } else {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < periodLabels.size(); i++) {
-            builder.append("select '").append(periodLabels.get(i)).append("' as Type, ");
-            for (int j = 0; j < types.size(); j++) {
-                AllRadarData radarData = types.get(j);
-                // Determine start/end based on time period
-                if ("month".equalsIgnoreCase(radarData.getTimePeriod())) {
-                    start = radarData.getStart() * 30;
-                    end = radarData.getEnd() * 30;
-                    date = "day";
-                } else if ("week".equalsIgnoreCase(radarData.getTimePeriod())) {
-                    start = radarData.getStart() * 7;
-                    end = radarData.getEnd() * 7;
-                    date = "day";
-                } else {
-                    start = radarData.getStart();
-                    end = radarData.getEnd();
-                    date = radarData.getTimePeriod();
-                }
-                builder.append(" ").append(CommonsViewData.SUMCASE);
-                if (radarData.getIsScanned() != -1) {
-                    builder.append(" IsScanned = ").append(radarData.getIsScanned()).append(" and ");
-                }
-                if (radarData.getIsNew() != -1) {
-                    builder.append(" IsNew = ").append(radarData.getIsNew()).append(" and ");
-                }
-                if (radarData.getIsComply() != -1) {
-                    builder.append(" IsComply = ").append(radarData.getIsComply()).append(" and ");
-                }
-                if (radarData.getIsCovered() != -1) {
-                    builder.append(" IsCoveredByControl = ").append(radarData.getIsCovered()).append(" and ");
-                }
-                if ("Score".equalsIgnoreCase(radarData.getColumnDateName())) {
-                    if (">".equalsIgnoreCase(periodLabels.get(i))) {
-                        builder.append(" (").append(radarData.getColumnDateName()).append(" >= ").append(start)
-                               .append(" and ").append(radarData.getColumnDateName()).append(" < ").append(end)
-                               .append(" ) and CreateDate <= DATEADD(Week,-4,'").append(dateNew).append("')");
-                    } else {
-                        builder.append(" (").append(radarData.getColumnDateName()).append(" < DATEADD(Week,-")
-                               .append(periodLabels.get(i).replace("W", "")).append("+ 1,'").append(dateNew)
-                               .append("') and ").append(radarData.getColumnDateName()).append(" >= DATEADD(Week,-")
-                               .append(periodLabels.get(i).replace("W", "")).append(",'").append(dateNew).append("'))");
-                    }
-                } else {
-                    if (">".equalsIgnoreCase(periodLabels.get(i))) {
-                        builder.append(radarData.getColumnDateName()).append(" <= DATEADD(").append(date)
-                               .append(",-").append(radarData.getStart()).append(",'").append(dateNew)
-                               .append("') and ").append(radarData.getColumnDateName()).append(" > DATEADD(")
-                               .append(date).append(",-").append((end - weeks.get(i))).append(",'").append(dateNew)
-                               .append("') ");
-                    } else {
-                        builder.append(radarData.getColumnDateName()).append(" <= DATEADD(").append(date)
-                               .append(",-").append((end - (weeks.get(i) + 7))).append(",'").append(dateNew)
-                               .append("') and ").append(radarData.getColumnDateName()).append(" > DATEADD(")
-                               .append(date).append(",-").append((end - weeks.get(i))).append(",'").append(dateNew)
-                               .append("') ");
-                    }
-                }
-                builder.append(CommonsViewData.CONDITION).append(" as ")
-                       .append(radarData.getColorType().replace("-", ""));
-                if (j < types.size() - 1) {
-                    builder.append(" , ");
-                }
-            }
-            if ("Comp".equalsIgnoreCase(type)) {
-                builder.append(CommonsViewData.FROMCOMPLIANCEHISTORY);
-            } else {
-                builder.append(CommonsViewData.FROMCOVERAGEHISTORY);
-            }
-            if (i < periodLabels.size() - 1) {
-                builder.append(" union ");
-            }
-        }
-        query = builder.toString();
-    }
-    return query.replace("--", "-");
-}
+SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenNew ,  
+SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeNew 
+,'all' as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by SubviewID ) query 
 
-//////////////////////////////////////////////////////////////////////////
-// Optimized getComplyCirclePerScore (no logic change)
-public List<ViewInfo> getComplyCirclePerScore(int viewId, int subViewId, String country, String type, String viewName, String date) {
-    QeuryBilder com = new QeuryBilder();
-    final String query = com.getDataPerScore(viewId, type, viewName);
-    
-    return getList(new JKFinder() {
-        @Override
-        public void setParamters(PreparedStatement ps) throws SQLException {
-            if (query.contains("?,?,?,?")) {
-                final int groups = 2;
-                for (int i = 0, v1 = 1, v2 = 2, v3 = 3, v4 = 4; i < groups; i++, v1 += 4, v2 += 4, v3 += 4, v4 += 4) {
-                    ps.setInt(v1, viewId);
-                    ps.setInt(v2, subViewId);
-                    ps.setString(v3, country);
-                    ps.setString(v4, date);
-                }
-            }
-        }
+union all
 
-        @Override
-        public ViewInfo populate(ResultSet rs) throws SQLException {
-            ViewInfo item = new ViewInfo();
-            item.setType(rs.getString("Type"));
-            item.setGreenExist(rs.getLong("GreenExist"));
-            item.setGreenNew(rs.getLong("GreenNew"));
-            item.setOrangeExist(rs.getLong("OrangeExist"));
-            item.setOrangeNew(rs.getLong("OrangeNew"));
-            return item;
-        }
+select * from (select 'first' as Type,   
+SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 95 and Score < 101 )  then 1 else 0 end)    as GreenNew ,   
+SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 85 and Score < 90 )  then 1 else 0 end)    as OrangeNew 
+,LocationCode as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by LocationCode,SubviewID
 
-        @Override
-        public String getQuery() {
-            return query;
-        }
-    });
-}
+union 
 
-////////////////////////////////////////////////
-// Optimized getDataPerScore without changing the logic
-public String getDataPerScore(int viewID, String type, String viewName) {
-    fillTheData(type + "-" + viewID, viewName);
-    List<String> scoreLabels = Arrays.asList("first", "second");
-    List<AllRadarData> types = new ArrayList<>();
-    types.add(greenExist);
-    types.add(greenNew);
-    types.add(orangeExist);
-    types.add(orangeNew);
-    
-    if (types.get(0).getColorType() == null) {
-        query = "select 'first' as Type, 0 as GreenExist, 0 as GreenNew, 0 as OrangeExist, 0 as OrangeNew " +
-                "union " +
-                "select 'second' as Type, 0 as GreenExist, 0 as GreenNew, 0 as OrangeExist, 0 as OrangeExist";
-    } else {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < scoreLabels.size(); i++) {
-            builder.append("select '").append(scoreLabels.get(i)).append("' as Type, ");
-            for (int j = 0; j < types.size(); j++) {
-                AllRadarData item = types.get(j);
-                builder.append(" ").append(CommonsViewData.SUMCASE);
-                if (item.getIsScanned() != -1) {
-                    builder.append(" IsScanned = ").append(item.getIsScanned()).append(" and ");
-                }
-                if (item.getIsNew() != -1) {
-                    builder.append(" IsNew = ").append(item.getIsNew()).append(" and ");
-                }
-                if (item.getIsComply() != -1) {
-                    builder.append(" IsComply = ").append(item.getIsComply()).append(" and ");
-                }
-                if (item.getIsCovered() != -1) {
-                    builder.append(" IsCoveredByControl = ").append(item.getIsCovered()).append(" and ");
-                }
-                if ("Score".equalsIgnoreCase(item.getColumnDateName())) {
-                    if ("first".equalsIgnoreCase(scoreLabels.get(i))) {
-                        builder.append(" (").append(item.getColumnDateName()).append(" >= ")
-                               .append((int)((item.getStart() + item.getEnd()) / 2))
-                               .append(" and ").append(item.getColumnDateName()).append(" < ")
-                               .append(item.getEnd()).append(" ) ");
-                    } else if ("second".equalsIgnoreCase(scoreLabels.get(i))) {
-                        builder.append(" (").append(item.getColumnDateName()).append(" >= ")
-                               .append(item.getStart()).append(" and ")
-                               .append(item.getColumnDateName()).append(" < ")
-                               .append((int)((item.getStart() + item.getEnd()) / 2))
-                               .append(" ) ");
-                    }
-                } else {
-                    // If the last appended token ends with " and ", remove it.
-                    String temp = builder.toString();
-                    if (temp.endsWith(" and ")) {
-                        builder.setLength(builder.length() - 4);
-                    }
-                }
-                builder.append(CommonsViewData.CONDITION).append(" as ")
-                       .append(item.getColorType().replace("-", ""));
-                if (!"Orange-New".equalsIgnoreCase(item.getColorType())) {
-                    builder.append(" , ");
-                }
-            }
-            if ("Comp".equalsIgnoreCase(type)) {
-                builder.append(CommonsViewData.FROMCOMPLIANCEHISTORY);
-            } else {
-                builder.append(CommonsViewData.FROMCOVERAGEHISTORY);
-            }
-            if (i < scoreLabels.size() - 1) {
-                builder.append(" union ");
-            }
-        }
-        query = builder.toString();
-    }
-    return query;
-}
+select 'second' as Type,   
+
+SUM(case when  IsNew = 0 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 1 and  IsCoveredByControl = 1 and  (Score >= 90 and Score < 95 )  then 1 else 0 end)    as GreenNew ,  
+SUM(case when  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeExist ,  
+SUM(case when  IsNew = 1 and  IsComply = 0 and  IsCoveredByControl = 1 and  (Score >= 80 and Score < 85 )  then 1 else 0 end)    as OrangeNew 
+,LocationCode as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Compliance_Dynamic](28,-1,'','2025-03-16') group by LocationCode,SubviewID ) query 
+
+
+
+
+
+
+-----------------------------------------------------------------
+
+
+
+ select * from (select '>' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-62, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-2, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-3, '2025-03-16')  and ScanDate > DATEADD(day,-152, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-1, '2025-03-16')  and ScanDate > DATEADD(day,-32, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-6, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,'all' as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
+
+union 
+
+select 'W4' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-62, '2025-03-16')  and ScanDate > DATEADD(day,-69, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-9, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-152, '2025-03-16')  and ScanDate > DATEADD(day,-159, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-32, '2025-03-16')  and ScanDate > DATEADD(day,-39, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,'all' as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
+
+union 
+
+select 'W3' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-69, '2025-03-16')  and ScanDate > DATEADD(day,-76, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-9, '2025-03-16')  and ScanDate > DATEADD(day,-16, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-159, '2025-03-16')  and ScanDate > DATEADD(day,-166, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-39, '2025-03-16')  and ScanDate > DATEADD(day,-46, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,'all' as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
+
+union 
+
+select 'W2' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-76, '2025-03-16')  and ScanDate > DATEADD(day,-83, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-16, '2025-03-16')  and ScanDate > DATEADD(day,-23, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-166, '2025-03-16')  and ScanDate > DATEADD(day,-173, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-46, '2025-03-16')  and ScanDate > DATEADD(day,-53, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,'all' as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by SubviewID
+
+union all
+
+select 'W1' as Type,   
+SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-83, '2025-03-16')  and ScanDate > DATEADD(day,-90, '2025-03-16')  then 1 else 0 end)    as GreenExist ,
+SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-23, '2025-03-16')  and ScanDate > DATEADD(day,-30, '2025-03-16')  then 1 else 0 end)    as GreenNew ,
+SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-173, '2025-03-16')  and ScanDate > DATEADD(day,-180, '2025-03-16')  then 1 else 0 end)    as OrangeExist , 
+SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-53, '2025-03-16')  and ScanDate > DATEADD(day,-60, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,
+SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedExist ,
+SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,'all' as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16') group by SubviewID ) query
+
+
+union 
+
+ select * from (select '>' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-62, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-0, '2025-03-16')  and ScanDate > DATEADD(day,-2, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-3, '2025-03-16')  and ScanDate > DATEADD(day,-152, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-1, '2025-03-16')  and ScanDate > DATEADD(day,-32, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-6, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-44972, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,LocationCode as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
+
+union all
+
+select 'W4' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-62, '2025-03-16')  and ScanDate > DATEADD(day,-69, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-2, '2025-03-16')  and ScanDate > DATEADD(day,-9, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-152, '2025-03-16')  and ScanDate > DATEADD(day,-159, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-32, '2025-03-16')  and ScanDate > DATEADD(day,-39, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44972, '2025-03-16')  and ScanDate > DATEADD(day,-44979, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,LocationCode as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
+
+union all
+
+select 'W3' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-69, '2025-03-16')  and ScanDate > DATEADD(day,-76, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-9, '2025-03-16')  and ScanDate > DATEADD(day,-16, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-159, '2025-03-16')  and ScanDate > DATEADD(day,-166, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-39, '2025-03-16')  and ScanDate > DATEADD(day,-46, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44979, '2025-03-16')  and ScanDate > DATEADD(day,-44986, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,LocationCode as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
+
+union all
+
+select 'W2' as Type,   SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-76, '2025-03-16')  and ScanDate > DATEADD(day,-83, '2025-03-16')  then 1 else 0 end)    as GreenExist ,   SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-16, '2025-03-16')  and ScanDate > DATEADD(day,-23, '2025-03-16')  then 1 else 0 end)    as GreenNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-166, '2025-03-16')  and ScanDate > DATEADD(day,-173, '2025-03-16')  then 1 else 0 end)    as OrangeExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-46, '2025-03-16')  and ScanDate > DATEADD(day,-53, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,   SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedExist ,   SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44986, '2025-03-16')  and ScanDate > DATEADD(day,-44993, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,LocationCode as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16')  group by LocationCode,SubviewID
+
+union all
+
+select 'W1' as Type,   
+SUM(case when  IsNew = 0 and  IsCoveredByControl = 1 and ScanDate <= DATEADD(day,-83, '2025-03-16')  and ScanDate > DATEADD(day,-90, '2025-03-16')  then 1 else 0 end)    as GreenExist ,
+SUM(case when  IsNew = 1 and ScanDate <= DATEADD(day,-23, '2025-03-16')  and ScanDate > DATEADD(day,-30, '2025-03-16')  then 1 else 0 end)    as GreenNew ,
+SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-173, '2025-03-16')  and ScanDate > DATEADD(day,-180, '2025-03-16')  then 1 else 0 end)    as OrangeExist , 
+SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-53, '2025-03-16')  and ScanDate > DATEADD(day,-60, '2025-03-16')  then 1 else 0 end)    as OrangeNew ,
+SUM(case when  IsScanned = 1 and  IsNew = 0 and  IsComply = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedExist ,
+SUM(case when  IsScanned = 0 and  IsNew = 0 and  IsCoveredByControl = 0 and ScanDate <= DATEADD(day,-44993, '2025-03-16')  and ScanDate > DATEADD(day,-45000, '2025-03-16')  then 1 else 0 end)    as RedNew 
+,LocationCode as LocationCode,
+SubviewID as SubviewID
+from ISACWEB.dbo.[External_Cmon_Coverage_All_Dynamic](28,-1,'','2025-03-16') group by LocationCode,SubviewID ) query
+
