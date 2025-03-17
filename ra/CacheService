@@ -12,10 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import com.app.dev.cmon.components.ViewInfo;
-import com.app.dev.cmon.components.Views;
 import com.app.dev.cmon.controllers.DataAccess;
 import com.app.dev.cmon.utilites.CacheConstants;
 
@@ -84,68 +82,46 @@ public class CacheService {
 
     /**
      * Refresh both DataPerWeek and CompCircleScore caches.
+     * Instead of iterating over all countries and subViewIDs,
+     * we call the DB query once per viewId with parameters that return detailed data.
+     * The returned data is then aggregated by CacheDataProcessor.
      */
     public void refreshAllCacheData(String dateStr) {
         logger.info("Refreshing dataCache dynamically...");
         clearCache();
 
-        // Process DataPerWeek caches using the RADAR_TYPES and RADAR_IS_NEW lists.
+        // Process DataPerWeek caches.
+        // For each combination of radar type and isNew, call the DB once per viewId.
         CacheConstants.RADAR_TYPES.forEach(type ->
             CacheConstants.RADAR_IS_NEW.forEach(isNew -> {
-                viewCountryMap.forEach((vid, countries) -> {
-                    // Retrieve or cache the subViews list for the current viewId.
-                    List<Integer> subViews = subViewsCache.computeIfAbsent(vid, v ->
-                        da.getSubViews(v).stream().map(Views::getId).collect(Collectors.toList())
-                    );
-                    countries.forEach(country -> {
-                        subViews.forEach(subViewId -> {
-                            if (!cacheEnabled) {
-                                logger.error("Cache updates are disabled. Exiting loop.");
-                                return;
-                            }
-                            try {
-                                String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, country, dateStr);
-                                List<ViewInfo> data = da.getCoveragePerWeek(
-                                    vid, subViewId,
-                                    country.equalsIgnoreCase("all") ? "" : country,
-                                    type, viewNameMap.get(vid), dateStr);
-                                cacheProvider.put(key, data);
-                            } catch (Exception e) {
-                                logger.error("Error refreshing DataPerWeek for viewId {} country {}: {}",
-                                             vid, country, e.getMessage());
-                                incrementErrorCount();
-                            }
-                        });
-                    });
+                viewCountryMap.keySet().forEach(vid -> {
+                    try {
+                        String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, "all", dateStr);
+                        // Pass subViewID = -1 and country = "all" to signal "all"
+                        List<ViewInfo> rawData = da.getCoveragePerWeek(vid, -1, "all", type, viewNameMap.get(vid), dateStr);
+                        List<ViewInfo> aggregatedData = CacheDataProcessor.aggregatePerWeekData(rawData);
+                        cacheProvider.put(key, aggregatedData);
+                    } catch (Exception e) {
+                        logger.error("Error refreshing DataPerWeek for viewId {}: {}",
+                                     vid, e.getMessage());
+                        incrementErrorCount();
+                    }
                 });
             })
         );
 
-        // Process CompCircleScore caches in a similar manner.
-        viewCountryMap.forEach((vid, countries) -> {
-            List<Integer> subViews = subViewsCache.computeIfAbsent(vid, v ->
-                da.getSubViews(v).stream().map(Views::getId).collect(Collectors.toList())
-            );
-            countries.forEach(country -> {
-                subViews.forEach(subViewId -> {
-                    if (!cacheEnabled) {
-                        logger.error("Cache updates are disabled. Exiting loop.");
-                        return;
-                    }
-                    try {
-                        String key = getCacheKey("CompCircleScore", "Comp", vid, country, dateStr);
-                        List<ViewInfo> data = da.getComplyCirclePerScore(
-                            vid, subViewId,
-                            country.equalsIgnoreCase("all") ? "" : country,
-                            "Comp", viewNameMap.get(vid), dateStr);
-                        cacheProvider.put(key, data);
-                    } catch (Exception e) {
-                        logger.error("Error refreshing CompCircleScore for viewId {} country {}: {}",
-                                     vid, country, e.getMessage());
-                        incrementErrorCount();
-                    }
-                });
-            });
+        // Process CompCircleScore caches.
+        viewCountryMap.keySet().forEach(vid -> {
+            try {
+                String key = getCacheKey("CompCircleScore", "Comp", vid, "all", dateStr);
+                List<ViewInfo> rawData = da.getComplyCirclePerScore(vid, -1, "all", "Comp", viewNameMap.get(vid), dateStr);
+                List<ViewInfo> aggregatedData = CacheDataProcessor.aggregateCircleData(rawData);
+                cacheProvider.put(key, aggregatedData);
+            } catch (Exception e) {
+                logger.error("Error refreshing CompCircleScore for viewId {}: {}",
+                             vid, e.getMessage());
+                incrementErrorCount();
+            }
         });
 
         logger.info("Dynamic cache refresh complete. Current cache size: {}", cacheProvider.size());
@@ -205,13 +181,20 @@ public class CacheService {
             logger.error("Error limit exceeded. Cache updates are now disabled.");
         }
     }
-} 
+}
 
 
 
 
-///////////////////////////////////////////////////////
 
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
 
 
 
