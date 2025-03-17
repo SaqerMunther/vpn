@@ -3,27 +3,16 @@ package com.app.dev.cmon.cache;
 import com.app.dev.cmon.components.ViewInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Helper class to aggregate detailed ViewInfo records.
- * Aggregation is performed per type by summing the numeric fields.
- */
 public class CacheDataProcessor {
-
     private static final Logger logger = LoggerFactory.getLogger(CacheDataProcessor.class);
 
-    /**
-     * Aggregates detailed records by sub-view.
-     * Groups by (subViewID, type), sums the numeric fields, and sets country to "all".
-     */
     public static List<ViewInfo> aggregateBySubView(List<ViewInfo> rawData) {
         logger.info("Aggregating {} records by sub-view.", rawData.size());
         Map<String, List<ViewInfo>> group = rawData.stream()
             .collect(Collectors.groupingBy(vi -> vi.getSupViewID() + "_" + vi.getType()));
-        
         List<ViewInfo> result = group.entrySet().stream().map(e -> {
             List<ViewInfo> list = e.getValue();
             ViewInfo agg = sumRecords(list);
@@ -34,15 +23,10 @@ public class CacheDataProcessor {
         return result;
     }
 
-    /**
-     * Aggregates detailed records by country.
-     * Groups by (country, type), sums the numeric fields, and sets subViewID to -1.
-     */
     public static List<ViewInfo> aggregateByCountry(List<ViewInfo> rawData) {
         logger.info("Aggregating {} records by country.", rawData.size());
         Map<String, List<ViewInfo>> group = rawData.stream()
             .collect(Collectors.groupingBy(vi -> vi.getCountry() + "_" + vi.getType()));
-        
         List<ViewInfo> result = group.entrySet().stream().map(e -> {
             List<ViewInfo> list = e.getValue();
             ViewInfo agg = sumRecords(list);
@@ -53,16 +37,10 @@ public class CacheDataProcessor {
         return result;
     }
 
-    /**
-     * Aggregates overall records by type.
-     * Groups by type across all records, sums the numeric fields,
-     * and sets country to "all" and subViewID to -1.
-     */
     public static List<ViewInfo> aggregateOverall(List<ViewInfo> rawData) {
         logger.info("Aggregating overall {} records.", rawData.size());
         Map<String, List<ViewInfo>> group = rawData.stream()
             .collect(Collectors.groupingBy(ViewInfo::getType));
-        
         List<ViewInfo> result = group.entrySet().stream().map(e -> {
             List<ViewInfo> list = e.getValue();
             ViewInfo agg = sumRecords(list);
@@ -74,22 +52,15 @@ public class CacheDataProcessor {
         return result;
     }
     
-    /**
-     * Sums a list of ViewInfo records.
-     * Assumes that all records in the list have the same type.
-     */
     private static ViewInfo sumRecords(List<ViewInfo> records) {
         ViewInfo sum = new ViewInfo();
-        // Use the type from the first record.
         sum.setType(records.get(0).getType());
-        // Initialize numeric fields to zero.
         sum.setGreenExist(0L);
         sum.setGreenNew(0L);
         sum.setOrangeExist(0L);
         sum.setOrangeNew(0L);
         sum.setRedExist(0L);
         sum.setRedNew(0L);
-        // Sum over all records.
         for (ViewInfo vi : records) {
             sum.setGreenExist(sum.getGreenExist() + safe(vi.getGreenExist()));
             sum.setGreenNew(sum.getGreenNew() + safe(vi.getGreenNew()));
@@ -98,7 +69,6 @@ public class CacheDataProcessor {
             sum.setRedExist(sum.getRedExist() + safe(vi.getRedExist()));
             sum.setRedNew(sum.getRedNew() + safe(vi.getRedNew()));
         }
-        // Assume subViewID is consistent in the group; if not, it remains unset.
         if (!records.isEmpty()) {
             sum.setSupViewID(records.get(0).getSupViewID());
         }
