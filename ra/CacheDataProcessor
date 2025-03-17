@@ -1,97 +1,110 @@
 package com.app.dev.cmon.cache;
 
 import com.app.dev.cmon.components.ViewInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Helper class to aggregate detailed ViewInfo records.
+ * Aggregation is performed per type by summing the numeric fields.
+ */
 public class CacheDataProcessor {
 
-    // Expected type orders for the two methods.
-    private static final List<String> PER_WEEK_TYPES = Arrays.asList(">", "W1", "W2", "W3", "W4");
-    private static final List<String> CIRCLE_TYPES = Arrays.asList("first", "second");
+    private static final Logger logger = LoggerFactory.getLogger(CacheDataProcessor.class);
 
     /**
-     * Aggregates a list of detailed ViewInfo records for per-week caching.
-     * The aggregation groups by the type field, sums up numeric fields,
+     * Aggregates detailed records by sub-view.
+     * Groups by (subViewID, type), sums the numeric fields, and sets country to "all".
+     */
+    public static List<ViewInfo> aggregateBySubView(List<ViewInfo> rawData) {
+        logger.info("Aggregating {} records by sub-view.", rawData.size());
+        Map<String, List<ViewInfo>> group = rawData.stream()
+            .collect(Collectors.groupingBy(vi -> vi.getSupViewID() + "_" + vi.getType()));
+        
+        List<ViewInfo> result = group.entrySet().stream().map(e -> {
+            List<ViewInfo> list = e.getValue();
+            ViewInfo agg = sumRecords(list);
+            agg.setCountry("all");
+            logger.info("Aggregated {} records for subViewID {} and type {}", list.size(), agg.getSupViewID(), agg.getType());
+            return agg;
+        }).collect(Collectors.toList());
+        return result;
+    }
+
+    /**
+     * Aggregates detailed records by country.
+     * Groups by (country, type), sums the numeric fields, and sets subViewID to -1.
+     */
+    public static List<ViewInfo> aggregateByCountry(List<ViewInfo> rawData) {
+        logger.info("Aggregating {} records by country.", rawData.size());
+        Map<String, List<ViewInfo>> group = rawData.stream()
+            .collect(Collectors.groupingBy(vi -> vi.getCountry() + "_" + vi.getType()));
+        
+        List<ViewInfo> result = group.entrySet().stream().map(e -> {
+            List<ViewInfo> list = e.getValue();
+            ViewInfo agg = sumRecords(list);
+            agg.setSupViewID(-1);
+            logger.info("Aggregated {} records for country {} and type {}", list.size(), agg.getCountry(), agg.getType());
+            return agg;
+        }).collect(Collectors.toList());
+        return result;
+    }
+
+    /**
+     * Aggregates overall records by type.
+     * Groups by type across all records, sums the numeric fields,
      * and sets country to "all" and subViewID to -1.
-     * If no record exists for an expected type, a default record is created.
      */
-    public static List<ViewInfo> aggregatePerWeekData(List<ViewInfo> rawData) {
-        Map<String, ViewInfo> aggregated = new HashMap<>();
-        for (ViewInfo vi : rawData) {
-            String type = vi.getType();
-            ViewInfo agg = aggregated.get(type);
-            if (agg == null) {
-                agg = createDefaultViewInfo(type);
-                aggregated.put(type, agg);
-            }
-            agg.setGreenExist(agg.getGreenExist() + safe(vi.getGreenExist()));
-            agg.setGreenNew(agg.getGreenNew() + safe(vi.getGreenNew()));
-            agg.setOrangeExist(agg.getOrangeExist() + safe(vi.getOrangeExist()));
-            agg.setOrangeNew(agg.getOrangeNew() + safe(vi.getOrangeNew()));
-            agg.setRedExist(agg.getRedExist() + safe(vi.getRedExist()));
-            agg.setRedNew(agg.getRedNew() + safe(vi.getRedNew()));
-        }
-        // Ensure that each expected type is present.
-        for (String type : PER_WEEK_TYPES) {
-            if (!aggregated.containsKey(type)) {
-                aggregated.put(type, createDefaultViewInfo(type));
-            }
-        }
-        // Return sorted according to the predefined order.
-        return PER_WEEK_TYPES.stream()
-                .map(aggregated::get)
-                .collect(Collectors.toList());
+    public static List<ViewInfo> aggregateOverall(List<ViewInfo> rawData) {
+        logger.info("Aggregating overall {} records.", rawData.size());
+        Map<String, List<ViewInfo>> group = rawData.stream()
+            .collect(Collectors.groupingBy(ViewInfo::getType));
+        
+        List<ViewInfo> result = group.entrySet().stream().map(e -> {
+            List<ViewInfo> list = e.getValue();
+            ViewInfo agg = sumRecords(list);
+            agg.setCountry("all");
+            agg.setSupViewID(-1);
+            logger.info("Overall aggregation for type {} over {} records.", agg.getType(), list.size());
+            return agg;
+        }).collect(Collectors.toList());
+        return result;
     }
-
+    
     /**
-     * Aggregates a list of detailed ViewInfo records for circle per score caching.
-     * Groups by type, sums up the numeric fields, and sets country to "all" and subViewID to -1.
-     * If no record exists for an expected type, a default record is created.
+     * Sums a list of ViewInfo records.
+     * Assumes that all records in the list have the same type.
      */
-    public static List<ViewInfo> aggregateCircleData(List<ViewInfo> rawData) {
-        Map<String, ViewInfo> aggregated = new HashMap<>();
-        for (ViewInfo vi : rawData) {
-            String type = vi.getType();
-            ViewInfo agg = aggregated.get(type);
-            if (agg == null) {
-                agg = createDefaultViewInfo(type);
-                aggregated.put(type, agg);
-            }
-            agg.setGreenExist(agg.getGreenExist() + safe(vi.getGreenExist()));
-            agg.setGreenNew(agg.getGreenNew() + safe(vi.getGreenNew()));
-            agg.setOrangeExist(agg.getOrangeExist() + safe(vi.getOrangeExist()));
-            agg.setOrangeNew(agg.getOrangeNew() + safe(vi.getOrangeNew()));
-            // For circle per score, red fields may not be relevant.
-            agg.setRedExist(agg.getRedExist() + safe(vi.getRedExist()));
-            agg.setRedNew(agg.getRedNew() + safe(vi.getRedNew()));
+    private static ViewInfo sumRecords(List<ViewInfo> records) {
+        ViewInfo sum = new ViewInfo();
+        // Use the type from the first record.
+        sum.setType(records.get(0).getType());
+        // Initialize numeric fields to zero.
+        sum.setGreenExist(0L);
+        sum.setGreenNew(0L);
+        sum.setOrangeExist(0L);
+        sum.setOrangeNew(0L);
+        sum.setRedExist(0L);
+        sum.setRedNew(0L);
+        // Sum over all records.
+        for (ViewInfo vi : records) {
+            sum.setGreenExist(sum.getGreenExist() + safe(vi.getGreenExist()));
+            sum.setGreenNew(sum.getGreenNew() + safe(vi.getGreenNew()));
+            sum.setOrangeExist(sum.getOrangeExist() + safe(vi.getOrangeExist()));
+            sum.setOrangeNew(sum.getOrangeNew() + safe(vi.getOrangeNew()));
+            sum.setRedExist(sum.getRedExist() + safe(vi.getRedExist()));
+            sum.setRedNew(sum.getRedNew() + safe(vi.getRedNew()));
         }
-        // Ensure defaults for expected circle types.
-        for (String type : CIRCLE_TYPES) {
-            if (!aggregated.containsKey(type)) {
-                aggregated.put(type, createDefaultViewInfo(type));
-            }
+        // Assume subViewID is consistent in the group; if not, it remains unset.
+        if (!records.isEmpty()) {
+            sum.setSupViewID(records.get(0).getSupViewID());
         }
-        // Return sorted according to the predefined order.
-        return CIRCLE_TYPES.stream()
-                .map(aggregated::get)
-                .collect(Collectors.toList());
+        return sum;
     }
-
-    private static ViewInfo createDefaultViewInfo(String type) {
-        ViewInfo vi = new ViewInfo();
-        vi.setType(type);
-        vi.setCountry("all");
-        vi.setSupViewID(-1);
-        vi.setGreenExist(0L);
-        vi.setGreenNew(0L);
-        vi.setOrangeExist(0L);
-        vi.setOrangeNew(0L);
-        vi.setRedExist(0L);
-        vi.setRedNew(0L);
-        return vi;
-    }
-
+    
     private static Long safe(Long value) {
         return value == null ? 0L : value;
     }
