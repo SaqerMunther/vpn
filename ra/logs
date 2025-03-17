@@ -1,0 +1,143 @@
+
+07:06:29.174 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 29 for subViewID 8.
+07:06:29.174 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 29 for subViewID 6.
+07:06:29.175 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 29 for subViewID 8.
+07:06:29.175 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 29 for subViewID 6.
+07:06:29.175 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 29 for subViewID 6.
+07:06:29.175 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 29 for subViewID 8.
+07:06:29.175 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 29 for subViewID 6.
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregating 100 records by country.
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type >
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W4
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W3
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W2
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W4
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W1
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W1
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W3
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W2
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W2
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W3
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W1
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type >
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W4
+07:06:29.175 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W3
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W2
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W1
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W4
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W4
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W3
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W2
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W1
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W4
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W1
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W3
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W2
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type >
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W2
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W1
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W4
+07:06:29.176 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for country null and type W3
+07:06:29.176 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error refreshing DataPerWeek for viewId 29: null
+07:06:29.176 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - An error occurred. Current error count: 41
+07:06:29.176 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error limit exceeded. Cache updates are now disabled.
+07:06:29.176 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Refreshing DataPerWeek for viewId 39 (type: cov, isNew: new)
+07:06:37.839 [https-jsse-nio-8443-exec-1057] INFO  com.arabbank.devf.cmon.Controller - init()
+07:06:37.840 [https-jsse-nio-8443-exec-1057] INFO  com.arabbank.devf.cmon.Controller - selectedCountries =in ('JORDAN','PALESTINE','EGYPT','UAE')
+07:06:37.840 [https-jsse-nio-8443-exec-1057] INFO  com.arabbank.devf.cmon.Controller - selectedAllCountries =in ('JORDAN','PALESTINE','EGYPT','UAE')
+07:06:49.559 [C3P0PooledConnectionPoolManager[identityToken->2rxdaob9190plstt6v3bw|62721b0a]-AdminTaskTimer] INFO  c.m.v.resourcepool.BasicResourcePool - A checked-out resource is overdue, and will be destroyed: com.mchange.v2.c3p0.impl.NewPooledConnection@163d9eac
+07:06:49.569 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error refreshing DataPerWeek for viewId 39: com.microsoft.sqlserver.jdbc.SQLServerException: Socket closed
+07:06:49.569 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - An error occurred. Current error count: 42
+07:06:49.569 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error limit exceeded. Cache updates are now disabled.
+07:06:49.569 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Refreshing DataPerWeek for viewId 46 (type: cov, isNew: new)
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Retrieved 5 detailed records for viewId 46.
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached 5 records for viewId 46 for country jo and subViewID 4.
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregating 5 records by sub-view.
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for subViewID 4 and type W4
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for subViewID 4 and type >
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for subViewID 4 and type W1
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for subViewID 4 and type W3
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for subViewID 4 and type W2
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 46 for subViewID 4.
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 46 for subViewID 4.
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 46 for subViewID 4.
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 46 for subViewID 4.
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 46 for subViewID 4.
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregating 5 records by country.
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:49.592 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:49.592 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error refreshing DataPerWeek for viewId 46: null
+07:06:49.592 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - An error occurred. Current error count: 43
+07:06:49.592 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error limit exceeded. Cache updates are now disabled.
+07:06:49.592 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Refreshing DataPerWeek for viewId 48 (type: cov, isNew: new)
+07:06:49.902 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Retrieved 10 detailed records for viewId 48.
+07:06:49.902 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached 5 records for viewId 48 for country jo and subViewID 4.
+07:06:49.903 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached 5 records for viewId 48 for country gd and subViewID 4.
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregating 10 records by sub-view.
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for subViewID 4 and type W4
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for subViewID 4 and type >
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for subViewID 4 and type W1
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for subViewID 4 and type W3
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 2 records for subViewID 4 and type W2
+07:06:49.903 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 48 for subViewID 4.
+07:06:49.903 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 48 for subViewID 4.
+07:06:49.903 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 48 for subViewID 4.
+07:06:49.903 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 48 for subViewID 4.
+07:06:49.903 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Cached aggregated sub-view record for viewId 48 for subViewID 4.
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregating 10 records by country.
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W2
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type >
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W1
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W4
+07:06:49.903 [pool-214-thread-1] INFO  c.a.d.cmon.cache.CacheDataProcessor - Aggregated 1 records for country null and type W3
+07:06:49.903 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error refreshing DataPerWeek for viewId 48: null
+07:06:49.903 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - An error occurred. Current error count: 44
+07:06:49.903 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error limit exceeded. Cache updates are now disabled.
+07:06:49.903 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Refreshing DataPerWeek for viewId 50 (type: cov, isNew: new)
+07:07:14.560 [C3P0PooledConnectionPoolManager[identityToken->2rxdaob9190plstt6v3bw|62721b0a]-AdminTaskTimer] INFO  c.m.v.resourcepool.BasicResourcePool - A checked-out resource is overdue, and will be destroyed: com.mchange.v2.c3p0.impl.NewPooledConnection@1c6ededf
+07:07:14.561 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error refreshing DataPerWeek for viewId 50: com.microsoft.sqlserver.jdbc.SQLServerException: Socket closed
+07:07:14.561 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - An error occurred. Current error count: 45
+07:07:14.561 [pool-214-thread-1] ERROR com.app.dev.cmon.cache.CacheService - Error limit exceeded. Cache updates are now disabled.
+07:07:14.561 [pool-214-thread-1] INFO  com.app.dev.cmon.cache.CacheService - Refreshing DataPerWeek for viewId 51 (type: cov, isNew: new)
