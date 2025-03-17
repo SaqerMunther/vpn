@@ -1,227 +1,272 @@
-		public List<ViewInfo> getCompCircleScore(String type) {
-			if (circleExiCompDetails == null || circleExiCompDetails.size() < 1) {
-				circleExiCompDetails = da.getComplyCirclePerScore(viewId, subViewId,
-						country.equalsIgnoreCase("all") ? "" : country, type, viewText,
-						sdf.format(radar.getDate1()).trim());
-			}
-			return circleExiCompDetails;
+package com.app.dev.cmon.components;
 
-		}
+import java.sql.Date;
 
-	private void processAndMapData() {
-	    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-	    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-	    
-	    oneMonthMap = processAssetList(listOne);
+import com.app.dev.cmon.controllers.RadarHistorical;
 
-	    twoMonthMap = processAssetList(listTwo);
+public class ViewInfo {
+	
+	private Long totalSum;
+	private Long green;
+	private Long Orange;
+	private Long Red;
+	private String Type;
+	private int CovFirst;
+	private int CovSecond;
+	private int CompFirst;
+	private int CompSecond;
+	private String country;
+	private String controlName;
+	private String fullName;
+	private RadarHistorical radarHistorical;
+	private int id;
+	private int supViewID;
+	private Long it;
+	private Long risk;
+	
+	private Long greenExist;
+	private Long orangeExist;
+	private Long greenNew;
+	private Long orangeNew;
+	private Long redExist;
+	private Long redNew;
+	private int controlId;
+	private int count;
+	private String color;
+	private String typeSort;
+	private String date;
+	public Long getTotalSum() {
+		return totalSum;
+	}
+
+	public void setTotalSum(Long totalSum) {
+		this.totalSum = totalSum;
+	}
+
+	public Long getGreen() {
+		return green;
+	}
+
+	public void setGreen(Long green) {
+		this.green = green;
+	}
+
+	public Long getOrange() {
+		return Orange;
+	}
+
+	public void setOrange(Long orange) {
+		Orange = orange;
+	}
+
+	public Long getRed() {
+		return Red;
+	}
+
+	public void setRed(Long red) {
+		Red = red;
+	}
+
+	public String getType() {
+		return Type;
+	}
+
+	public void setType(String type) {
+		Type = type;
+	}
+
+	public int getCovFirst() {
+		return CovFirst;
+	}
+
+	public void setCovFirst(int covFirst) {
+		CovFirst = covFirst;
+	}
+
+	public int getCovSecond() {
+		return CovSecond;
+	}
+
+	public void setCovSecond(int covSecond) {
+		CovSecond = covSecond;
+	}
+
+	public int getCompFirst() {
+		return CompFirst;
+	}
+
+	public void setCompFirst(int compFirst) {
+		CompFirst = compFirst;
+	}
+
+	public int getCompSecond() {
+		return CompSecond;
+	}
+
+	public void setCompSecond(int compSecond) {
+		CompSecond = compSecond;
+	}
+
+	public String getCountry() {
+		return country;
+	}
+
+	public void setCountry(String country) {
+		this.country = country;
+	}
+
+	public String getControlName() {
+		return controlName;
+	}
+
+	public void setControlName(String controlName) {
+		this.controlName = controlName;
+	}
+
+	public RadarHistorical getRadarHistorical() {
+		return radarHistorical;
+	}
+
+	public void setRadarHistorical(RadarHistorical radarHistorical) {
+		this.radarHistorical = radarHistorical;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public int getSupViewID() {
+		return supViewID;
+	}
+
+	public void setSupViewID(int supViewID) {
+		this.supViewID = supViewID;
+	}
+
+	public Long getIt() {
+		return it;
+	}
+
+	public void setIt(Long it) {
+		this.it = it;
+	}
+
+	public Long getRisk() {
+		return risk;
+	}
+
+	public void setRisk(Long risk) {
+		this.risk = risk;
+	}
+
+	public Long getGreenExist() {
+		return greenExist;
+	}
+
+	public void setGreenExist(Long greenExist) {
+		this.greenExist = greenExist;
+	}
+
+	public Long getOrangeExist() {
+		return orangeExist;
+	}
+
+	public void setOrangeExist(Long orangeExist) {
+		this.orangeExist = orangeExist;
+	}
+
+	public Long getGreenNew() {
+		return greenNew;
+	}
+
+	public void setGreenNew(Long greenNew) {
+		this.greenNew = greenNew;
+	}
+
+	public Long getOrangeNew() {
+		return orangeNew;
+	}
+
+	public void setOrangeNew(Long orangeNew) {
+		this.orangeNew = orangeNew;
+	}
+
+	public Long getRedExist() {
+		return redExist;
+	}
+
+	public void setRedExist(Long redExist) {
+		this.redExist = redExist;
+	}
+
+	public Long getRedNew() {
+		return redNew;
+	}
+
+	public void setRedNew(Long redNew) {
+		this.redNew = redNew;
+	}
+
+	public String getFullName() {
+		return fullName;
+	}
+
+	public void setFullName(String fullName) {
+		this.fullName = fullName;
+	}
+
+	public int getControlId() {
+		return controlId;
+	}
+
+	public void setControlId(int controlId) {
+		this.controlId = controlId;
+	}
+
+	public int getCount() {
+		return count;
+	}
+
+	public void setCount(int count) {
+		this.count = count;
+	}
+
+	public String getColor() {
+		return color;
+	}
+
+	public void setColor(String color) {
+		this.color = color;
+	}
+	
+	public String getTypeSort() {
+		return typeSort;
+	}
+
+	public void setTypeSort(String typeSort) {
+		this.typeSort = typeSort;
+	}
+	
+	
+	public String getDate() {
+		return date;
+	}
+
+	public void setDate(String date) {
+		this.date = date;
+	}
+
+	@Override
+	public String toString() {
+		return "ViewInfo [totalSum=" + totalSum + ", green=" + green + ", Orange=" + Orange + ", Red=" + Red + ", Type="
+				+ Type + ", country=" + country + ", supViewID=" + supViewID + ", it=" + it + ", risk=" + risk
+				+ ", controlId=" + controlId + ", color=" + color + ", typeSort=" + typeSort + "]";
 	}
 
 
-	public List<ViewInfo> getDataPerWeek(String type, String isNew) {
 
-		if (type.equalsIgnoreCase("Cov")) {
-			if (circleCovPerWeek == null || circleCovPerWeek.size() < 1) {
-				circleCovPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
-			}
-			return circleCovPerWeek;
-		} else {
-			if (circleCompPerWeek == null || circleCompPerWeek.size() < 1) {
-				circleCompPerWeek = da.getCoveragePerWeek(viewId, subViewId, country.equalsIgnoreCase("all") ? "" : country, type, viewText,sdf.format(radar.getDate1()).trim());
-			}
-			return circleCompPerWeek;
-		}
-	}
-
-/////////////////////////////////////////////////////////////////////////
-
-public List<ViewInfo> getCompCircleScore(String type) {
-    String dateStr = sdf.format(radar.getDate1()).trim();
-    String key = "CompCircleScore_" + viewId + "_" + subViewId + "_" +
-            (country.equalsIgnoreCase("all") ? "all" : country) + "_" +
-            type + "_" + viewText + "_" + dateStr;
-    
-    // Attempt to retrieve from cache.
-    List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
-    if (cachedResult != null && !cachedResult.isEmpty()) {
-        return cachedResult;
-    }
-    
-    // Otherwise, fetch the data.
-    List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
-            country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
-    
-    // Cache the fetched data.
-    CacheService.getInstance().putInCache(key, data);
-    return data;
-}
-
-
-/////////////////////////////////////////////
-
-private void processAndMapData() {
-    String dateStr = sdf.format(new Date());
-    
-    // One month map
-    List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-    Map<String, Pair<Integer, Integer>> oneMonth = processAssetList(listOne);
-    String keyOneMonth = "ProcessMap_OneMonth_" + viewId + "_" + subViewId + "_" +
-            (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
-    CacheService.getInstance().putInCache(keyOneMonth, oneMonth);
-    oneMonthMap = oneMonth; // update local field if needed
-
-    // Two month map
-    List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-    Map<String, Pair<Integer, Integer>> twoMonth = processAssetList(listTwo);
-    String keyTwoMonth = "ProcessMap_TwoMonth_" + viewId + "_" + subViewId + "_" +
-            (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
-    CacheService.getInstance().putInCache(keyTwoMonth, twoMonth);
-    twoMonthMap = twoMonth; // update local field if needed
-}
-
-
-////////////////////////////////////////////////////////
-
-public List<ViewInfo> getDataPerWeek(String type, String isNew) {
-    String dateStr = sdf.format(radar.getDate1()).trim();
-    String key = "DataPerWeek_" + type + "_" + isNew + "_" + viewId + "_" + subViewId + "_" +
-            (country.equalsIgnoreCase("all") ? "all" : country) + "_" + viewText + "_" + dateStr;
-    
-    // Try cache first.
-    List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
-    if (cachedResult != null && !cachedResult.isEmpty()) {
-        return cachedResult;
-    }
-    
-    // Fetch the data if not cached.
-    List<ViewInfo> data;
-    if (type.equalsIgnoreCase("Cov")) {
-        data = da.getCoveragePerWeek(viewId, subViewId, 
-                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
-    } else {
-        data = da.getCoveragePerWeek(viewId, subViewId, 
-                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
-    }
-    
-    // Store in cache.
-    CacheService.getInstance().putInCache(key, data);
-    return data;
-}
-
-
-/////////////////////////////////////////////////////////
-
-@PostConstruct
-public void init() {
-    // ... your existing initialization code ...
-    // Synchronously load the first view’s data (via getCompCircleScore, getDataPerWeek, etc.)
-    // Then trigger asynchronous preloading:
-    CacheService.getInstance().preloadCacheBackground(viewId, subViewId, country, viewText);
-}
-
-
-
-/////////////////////////////////////////////////////////////////////
-
-@ManagedBean(name = "mbMain")
-@ViewScoped
-public class MB_Main extends CmonManagedBean {
-    
-    private DataAccess da = new DataAccess();
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    
-    // Dynamic parameters
-    private int viewId;
-    private int subViewId;
-    private String country;
-    private String viewText;
-    private Map<Integer, List<String>> viewCountryMap;
-    private Map<Integer, String> viewNameMap;
-    
-    // Cached methods
-    private List<ViewInfo> circleExiCompDetails;
-    private List<ViewInfo> circleCovPerWeek;
-    private List<ViewInfo> circleCompPerWeek;
-    
-    @PostConstruct
-    public void init() {
-        // Initialize dynamic parameters (these may come from DataAccess or configuration)
-        viewId = 1;
-        subViewId = 10;
-        country = "all";
-        viewText = "SampleView";
-        viewCountryMap = da.getViewCountryMap();
-        viewNameMap = da.getViewNameMap();
-        
-        // Provide these parameters to CacheService.
-        CacheService cache = CacheService.getInstance();
-        cache.setViewCountryMap(viewCountryMap);
-        cache.setViewNameMap(viewNameMap);
-        
-        // Synchronously load first view data.
-        List<ViewInfo> firstCompCircle = getCompCircleScore("Comp");
-        List<ViewInfo> firstDataWeek = getDataPerWeek("Cov", "false");
-        processAndMapData();
-        
-        // Let CacheService handle the startup flow.
-        cache.startupFlow(viewId, subViewId, country, viewText);
-    }
-    
-    public List<ViewInfo> getCompCircleScore(String type) {
-        String dateStr = sdf.format(radar.getDate1()).trim();
-        String key = "CompCircleScore_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" +
-                type + "_" + viewText + "_" + dateStr;
-        
-        List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
-        if (cachedResult != null && !cachedResult.isEmpty()) {
-            return cachedResult;
-        }
-        
-        List<ViewInfo> data = da.getComplyCirclePerScore(viewId, subViewId,
-                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
-        CacheService.getInstance().putInCache(key, data);
-        return data;
-    }
-    
-    private void processAndMapData() {
-        String dateStr = sdf.format(new Date());
-        
-        List<AssetInfo> listOne = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(1)));
-        Map<String, Pair<Integer, Integer>> oneMonth = processAssetList(listOne);
-        String keyOneMonth = "ProcessMap_OneMonth_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
-        CacheService.getInstance().putInCache(keyOneMonth, oneMonth);
-        
-        List<AssetInfo> listTwo = da.getAllCoverage(viewId, -1, "", sdf.format(getPreviousMonth(2)));
-        Map<String, Pair<Integer, Integer>> twoMonth = processAssetList(listTwo);
-        String keyTwoMonth = "ProcessMap_TwoMonth_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" + dateStr;
-        CacheService.getInstance().putInCache(keyTwoMonth, twoMonth);
-    }
-    
-    public List<ViewInfo> getDataPerWeek(String type, String isNew) {
-        String dateStr = sdf.format(radar.getDate1()).trim();
-        String key = "DataPerWeek_" + type + "_" + isNew + "_" + viewId + "_" + subViewId + "_" +
-                (country.equalsIgnoreCase("all") ? "all" : country) + "_" + viewText + "_" + dateStr;
-        
-        List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
-        if (cachedResult != null && !cachedResult.isEmpty()) {
-            return cachedResult;
-        }
-        
-        List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId, 
-                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
-        CacheService.getInstance().putInCache(key, data);
-        return data;
-    }
-    
-    private Date getPreviousMonth(int months) {
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.add(java.util.Calendar.MONTH, -months);
-        cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
-        return cal.getTime();
-    }
-    
-    // ... additional controller methods ...
 }
