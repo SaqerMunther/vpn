@@ -54,7 +54,7 @@ public class CacheService {
         logger.info("Cache date set to {}.", sdf.format(date));
     }
 
-    public String getCacheKey(String methodName, String extra, int viewId, String country, String date) {
+    public String getCacheKey(String methodName, String extra, int viewId, int subViewId, String country, String date) {
         return (methodName + "_" + extra + "_" + viewId + "_" + (country.equalsIgnoreCase("") ? "all" : country) + "_" + date).toLowerCase();
     }
 
@@ -80,32 +80,32 @@ public class CacheService {
                 viewCountryMap.keySet().forEach(vid -> {
                     try {
                         logger.info("Refreshing DataPerWeek for viewId {} (type: {}, isNew: {})", vid, type, isNew);
-                        List<ViewInfo> rawData = da.getCoveragePerWeekAll(vid, type, viewNameMap.get(vid), dateStr, isNew);
+                        List<ViewInfo> rawData = da.getCoveragePerWeekCache(vid, -1, "", type, viewNameMap.get(vid), dateStr);
                         logger.info("Retrieved {} detailed records for viewId {}.", rawData.size(), vid);
                         Map<String, Map<Integer, List<ViewInfo>>> partitioned = rawData.stream()
                             .collect(Collectors.groupingBy(ViewInfo::getCountry, Collectors.groupingBy(ViewInfo::getSupViewID)));
                         partitioned.forEach((country, subMap) -> {
                             subMap.forEach((subViewId, list) -> {
-                                String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, country, dateStr) + "_sv_" + subViewId;
+                                String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, subViewId, country, dateStr);
                                 cacheProvider.put(key, list);
                                 logger.info("Cached {} records for viewId {} for country {} and subViewID {}. Key: {}", list.size(), vid, country, subViewId, key);
                             });
                         });
                         List<ViewInfo> aggBySubView = CacheDataProcessor.aggregateBySubView(rawData);
                         aggBySubView.forEach(vi -> {
-                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, "all", dateStr) + "_sv_" + vi.getSupViewID();
+                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, vi.getSupViewID(), "all", dateStr);
                             cacheProvider.put(key, vi);
                             logger.info("Cached aggregated sub-view record for viewId {} for subViewID {}. Key: {}", vid, vi.getSupViewID(), key);
                         });
                         List<ViewInfo> aggByCountry = CacheDataProcessor.aggregateByCountry(rawData);
                         aggByCountry.forEach(vi -> {
-                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, vi.getCountry(), dateStr) + "_ctry";
+                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, -1, vi.getCountry(), dateStr);
                             cacheProvider.put(key, vi);
                             logger.info("Cached aggregated country record for viewId {} for country {}. Key: {}", vid, vi.getCountry(), key);
                         });
                         List<ViewInfo> overallAgg = CacheDataProcessor.aggregateOverall(rawData);
                         overallAgg.forEach(vi -> {
-                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, "all", dateStr) + "_overall_" + vi.getType();
+                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, -1, "all", dateStr);
                             cacheProvider.put(key, vi);
                             logger.info("Cached overall aggregated record for viewId {} for type {}. Key: {}", vid, vi.getType(), key);
                         });
@@ -119,32 +119,32 @@ public class CacheService {
         viewCountryMap.keySet().forEach(vid -> {
             try {
                 logger.info("Refreshing CompCircleScore for viewId {}.", vid);
-                List<ViewInfo> rawData = da.getComplyCirclePerScoreAll(vid, "Comp", viewNameMap.get(vid), dateStr);
+                List<ViewInfo> rawData = da.getComplyCirclePerScoreCache(vid, -1, "", "Comp", viewNameMap.get(vid), dateStr);
                 logger.info("Retrieved {} detailed records for CompCircleScore for viewId {}.", rawData.size(), vid);
                 Map<String, Map<Integer, List<ViewInfo>>> partitioned = rawData.stream()
                         .collect(Collectors.groupingBy(ViewInfo::getCountry, Collectors.groupingBy(ViewInfo::getSupViewID)));
                 partitioned.forEach((country, subMap) -> {
                     subMap.forEach((subViewId, list) -> {
-                        String key = getCacheKey("CompCircleScore", "Comp", vid, country, dateStr) + "_sv_" + subViewId;
+                        String key = getCacheKey("CompCircleScore", "Comp", vid, subViewId, country, dateStr);
                         cacheProvider.put(key, list);
                         logger.info("Cached {} records for CompCircleScore for viewId {} for country {} and subViewID {}. Key: {}", list.size(), vid, country, subViewId, key);
                     });
                 });
                 List<ViewInfo> aggBySubView = CacheDataProcessor.aggregateBySubView(rawData);
                 aggBySubView.forEach(vi -> {
-                    String key = getCacheKey("CompCircleScore", "Comp", vid, "all", dateStr) + "_sv_" + vi.getSupViewID();
+                    String key = getCacheKey("CompCircleScore", "Comp", vid, vi.getSupViewID(), "all", dateStr);
                     cacheProvider.put(key, vi);
                     logger.info("Cached aggregated CompCircleScore sub-view record for viewId {} for subViewID {}. Key: {}", vid, vi.getSupViewID(), key);
                 });
                 List<ViewInfo> aggByCountry = CacheDataProcessor.aggregateByCountry(rawData);
                 aggByCountry.forEach(vi -> {
-                    String key = getCacheKey("CompCircleScore", "Comp", vid, vi.getCountry(), dateStr) + "_ctry";
+                    String key = getCacheKey("CompCircleScore", "Comp", vid, -1, vi.getCountry(), dateStr);
                     cacheProvider.put(key, vi);
                     logger.info("Cached aggregated CompCircleScore country record for viewId {} for country {}. Key: {}", vid, vi.getCountry(), key);
                 });
                 List<ViewInfo> overallAgg = CacheDataProcessor.aggregateOverall(rawData);
                 overallAgg.forEach(vi -> {
-                    String key = getCacheKey("CompCircleScore", "Comp", vid, "all", dateStr) + "_overall_" + vi.getType();
+                    String key = getCacheKey("CompCircleScore", "Comp", vid, -1, "all", dateStr);
                     cacheProvider.put(key, vi);
                     logger.info("Cached overall aggregated CompCircleScore record for viewId {} for type {}. Key: {}", vid, vi.getType(), key);
                 });
