@@ -3,6 +3,7 @@ package com.app.dev.cmon.cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,8 @@ public class CacheService {
     }
 
     public String getCacheKey(String methodName, String extra, int viewId, int subViewId, String country, String date) {
-        return (methodName + "_" + extra + "_" + viewId + "_" + (country.equalsIgnoreCase("") ? "all" : country) + "_" + date).toLowerCase();
+        return (methodName + "_" + extra + "_" + viewId + "_" +
+                (country.equalsIgnoreCase("") ? "all" : country) + "_" + date).toLowerCase();
     }
 
     public <T> T getFromCache(String key) {
@@ -87,26 +89,26 @@ public class CacheService {
                         partitioned.forEach((country, subMap) -> {
                             subMap.forEach((subViewId, list) -> {
                                 String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, subViewId, country, dateStr);
-                                cacheProvider.put(key, list);
+                                putInCache(key, list);
                                 logger.info("Cached {} records for viewId {} for country {} and subViewID {}. Key: {}", list.size(), vid, country, subViewId, key);
                             });
                         });
                         List<ViewInfo> aggBySubView = CacheDataProcessor.aggregateBySubView(rawData);
                         aggBySubView.forEach(vi -> {
                             String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, vi.getSupViewID(), "all", dateStr);
-                            cacheProvider.put(key, vi);
+                            putInCache(key, Collections.singletonList(vi));
                             logger.info("Cached aggregated sub-view record for viewId {} for subViewID {}. Key: {}", vid, vi.getSupViewID(), key);
                         });
                         List<ViewInfo> aggByCountry = CacheDataProcessor.aggregateByCountry(rawData);
                         aggByCountry.forEach(vi -> {
                             String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, -1, vi.getCountry(), dateStr);
-                            cacheProvider.put(key, vi);
+                            putInCache(key, Collections.singletonList(vi));
                             logger.info("Cached aggregated country record for viewId {} for country {}. Key: {}", vid, vi.getCountry(), key);
                         });
                         List<ViewInfo> overallAgg = CacheDataProcessor.aggregateOverall(rawData);
                         overallAgg.forEach(vi -> {
                             String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, -1, "all", dateStr);
-                            cacheProvider.put(key, vi);
+                            putInCache(key, Collections.singletonList(vi));
                             logger.info("Cached overall aggregated record for viewId {} for type {}. Key: {}", vid, vi.getType(), key);
                         });
                     } catch (Exception e) {
@@ -126,26 +128,26 @@ public class CacheService {
                 partitioned.forEach((country, subMap) -> {
                     subMap.forEach((subViewId, list) -> {
                         String key = getCacheKey("CompCircleScore", "Comp", vid, subViewId, country, dateStr);
-                        cacheProvider.put(key, list);
+                        putInCache(key, list);
                         logger.info("Cached {} records for CompCircleScore for viewId {} for country {} and subViewID {}. Key: {}", list.size(), vid, country, subViewId, key);
                     });
                 });
                 List<ViewInfo> aggBySubView = CacheDataProcessor.aggregateBySubView(rawData);
                 aggBySubView.forEach(vi -> {
                     String key = getCacheKey("CompCircleScore", "Comp", vid, vi.getSupViewID(), "all", dateStr);
-                    cacheProvider.put(key, vi);
+                    putInCache(key, Collections.singletonList(vi));
                     logger.info("Cached aggregated CompCircleScore sub-view record for viewId {} for subViewID {}. Key: {}", vid, vi.getSupViewID(), key);
                 });
                 List<ViewInfo> aggByCountry = CacheDataProcessor.aggregateByCountry(rawData);
                 aggByCountry.forEach(vi -> {
                     String key = getCacheKey("CompCircleScore", "Comp", vid, -1, vi.getCountry(), dateStr);
-                    cacheProvider.put(key, vi);
+                    putInCache(key, Collections.singletonList(vi));
                     logger.info("Cached aggregated CompCircleScore country record for viewId {} for country {}. Key: {}", vid, vi.getCountry(), key);
                 });
                 List<ViewInfo> overallAgg = CacheDataProcessor.aggregateOverall(rawData);
                 overallAgg.forEach(vi -> {
                     String key = getCacheKey("CompCircleScore", "Comp", vid, -1, "all", dateStr);
-                    cacheProvider.put(key, vi);
+                    putInCache(key, Collections.singletonList(vi));
                     logger.info("Cached overall aggregated CompCircleScore record for viewId {} for type {}. Key: {}", vid, vi.getType(), key);
                 });
             } catch (Exception e) {
@@ -174,39 +176,4 @@ public class CacheService {
         int interval = cacheConfig.getAutoRefreshInterval();
         scheduledExecutor.scheduleAtFixedRate(() -> {
             String dateStr = sdf.format(date);
-            logger.info("Automatic periodic cache refresh triggered at {}.", dateStr);
-            refreshAllCacheData(dateStr);
-        }, interval, interval, java.util.concurrent.TimeUnit.MINUTES);
-    }
-
-    public void stopAutoRefresh() {
-        if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
-            scheduledExecutor.shutdown();
-            logger.info("Automatic cache auto-refresh stopped.");
-        }
-    }
-
-    public void shutdown() {
-        executorService.shutdown();
-        if (scheduledExecutor != null) {
-            scheduledExecutor.shutdown();
-        }
-        cacheConfig.shutdown();
-        logger.info("CacheService shutdown.");
-    }
-
-    public void startupFlow(final int viewId, final int subViewId, final String country, final String viewText) {
-        preloadCacheBackground(viewId, subViewId, country, viewText);
-        startAutoRefresh(viewId, subViewId, country, viewText);
-        logger.info("CacheService startup flow completed.");
-    }
-    
-    public void incrementErrorCount() {
-        errorCount++;
-        logger.error("An error occurred. Current error count: {}", errorCount);
-        if (errorCount > cacheConfig.getErrorLimit()) {
-            cacheEnabled = false;
-            logger.error("Error limit exceeded. Cache updates are now disabled.");
-        }
-    }
-}
+ 
