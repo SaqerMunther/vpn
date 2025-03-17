@@ -176,4 +176,39 @@ public class CacheService {
         int interval = cacheConfig.getAutoRefreshInterval();
         scheduledExecutor.scheduleAtFixedRate(() -> {
             String dateStr = sdf.format(date);
- 
+            logger.info("Automatic periodic cache refresh triggered at {}.", dateStr);
+            refreshAllCacheData(dateStr);
+        }, interval, interval, java.util.concurrent.TimeUnit.MINUTES);
+    }
+
+    public void stopAutoRefresh() {
+        if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
+            scheduledExecutor.shutdown();
+            logger.info("Automatic cache auto-refresh stopped.");
+        }
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
+        if (scheduledExecutor != null) {
+            scheduledExecutor.shutdown();
+        }
+        cacheConfig.shutdown();
+        logger.info("CacheService shutdown.");
+    }
+
+    public void startupFlow(final int viewId, final int subViewId, final String country, final String viewText) {
+        preloadCacheBackground(viewId, subViewId, country, viewText);
+        startAutoRefresh(viewId, subViewId, country, viewText);
+        logger.info("CacheService startup flow completed.");
+    }
+    
+    public void incrementErrorCount() {
+        errorCount++;
+        logger.error("An error occurred. Current error count: {}", errorCount);
+        if (errorCount > cacheConfig.getErrorLimit()) {
+            cacheEnabled = false;
+            logger.error("Error limit exceeded. Cache updates are now disabled.");
+        }
+    }
+}
