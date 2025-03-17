@@ -7,11 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.app.dev.cmon.components.ViewInfo;
 import com.app.dev.cmon.controllers.DataAccess;
@@ -22,9 +18,6 @@ public class CacheService {
     private static CacheService instance;
 
     private ICacheProvider cacheProvider;
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private ScheduledExecutorService scheduledExecutor;
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     private DataAccess da = new DataAccess();
     private Map<Integer, List<String>> viewCountryMap;
     private Map<Integer, String> viewNameMap;
@@ -34,13 +27,14 @@ public class CacheService {
     private int errorCount = 0; // Counter for errors
     private boolean cacheEnabled = true; // Flag to control cache updates
 
-    // Cache for subViews to avoid repeated calls to da.getSubViews().
-    private final Map<Integer, List<Integer>> subViewsCache = new ConcurrentHashMap<>();
-
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    private final java.util.concurrent.ExecutorService executorService = java.util.concurrent.Executors.newSingleThreadExecutor();
+    private java.util.concurrent.ScheduledExecutorService scheduledExecutor;
+    
     private CacheService() {
         cacheConfig = new CacheConfig();
         cacheProvider = new EhcacheProvider(cacheConfig.getDataCache());
-        logger.debug("CacheService initialized.");
+        logger.info("CacheService initialized.");
     }
 
     public static synchronized CacheService getInstance() {
@@ -52,16 +46,23 @@ public class CacheService {
     
     public void setViewCountryMap(Map<Integer, List<String>> viewCountryMap) {
         this.viewCountryMap = viewCountryMap;
+        logger.info("View country map set with {} entries.", viewCountryMap.size());
     }
     
     public void setViewNameMap(Map<Integer, String> viewNameMap) {
         this.viewNameMap = viewNameMap;
+        logger.info("View name map set with {} entries.", viewNameMap.size());
     }
     
     public void setDate(Date date) {
         this.date = date;
+        logger.info("Cache date set to {}.", sdf.format(date));
     }
 
+    /**
+     * Generate a cache key.
+     * For aggregated rows we append suffixes (e.g., "_sv_", "_ctry", "_overall_").
+     */
     public String getCacheKey(String methodName, String extra, int viewId, String country, String date) {
         return (methodName + "_" + extra + "_" + viewId + "_" +
                (country.equalsIgnoreCase("") ? "all" : country) + "_" + date).toLowerCase();
@@ -73,6 +74,7 @@ public class CacheService {
 
     public <T> void putInCache(String key, T value) {
         cacheProvider.put(key, value);
+        logger.info("Cache entry saved: key = {}", key);
     }
 
     public void clearCache() {
@@ -81,49 +83,126 @@ public class CacheService {
     }
 
     /**
-     * Refresh both DataPerWeek and CompCircleScore caches.
-     * Instead of iterating over all countries and subViewIDs,
-     * we call the DB query once per viewId with parameters that return detailed data.
-     * The returned data is then aggregated by CacheDataProcessor.
+     * Refreshes both DataPerWeek and CompCircleScore caches.
+     * For each viewId, we retrieve detailed data for all countries and sub-view IDs,
+     * partition the results, and then aggregate:
+     *  - Detailed partitions: stored under keys including actual country and subViewID.
+     *  - Aggregated per sub-view: (country "all" for each subViewID).
+     *  - Aggregated per country: (subViewID = -1 for each country).
+     *  - Overall aggregated: (country "all" and subViewID = -1).
      */
     public void refreshAllCacheData(String dateStr) {
-        logger.info("Refreshing dataCache dynamically...");
+        logger.info("Refreshing dataCache dynamically at {}...", dateStr);
         clearCache();
 
-        // Process DataPerWeek caches.
-        // For each combination of radar type and isNew, call the DB once per viewId.
+        // Process DataPerWeek caches for each combination of radar type and isNew.
         CacheConstants.RADAR_TYPES.forEach(type ->
             CacheConstants.RADAR_IS_NEW.forEach(isNew -> {
                 viewCountryMap.keySet().forEach(vid -> {
                     try {
-                        String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, "all", dateStr);
-                        // Pass subViewID = -1 and country = "all" to signal "all"
-                        List<ViewInfo> rawData = da.getCoveragePerWeek(vid, -1, "all", type, viewNameMap.get(vid), dateStr);
-                        List<ViewInfo> aggregatedData = CacheDataProcessor.aggregatePerWeekData(rawData);
-                        cacheProvider.put(key, aggregatedData);
+                        logger.info("Refreshing DataPerWeek for viewId {} (type: {}, isNew: {})", vid, type, isNew);
+                        // Retrieve detailed records covering all countries and sub-view IDs.
+                        List<ViewInfo> rawData = da.getCoveragePerWeekAll(vid, type, viewNameMap.get(vid), dateStr, isNew);
+                        logger.info("Retrieved {} detailed records for viewId {}.", rawData.size(), vid);
+                        
+                        // Partition detailed records by country and sub-view.
+                        Map<String, Map<Integer, List<ViewInfo>>> partitioned = rawData.stream()
+                            .collect(Collectors.groupingBy(ViewInfo::getCountry,
+                                Collectors.groupingBy(ViewInfo::getSupViewID)));
+                        
+                        // Cache each individual partition.
+                        partitioned.forEach((country, subMap) -> {
+                            subMap.forEach((subViewId, list) -> {
+                                String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, country, dateStr)
+                                             + "_sv_" + subViewId;
+                                cacheProvider.put(key, list);
+                                logger.info("Cached {} records for viewId {} for country {} and subViewID {}.", list.size(), vid, country, subViewId);
+                            });
+                        });
+                        
+                        // Aggregate per sub-view (across countries).
+                        List<ViewInfo> aggBySubView = CacheDataProcessor.aggregateBySubView(rawData);
+                        aggBySubView.forEach(vi -> {
+                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, "all", dateStr)
+                                         + "_sv_" + vi.getSupViewID();
+                            cacheProvider.put(key, vi);
+                            logger.info("Cached aggregated sub-view record for viewId {} for subViewID {}.", vid, vi.getSupViewID());
+                        });
+                        
+                        // Aggregate per country (across sub-views).
+                        List<ViewInfo> aggByCountry = CacheDataProcessor.aggregateByCountry(rawData);
+                        aggByCountry.forEach(vi -> {
+                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, vi.getCountry(), dateStr)
+                                         + "_ctry";
+                            cacheProvider.put(key, vi);
+                            logger.info("Cached aggregated country record for viewId {} for country {}.", vid, vi.getCountry());
+                        });
+                        
+                        // Overall aggregation.
+                        List<ViewInfo> overallAgg = CacheDataProcessor.aggregateOverall(rawData);
+                        overallAgg.forEach(vi -> {
+                            String key = getCacheKey("DataPerWeek", type + "_" + isNew, vid, "all", dateStr)
+                                         + "_overall_" + vi.getType();
+                            cacheProvider.put(key, vi);
+                            logger.info("Cached overall aggregated record for viewId {} for type {}.", vid, vi.getType());
+                        });
                     } catch (Exception e) {
-                        logger.error("Error refreshing DataPerWeek for viewId {}: {}",
-                                     vid, e.getMessage());
+                        logger.error("Error refreshing DataPerWeek for viewId {}: {}", vid, e.getMessage());
                         incrementErrorCount();
                     }
                 });
             })
         );
 
-        // Process CompCircleScore caches.
+        // Process CompCircleScore caches similarly.
         viewCountryMap.keySet().forEach(vid -> {
             try {
-                String key = getCacheKey("CompCircleScore", "Comp", vid, "all", dateStr);
-                List<ViewInfo> rawData = da.getComplyCirclePerScore(vid, -1, "all", "Comp", viewNameMap.get(vid), dateStr);
-                List<ViewInfo> aggregatedData = CacheDataProcessor.aggregateCircleData(rawData);
-                cacheProvider.put(key, aggregatedData);
+                logger.info("Refreshing CompCircleScore for viewId {}.", vid);
+                List<ViewInfo> rawData = da.getComplyCirclePerScoreAll(vid, "Comp", viewNameMap.get(vid), dateStr);
+                logger.info("Retrieved {} detailed records for CompCircleScore for viewId {}.", rawData.size(), vid);
+                
+                Map<String, Map<Integer, List<ViewInfo>>> partitioned = rawData.stream()
+                        .collect(Collectors.groupingBy(ViewInfo::getCountry,
+                                Collectors.groupingBy(ViewInfo::getSupViewID)));
+                
+                partitioned.forEach((country, subMap) -> {
+                    subMap.forEach((subViewId, list) -> {
+                        String key = getCacheKey("CompCircleScore", "Comp", vid, country, dateStr)
+                                     + "_sv_" + subViewId;
+                        cacheProvider.put(key, list);
+                        logger.info("Cached {} records for CompCircleScore for viewId {} for country {} and subViewID {}.", list.size(), vid, country, subViewId);
+                    });
+                });
+                
+                List<ViewInfo> aggBySubView = CacheDataProcessor.aggregateBySubView(rawData);
+                aggBySubView.forEach(vi -> {
+                    String key = getCacheKey("CompCircleScore", "Comp", vid, "all", dateStr)
+                                 + "_sv_" + vi.getSupViewID();
+                    cacheProvider.put(key, vi);
+                    logger.info("Cached aggregated CompCircleScore sub-view record for viewId {} for subViewID {}.", vid, vi.getSupViewID());
+                });
+                
+                List<ViewInfo> aggByCountry = CacheDataProcessor.aggregateByCountry(rawData);
+                aggByCountry.forEach(vi -> {
+                    String key = getCacheKey("CompCircleScore", "Comp", vid, vi.getCountry(), dateStr)
+                                 + "_ctry";
+                    cacheProvider.put(key, vi);
+                    logger.info("Cached aggregated CompCircleScore country record for viewId {} for country {}.", vid, vi.getCountry());
+                });
+                
+                List<ViewInfo> overallAgg = CacheDataProcessor.aggregateOverall(rawData);
+                overallAgg.forEach(vi -> {
+                    String key = getCacheKey("CompCircleScore", "Comp", vid, "all", dateStr)
+                                 + "_overall_" + vi.getType();
+                    cacheProvider.put(key, vi);
+                    logger.info("Cached overall aggregated CompCircleScore record for viewId {} for type {}.", vid, vi.getType());
+                });
             } catch (Exception e) {
-                logger.error("Error refreshing CompCircleScore for viewId {}: {}",
-                             vid, e.getMessage());
+                logger.error("Error refreshing CompCircleScore for viewId {}: {}", vid, e.getMessage());
                 incrementErrorCount();
             }
         });
-
+        
         logger.info("Dynamic cache refresh complete. Current cache size: {}", cacheProvider.size());
     }
 
@@ -141,20 +220,20 @@ public class CacheService {
 
     public void startAutoRefresh(final int viewId, final int subViewId, final String country, final String viewText) {
         if (scheduledExecutor == null || scheduledExecutor.isShutdown()) {
-            scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+            scheduledExecutor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
         }
         int interval = cacheConfig.getAutoRefreshInterval();
         scheduledExecutor.scheduleAtFixedRate(() -> {
             String dateStr = sdf.format(date);
-            logger.debug("Automatic periodic cache refresh triggered.");
+            logger.info("Automatic periodic cache refresh triggered at {}.", dateStr);
             refreshAllCacheData(dateStr);
-        }, interval, interval, TimeUnit.MINUTES);
+        }, interval, interval, java.util.concurrent.TimeUnit.MINUTES);
     }
 
     public void stopAutoRefresh() {
         if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
             scheduledExecutor.shutdown();
-            logger.debug("Automatic cache auto-refresh stopped.");
+            logger.info("Automatic cache auto-refresh stopped.");
         }
     }
 
@@ -164,13 +243,13 @@ public class CacheService {
             scheduledExecutor.shutdown();
         }
         cacheConfig.shutdown();
-        logger.debug("CacheService shutdown.");
+        logger.info("CacheService shutdown.");
     }
 
     public void startupFlow(final int viewId, final int subViewId, final String country, final String viewText) {
         preloadCacheBackground(viewId, subViewId, country, viewText);
         startAutoRefresh(viewId, subViewId, country, viewText);
-        logger.debug("CacheService startup flow completed.");
+        logger.info("CacheService startup flow completed.");
     }
     
     public void incrementErrorCount() {
@@ -180,95 +259,5 @@ public class CacheService {
             cacheEnabled = false; // Disable cache updates if too many errors occur.
             logger.error("Error limit exceeded. Cache updates are now disabled.");
         }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-package com.app.dev.cmon.cache;
-
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.Configuration;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
-public class CacheConfig {
-    private static final Logger logger = LoggerFactory.getLogger(CacheConfig.class);
-    private CacheManager cacheManager;
-    private Properties properties = new Properties();
-    private int autoRefreshInterval;
-    private int errorLimit = 10;
-
-    public CacheConfig() {
-        loadProperties();
-        Configuration config = new Configuration();
-        CacheConfiguration cacheConfig = new CacheConfiguration("dataCache", 2000)
-                .eternal(false)
-                .timeToIdleSeconds(1800) // 30 minutes
-                .timeToLiveSeconds(1800) // 30 minutes
-                .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
-        config.addCache(cacheConfig);
-        cacheManager = CacheManager.newInstance(config);
-        logger.debug("CacheConfig initialized.");
-    }
-
-    private void loadProperties() {
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("application.properties")) {
-            if (input == null) {
-                logger.warn("Unable to find application.properties. Using default settings.");
-                autoRefreshInterval = 30;
-                return;
-            }
-            properties.load(input);
-            String interval = properties.getProperty("cache.autoRefresh.interval", "30");
-            String error = properties.getProperty("cache.errorLimit.interval", "10");
-            autoRefreshInterval = Integer.parseInt(interval);
-            errorLimit = Integer.parseInt(error);
-        } catch (IOException ex) {
-            logger.error("Error loading properties: {}", ex.getMessage());
-            autoRefreshInterval = 30;
-            errorLimit = 10;
-        }
-    }
-
-    public Cache getDataCache() {
-        return cacheManager.getCache("dataCache");
-    }
-
-    public int getAutoRefreshInterval() {
-        return autoRefreshInterval;
-    }
-
-    public int getErrorLimit() {
-        return errorLimit;
-    }
-
-    public void setErrorLimit(int errorLimit) {
-        this.errorLimit = errorLimit;
-    }
-
-    public void shutdown() {
-        cacheManager.shutdown();
-        logger.debug("CacheConfig shutdown.");
     }
 }
