@@ -123,3 +123,22 @@ at sun.reflect.GeneratedMethodAccessor9147.invoke(Unknown Source)
 at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
 at java.lang.reflect.Method.invoke(Method.java:498)
 at javax.el.BeanELResolver.invoke(BeanELResolver.java:165)
+
+
+
+
+
+    public List<ViewInfo> getDataPerWeek(String type, String isNew) {
+        String dateStr = sdf.format(radar.getDate1()).trim();
+        String key = CacheService.getInstance().getCacheKey("DataPerWeek", type + "_" + isNew, viewId, subViewId, country, dateStr);
+        
+        List<ViewInfo> cachedResult = CacheService.getInstance().getFromCache(key);
+        if (cachedResult != null && !cachedResult.isEmpty()) {
+            return cachedResult;
+        }
+        
+        List<ViewInfo> data = da.getCoveragePerWeek(viewId, subViewId, 
+                country.equalsIgnoreCase("all") ? "" : country, type, viewText, dateStr);
+        CacheService.getInstance().putInCache(key, data);
+        return data;
+    }
