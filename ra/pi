@@ -1,0 +1,652 @@
+Running with gitlab-runner 12.2.0 (a987417a)
+  on cmon02 2XiWnzuN
+Using Shell executor...
+00:00
+Running on jo00-cmonapp02...
+00:00
+Fetching changes with git depth set to 20...
+00:01
+Reinitialized existing Git repository in /data/gitlab-runner/builds/2XiWnzuN/0/hub-dev-factory/web-core/core-web-components/.git/
+Checking out 8e8885fa as dev...
+Skipping Git submodules setup
+$ npm cache clean --force
+30:51
+npm WARN using --force I sure hope you know what you are doing.
+$ npm config set strict-ssl false
+$ npm i
+npm WARN read-shrinkwrap This version of npm is compatible with lockfileVersion@1, but package-lock.json was generated for lockfileVersion@3. I'll try to do my best with it!
+npm ERR! code ETIMEDOUT
+npm ERR! errno ETIMEDOUT
+npm ERR! network request to https://registry.npmjs.org/axios failed, reason: connect ETIMEDOUT 10.1.30.175:8080
+npm ERR! network This is a problem related to network connectivity.
+npm ERR! network In most cases you are behind a proxy or have bad network settings.
+npm ERR! network 
+npm ERR! network If you are behind a proxy, please make sure that the
+npm ERR! network 'proxy' config is set properly.  See: 'npm help config'
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home/gitlab-runner/.npm/_logs/2025-03-20T13_00_15_721Z-debug.log
+ERROR: Job failed: exit status 1   
+
+
+/////////////////////////////////////////////////////////////////
+
+
+
+
+Running with gitlab-runner 12.2.0 (a987417a)
+  on cmon02 2XiWnzuN
+Using Shell executor...
+00:00
+Running on jo00-cmonapp02...
+00:00
+Fetching changes with git depth set to 20...
+00:04
+Reinitialized existing Git repository in /data/gitlab-runner/builds/2XiWnzuN/0/hub-dev-factory/web-core/core-web-components/.git/
+From http://10.101.18.33:10080/hub-dev-factory/web-core/core-web-components
+ * [new ref]         refs/pipelines/49039 -> refs/pipelines/49039
+   68a6077..8ac1190  dev                  -> origin/dev
+Checking out 8ac1190e as dev...
+Removing .npmrc
+Removing dist/
+Removing node_modules/
+Skipping Git submodules setup
+$ npm cache clean --force
+03:03
+npm WARN using --force I sure hope you know what you are doing.
+$ npm config set strict-ssl false
+$ npm i
+npm WARN read-shrinkwrap This version of npm is compatible with lockfileVersion@1, but package-lock.json was generated for lockfileVersion@3. I'll try to do my best with it!
+npm WARN deprecated @mui/base@5.0.0-beta.69: This package has been replaced by @base-ui-components/react
+npm WARN deprecated @types/react-select@5.0.1: This is a stub types definition. react-select provides its own type definitions, so you do not need this installed.
+npm WARN deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+npm WARN deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm WARN deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+> @parcel/watcher@2.5.1 install /data/gitlab-runner/builds/2XiWnzuN/0/hub-dev-factory/web-core/core-web-components/node_modules/@parcel/watcher
+> node scripts/build-from-source.js
+npm WARN notsup Unsupported engine for css-minimizer-webpack-plugin@7.0.0: wanted: {"node":">= 18.12.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: css-minimizer-webpack-plugin@7.0.0
+npm WARN notsup Unsupported engine for next@14.2.24: wanted: {"node":">=18.17.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: next@14.2.24
+npm WARN notsup Unsupported engine for lru-cache@11.0.2: wanted: {"node":"20 || >=22"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: lru-cache@11.0.2
+npm WARN notsup Unsupported engine for cssnano@7.0.6: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: cssnano@7.0.6
+npm WARN notsup Unsupported engine for cssnano-preset-default@7.0.6: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: cssnano-preset-default@7.0.6
+npm WARN notsup Unsupported engine for postcss-calc@10.1.1: wanted: {"node":"^18.12 || ^20.9 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-calc@10.1.1
+npm WARN notsup Unsupported engine for cssnano-utils@5.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: cssnano-utils@5.0.0
+npm WARN notsup Unsupported engine for postcss-colormin@7.0.2: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-colormin@7.0.2
+npm WARN notsup Unsupported engine for postcss-convert-values@7.0.4: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-convert-values@7.0.4
+npm WARN notsup Unsupported engine for postcss-discard-comments@7.0.3: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-discard-comments@7.0.3
+npm WARN notsup Unsupported engine for postcss-discard-duplicates@7.0.1: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-discard-duplicates@7.0.1
+npm WARN notsup Unsupported engine for postcss-discard-empty@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-discard-empty@7.0.0
+npm WARN notsup Unsupported engine for postcss-discard-overridden@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-discard-overridden@7.0.0
+npm WARN notsup Unsupported engine for postcss-merge-longhand@7.0.4: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-merge-longhand@7.0.4
+npm WARN notsup Unsupported engine for postcss-merge-rules@7.0.4: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-merge-rules@7.0.4
+npm WARN notsup Unsupported engine for postcss-minify-font-values@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-minify-font-values@7.0.0
+npm WARN notsup Unsupported engine for postcss-minify-gradients@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-minify-gradients@7.0.0
+npm WARN notsup Unsupported engine for postcss-minify-params@7.0.2: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-minify-params@7.0.2
+npm WARN notsup Unsupported engine for postcss-minify-selectors@7.0.4: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-minify-selectors@7.0.4
+npm WARN notsup Unsupported engine for postcss-normalize-charset@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-charset@7.0.0
+npm WARN notsup Unsupported engine for postcss-normalize-display-values@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-display-values@7.0.0
+npm WARN notsup Unsupported engine for postcss-normalize-positions@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-positions@7.0.0
+npm WARN notsup Unsupported engine for postcss-normalize-repeat-style@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-repeat-style@7.0.0
+npm WARN notsup Unsupported engine for postcss-normalize-string@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-string@7.0.0
+npm WARN notsup Unsupported engine for postcss-normalize-timing-functions@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-timing-functions@7.0.0
+npm WARN notsup Unsupported engine for postcss-normalize-unicode@7.0.2: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-unicode@7.0.2
+npm WARN notsup Unsupported engine for postcss-normalize-url@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-url@7.0.0
+npm WARN notsup Unsupported engine for postcss-normalize-whitespace@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-normalize-whitespace@7.0.0
+npm WARN notsup Unsupported engine for postcss-ordered-values@7.0.1: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-ordered-values@7.0.1
+npm WARN notsup Unsupported engine for postcss-reduce-initial@7.0.2: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-reduce-initial@7.0.2
+npm WARN notsup Unsupported engine for postcss-reduce-transforms@7.0.0: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-reduce-transforms@7.0.0
+npm WARN notsup Unsupported engine for postcss-svgo@7.0.1: wanted: {"node":"^18.12.0 || ^20.9.0 || >= 18"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-svgo@7.0.1
+npm WARN notsup Unsupported engine for postcss-unique-selectors@7.0.3: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: postcss-unique-selectors@7.0.3
+npm WARN notsup Unsupported engine for stylehacks@7.0.4: wanted: {"node":"^18.12.0 || ^20.9.0 || >=22.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: stylehacks@7.0.4
+npm WARN notsup Unsupported engine for csso@5.0.5: wanted: {"node":"^10 || ^12.20.0 || ^14.13.0 || >=15.0.0","npm":">=7.0.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: csso@5.0.5
+npm WARN notsup Unsupported engine for css-tree@2.2.1: wanted: {"npm":">=7.0.0","node":"^10 || ^12.20.0 || ^14.13.0 || >=15.0.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: css-tree@2.2.1
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @next/swc-darwin-x64@14.2.24 (node_modules/next/node_modules/@next/swc-darwin-x64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @next/swc-darwin-x64@14.2.24: wanted {"os":"darwin","arch":"x64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @next/swc-darwin-arm64@14.2.24 (node_modules/next/node_modules/@next/swc-darwin-arm64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @next/swc-darwin-arm64@14.2.24: wanted {"os":"darwin","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @next/swc-win32-x64-msvc@14.2.24 (node_modules/next/node_modules/@next/swc-win32-x64-msvc):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @next/swc-win32-x64-msvc@14.2.24: wanted {"os":"win32","arch":"x64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @next/swc-linux-arm64-gnu@14.2.24 (node_modules/next/node_modules/@next/swc-linux-arm64-gnu):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @next/swc-linux-arm64-gnu@14.2.24: wanted {"os":"linux","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @next/swc-win32-ia32-msvc@14.2.24 (node_modules/next/node_modules/@next/swc-win32-ia32-msvc):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @next/swc-win32-ia32-msvc@14.2.24: wanted {"os":"win32","arch":"ia32"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @next/swc-win32-arm64-msvc@14.2.24 (node_modules/next/node_modules/@next/swc-win32-arm64-msvc):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @next/swc-win32-arm64-msvc@14.2.24: wanted {"os":"win32","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @next/swc-linux-arm64-musl@14.2.24 (node_modules/next/node_modules/@next/swc-linux-arm64-musl):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @next/swc-linux-arm64-musl@14.2.24: wanted {"os":"linux","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN notsup Unsupported engine for compression-webpack-plugin@11.1.0: wanted: {"node":">= 18.12.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: compression-webpack-plugin@11.1.0
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-darwin-x64@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-darwin-x64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-darwin-x64@2.5.1: wanted {"os":"darwin","arch":"x64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-darwin-arm64@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-darwin-arm64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-darwin-arm64@2.5.1: wanted {"os":"darwin","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-win32-x64@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-win32-x64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-win32-x64@2.5.1: wanted {"os":"win32","arch":"x64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-win32-arm64@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-win32-arm64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-win32-arm64@2.5.1: wanted {"os":"win32","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-win32-ia32@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-win32-ia32):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-win32-ia32@2.5.1: wanted {"os":"win32","arch":"ia32"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-linux-arm64-glibc@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-linux-arm64-glibc):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-linux-arm64-glibc@2.5.1: wanted {"os":"linux","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-linux-arm64-musl@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-linux-arm64-musl):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-linux-arm64-musl@2.5.1: wanted {"os":"linux","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-linux-arm-glibc@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-linux-arm-glibc):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-linux-arm-glibc@2.5.1: wanted {"os":"linux","arch":"arm"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-linux-arm-musl@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-linux-arm-musl):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-linux-arm-musl@2.5.1: wanted {"os":"linux","arch":"arm"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-android-arm64@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-android-arm64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-android-arm64@2.5.1: wanted {"os":"android","arch":"arm64"} (current: {"os":"linux","arch":"x64"})
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: @parcel/watcher-freebsd-x64@2.5.1 (node_modules/@parcel/watcher/node_modules/@parcel/watcher-freebsd-x64):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for @parcel/watcher-freebsd-x64@2.5.1: wanted {"os":"freebsd","arch":"x64"} (current: {"os":"linux","arch":"x64"})
+npm WARN notsup Unsupported engine for readdirp@4.1.2: wanted: {"node":">= 14.18.0"} (current: {"node":"14.17.0","npm":"6.14.13"})
+npm WARN notsup Not compatible with your version of node/npm: readdirp@4.1.2
+npm WARN @hdf/core-components@0.5.161 requires a peer of react-dom@^18.2.0 but none is installed. You must install peer dependencies yourself.
+npm WARN next@14.2.24 requires a peer of react-dom@^18.2.0 but none is installed. You must install peer dependencies yourself.
+npm WARN react-select@5.10.0 requires a peer of react-dom@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 but none is installed. You must install peer dependencies yourself.
+npm WARN react-datepicker@6.9.0 requires a peer of react-dom@^16.9.0 || ^17 || ^18 but none is installed. You must install peer dependencies yourself.
+npm WARN react-window@1.8.11 requires a peer of react-dom@^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 but none is installed. You must install peer dependencies yourself.
+npm WARN @floating-ui/react@0.26.28 requires a peer of react-dom@>=16.8.0 but none is installed. You must install peer dependencies yourself.
+npm WARN react-onclickoutside@6.13.1 requires a peer of react-dom@^15.5.x || ^16.x || ^17.x || ^18.x but none is installed. You must install peer dependencies yourself.
+npm WARN @floating-ui/react-dom@2.1.2 requires a peer of react-dom@>=16.8.0 but none is installed. You must install peer dependencies yourself.
+npm WARN react-transition-group@4.4.5 requires a peer of react-dom@>=16.6.0 but none is installed. You must install peer dependencies yourself.
+npm WARN @mui/base@5.0.0-beta.69 requires a peer of react-dom@^17.0.0 || ^18.0.0 || ^19.0.0 but none is installed. You must install peer dependencies yourself.
+npm WARN @mui/material@6.4.5 requires a peer of react-dom@^17.0.0 || ^18.0.0 || ^19.0.0 but none is installed. You must install peer dependencies yourself.
+npm WARN react-toastify@11.0.5 requires a peer of react-dom@^18 || ^19 but none is installed. You must install peer dependencies yourself.
+npm WARN sweetalert2-react-content@5.1.0 requires a peer of react-dom@^18.0.0 || ^19.0.0 but none is installed. You must install peer dependencies yourself.
+added 532 packages from 478 contributors and audited 552 packages in 83.91s
+77 packages are looking for funding
+  run `npm fund` for details
+found 3 vulnerabilities (1 low, 2 high)
+  run `npm audit fix` to fix them, or `npm audit` for details
+$ npm run build
+> @hdf/core-components@0.5.161 build /data/gitlab-runner/builds/2XiWnzuN/0/hub-dev-factory/web-core/core-web-components
+> webpack --config webpack.config.js --mode production
+assets by path types/components/ 106 KiB 83 assets
+assets by path types/Icons/ 1.53 KiB
+  asset types/Icons/NavigateBeforeIcon/index.d.ts 241 bytes [emitted]
+  asset types/Icons/NavigateNextIcon/index.d.ts 237 bytes [emitted]
+  asset types/Icons/FirstPageIcon/index.d.ts 231 bytes [emitted]
+  + 5 assets
+assets by path types/enums/*.ts 226 bytes
+  asset types/enums/ColumnTypes.d.ts 120 bytes [emitted]
+  asset types/enums/ColumnSorting.d.ts 106 bytes [emitted]
+asset index.js 1.48 MiB [emitted] [minimized] [big] (name: main) 1 related asset
+asset types/index.d.ts 2.4 KiB [emitted]
+asset types/utilities/general.d.ts 82 bytes [emitted]
+orphan modules 1.01 MiB [orphan] 727 modules
+runtime modules 1.17 KiB 6 modules
+built modules 3.74 MiB [built]
+  modules by path ./node_modules/ 3.44 MiB 500 modules
+  modules by path ./src/ 298 KiB 113 modules
+  modules by path external "@emotion/ 84 bytes
+    external "@emotion/react" 42 bytes [built] [code generated]
+    external "@emotion/styled" 42 bytes [built] [code generated]
+  external "react" 42 bytes [built] [code generated]
+  external "react-dom" 42 bytes [built] [code generated]
+  external "@mui/material" 42 bytes [built] [code generated]
+  external "formik" 42 bytes [built] [code generated]
+WARNING in ./node_modules/react-datepicker/dist/react-datepicker.css (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./node_modules/react-datepicker/dist/react-datepicker.css)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./node_modules/react-datepicker/dist/react-datepicker.css 8:6-130 22:17-24 26:0-100 26:0-100 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DateTimeSelector/index.tsx 9:0-53
+ @ ./src/index.tsx 40:25-65 42:13-53
+WARNING in ./node_modules/react-toastify/dist/ReactToastify.css (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./node_modules/react-toastify/dist/ReactToastify.css)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./node_modules/react-toastify/dist/ReactToastify.css 8:6-127 22:17-24 26:0-97 26:0-97 27:22-29 27:33-47 27:50-64
+ @ ./src/components/CustomToast/index.tsx 7:0-48
+ @ ./src/index.tsx 69:20-55
+WARNING in ./src/components/ClinetExportToExcel/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/ClinetExportToExcel/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/ClinetExportToExcel/style.module.scss 8:6-159 22:17-24 26:0-129 26:0-129 27:22-29 27:33-47 27:50-64
+ @ ./src/components/ClinetExportToExcel/index.tsx 41:44-74
+ @ ./src/components/DataTable/Controllers/index.tsx 10:46-82
+ @ ./src/components/DataTable/index.tsx 50:38-62
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/ColumnsController/styles.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/ColumnsController/styles.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/ColumnsController/styles.module.scss 8:6-160 22:17-24 26:0-130 26:0-130 27:22-29 27:33-47 27:50-64
+ @ ./src/components/ColumnsController/index.tsx 8:45-76
+ @ ./src/components/DataTable/THead/index.tsx 46:44-78
+ @ ./src/components/DataTable/index.tsx 44:32-50
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/DataTable/ClientQuickSearch/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/DataTable/ClientQuickSearch/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/DataTable/ClientQuickSearch/style.module.scss 8:6-165 22:17-24 26:0-135 26:0-135 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/ClientQuickSearch/index.tsx 8:44-74
+ @ ./src/components/DataTable/Controllers/index.tsx 9:44-75
+ @ ./src/components/DataTable/index.tsx 50:38-62
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/DataTable/QuickSearch/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/DataTable/QuickSearch/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/DataTable/QuickSearch/style.module.scss 8:6-165 22:17-24 26:0-135 26:0-135 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/QuickSearch/index.tsx 9:44-74
+ @ ./src/components/DataTable/Controllers/index.tsx 8:38-63
+ @ ./src/components/DataTable/index.tsx 50:38-62
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/DataTable/Spinner/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/DataTable/Spinner/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/DataTable/Spinner/style.module.scss 8:6-165 22:17-24 26:0-135 26:0-135 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/Spinner/index.tsx 7:44-74
+ @ ./src/components/DataTable/index.tsx 46:34-54
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/DataTable/TBody/TRow/styles.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/DataTable/TBody/TRow/styles.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/DataTable/TBody/TRow/styles.module.scss 8:6-172 22:17-24 26:0-142 26:0-142 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/TBody/TRow/index.tsx 7:45-76
+ @ ./src/components/DataTable/TBody/index.tsx 10:31-48
+ @ ./src/components/DataTable/index.tsx 43:32-50
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/DataTable/TBody/styles.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/DataTable/TBody/styles.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/DataTable/TBody/styles.module.scss 8:6-166 22:17-24 26:0-136 26:0-136 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/TBody/index.tsx 11:45-76
+ @ ./src/components/DataTable/index.tsx 43:32-50
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/DataTable/THead/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/DataTable/THead/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/DataTable/THead/style.module.scss 8:6-165 22:17-24 26:0-135 26:0-135 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/THead/index.tsx 42:44-74
+ @ ./src/components/DataTable/index.tsx 44:32-50
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/DataTable/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/DataTable/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/DataTable/style.module.scss 8:6-159 22:17-24 26:0-129 26:0-129 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/index.tsx 45:44-74
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/ExportToExcel/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/ExportToExcel/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/ExportToExcel/style.module.scss 8:6-159 22:17-24 26:0-129 26:0-129 27:22-29 27:33-47 27:50-64
+ @ ./src/components/ExportToExcel/index.tsx 16:44-74
+ @ ./src/components/DataTable/Controllers/index.tsx 11:40-70
+ @ ./src/components/DataTable/index.tsx 50:38-62
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in ./src/components/FormikTextField/style.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/FormikTextField/style.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/FormikTextField/style.scss 8:6-152 22:17-24 26:0-122 26:0-122 27:22-29 27:33-47 27:50-64
+ @ ./src/components/FormikTextField/index.tsx 19:0-23
+ @ ./src/index.tsx 58:24-63
+WARNING in ./src/components/Loader/styles.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/Loader/styles.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/Loader/styles.module.scss 8:6-160 22:17-24 26:0-130 26:0-130 27:22-29 27:33-47 27:50-64
+ @ ./src/components/Loader/index.tsx 7:45-76
+ @ ./src/components/StandardTable/index.tsx 54:33-53
+ @ ./src/index.tsx 24:22-59 26:13-50
+WARNING in ./src/components/Modal/Body/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/Modal/Body/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/Modal/Body/style.module.scss 8:6-165 22:17-24 26:0-135 26:0-135 27:22-29 27:33-47 27:50-64
+ @ ./src/components/Modal/Body/index.tsx 7:44-74
+ @ ./src/components/Modal/index.tsx 10:31-48
+ @ ./src/index.tsx 30:14-43 32:13-42
+WARNING in ./src/components/Modal/Header/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/Modal/Header/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/Modal/Header/style.module.scss 8:6-165 22:17-24 26:0-135 26:0-135 27:22-29 27:33-47 27:50-64
+ @ ./src/components/Modal/Header/index.tsx 7:44-74
+ @ ./src/components/Modal/index.tsx 9:33-52
+ @ ./src/index.tsx 30:14-43 32:13-42
+WARNING in ./src/components/Modal/style.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/Modal/style.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/Modal/style.module.scss 8:6-159 22:17-24 26:0-129 26:0-129 27:22-29 27:33-47 27:50-64
+ @ ./src/components/Modal/index.tsx 11:44-74
+ @ ./src/index.tsx 30:14-43 32:13-42
+WARNING in ./src/components/StandardTable/styles.module.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/components/StandardTable/styles.module.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/components/StandardTable/styles.module.scss 8:6-160 22:17-24 26:0-130 26:0-130 27:22-29 27:33-47 27:50-64
+ @ ./src/components/StandardTable/index.tsx 53:45-76
+ @ ./src/index.tsx 24:22-59 26:13-50
+WARNING in ./src/styles/general-rules.scss (./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js!./src/styles/general-rules.scss)
+Module Warning (from ./node_modules/sass-loader/dist/cjs.js):
+Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+More info: https://sass-lang.com/d/legacy-js-api
+ @ ./src/styles/general-rules.scss 8:6-154 22:17-24 26:0-124 26:0-124 27:22-29 27:33-47 27:50-64
+ @ ./src/components/DataTable/index.tsx 42:0-42
+ @ ./src/index.tsx 21:18-51 23:13-46
+WARNING in asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  index.js (1.48 MiB)
+WARNING in entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  main (1.48 MiB)
+      index.js
+WARNING in webpack performance recommendations: 
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+webpack 5.98.0 compiled with 22 warnings in 88465 ms
+$ git checkout -- .
+$ npm version patch -m "%s [skip ci]"
+v0.5.162
+$ git config user.name "$CICD_USER"
+$ git remote set-url origin "http://$CICD_USER:$CICD_PASSWORD@10.101.18.33:10080/hub-dev-factory/web-core/core-web-components"
+$ git push origin HEAD:dev
+warning: redirecting to http://10.101.18.33:10080/hub-dev-factory/web-core/core-web-components.git/
+remote: 
+remote: View merge request for dev:        
+remote:   http://10.101.18.33:10080/hub-dev-factory/web-core/core-web-components/-/merge_requests/4        
+remote: 
+To http://10.101.18.33:10080/hub-dev-factory/web-core/core-web-components
+   8ac1190..b0ab0ad  HEAD -> dev
+$ echo "//10.101.18.33:8081/repository/abgroup-npm/:_auth=$(echo -n $NEXUS_USER:$NEXUS_PASSWORD | base64)" > .npmrc
+$ echo "registry=http://10.101.18.33:8081/repository/ab-npm-hosted/" >> .npmrc
+$ echo "_auth=$(echo -n $NEXUS_USER:$NEXUS_PASSWORD | base64)" >> .npmrc
+$ echo "always-auth=true" >> .npmrc
+$ npm publish
+npm notice 
+npm notice 📦  @hdf/core-components@0.5.162
+npm notice === Tarball Contents === 
+npm notice 91B     .babelrc                                                                                     
+npm notice 1.6MB   dist/index.js                                                                                
+npm notice 1.0kB   webpack.config.js                                                                            
+npm notice 2.5kB   package.json                                                                                 
+npm notice 12.0kB  tsconfig.json                                                                                
+npm notice 1.8kB   src/components/DataTable/InputText/index.jsx                                                 
+npm notice 1.8kB   src/components/DataTable/SelectOneMenu/index.jsx                                             
+npm notice 183B    src/enums/ColumnSorting.d.ts.map                                                             
+npm notice 193B    src/enums/ColumnTypes.d.ts.map                                                               
+npm notice 164B    src/utilities/general.d.ts.map                                                               
+npm notice 433B    src/components/DataTable/settings.d.ts.map                                                   
+npm notice 115B    webpack.config.d.ts.map                                                                      
+npm notice 595B    src/styles/general-rules.scss                                                                
+npm notice 1.3kB   src/components/ClinetExportToExcel/style.module.scss                                         
+npm notice 2.0kB   src/components/DataTable/ClientQuickSearch/style.module.scss                                 
+npm notice 1.3kB   src/components/DataTable/Pagination/style.module.scss                                        
+npm notice 2.0kB   src/components/DataTable/QuickSearch/style.module.scss                                       
+npm notice 930B    src/components/DataTable/Settings/ColumnVisibilityBtn/style.module.scss                      
+npm notice 1.0kB   src/components/DataTable/Settings/RowHeightBtn/style.module.scss                             
+npm notice 225B    src/components/DataTable/Settings/style.module.scss                                          
+npm notice 922B    src/components/DataTable/Spinner/style.module.scss                                           
+npm notice 640B    src/components/DataTable/style.module.scss                                                   
+npm notice 2.7kB   src/components/DataTable/THead/style.module.scss                                             
+npm notice 1.3kB   src/components/ExportToExcel/style.module.scss                                               
+npm notice 0       src/components/Modal/Body/style.module.scss                                                  
+npm notice 349B    src/components/Modal/Header/style.module.scss                                                
+npm notice 1.1kB   src/components/Modal/style.module.scss                                                       
+npm notice 89B     src/Icons/FirstPageIcon/style.module.scss                                                    
+npm notice 90B     src/Icons/LastPageIcon/style.module.scss                                                     
+npm notice 96B     src/Icons/NavigateBeforeIcon/style.module.scss                                               
+npm notice 94B     src/Icons/NavigateNextIcon/style.module.scss                                                 
+npm notice 177B    src/components/FormikTextField/style.scss                                                    
+npm notice 375B    src/components/ColumnsController/styles.module.scss                                          
+npm notice 2.0kB   src/components/DataTable/TBody/styles.module.scss                                            
+npm notice 31B     src/components/DataTable/TBody/TRow/styles.module.scss                                       
+npm notice 1.9kB   src/components/Loader/styles.module.scss                                                     
+npm notice 3.3kB   src/components/StandardTable/styles.module.scss                                              
+npm notice 1.4kB   src/Icons/OptionsIcon/optionsIcon.svg                                                        
+npm notice 192B    dist/types/components/CountryFlag/flags/AE.d.ts                                              
+npm notice 192B    dist/types/components/CountryFlag/flags/BH.d.ts                                              
+npm notice 196B    dist/types/components/CountryFlag/flags/BHOP.d.ts                                            
+npm notice 192B    dist/types/components/CountryFlag/flags/CN.d.ts                                              
+npm notice 106B    dist/types/enums/ColumnSorting.d.ts                                                          
+npm notice 151B    src/enums/ColumnSorting.d.ts                                                                 
+npm notice 120B    dist/types/enums/ColumnTypes.d.ts                                                            
+npm notice 161B    src/enums/ColumnTypes.d.ts                                                                   
+npm notice 713B    dist/types/components/DataTable/THead/CustomSelect/CustomSelect.d.ts                         
+npm notice 1.4kB   src/components/DataTable/THead/CustomSelect/CustomSelect.ts                                  
+npm notice 210B    dist/types/components/CountryFlag/flags/DefaultFlag.d.ts                                     
+npm notice 192B    dist/types/components/CountryFlag/flags/DZ.d.ts                                              
+npm notice 192B    dist/types/components/CountryFlag/flags/EG.d.ts                                              
+npm notice 192B    dist/types/components/CountryFlag/flags/EU.d.ts                                              
+npm notice 140B    dist/types/Icons/ExportToExcelIcon/ExportToExcelIcon.d.ts                                    
+npm notice 192B    dist/types/components/CountryFlag/flags/FR.d.ts                                              
+npm notice 82B     dist/types/utilities/general.d.ts                                                            
+npm notice 119B    src/utilities/general.d.ts                                                                   
+npm notice 223B    dist/types/components/DataTable/utils/highlightText.d.ts                                     
+npm notice 5.5kB   dist/types/components/Alerts/index.d.ts                                                      
+npm notice 1.1kB   dist/types/components/AsyncSelectMenu/index.d.ts                                             
+npm notice 3.9kB   dist/types/components/Backdrop/index.d.ts                                                    
+npm notice 307B    dist/types/components/BaseIconButton/index.d.ts                                              
+npm notice 586B    dist/types/components/Checkbox/index.d.ts                                                    
+npm notice 353B    dist/types/components/ClinetExportToExcel/index.d.ts                                         
+npm notice 551B    dist/types/components/ColumnsController/index.d.ts                                           
+npm notice 894B    dist/types/components/ConfirmationModal/index.d.ts                                           
+npm notice 286B    dist/types/components/CountryFlag/index.d.ts                                                 
+npm notice 4.4kB   dist/types/components/CustomAccordion/index.d.ts                                             
+npm notice 4.4kB   dist/types/components/CustomBreadcrumb/index.d.ts                                            
+npm notice 2.9kB   dist/types/components/CustomButton/index.d.ts                                                
+npm notice 4.7kB   dist/types/components/CustomToast/index.d.ts                                                 
+npm notice 917B    dist/types/components/DataTable/ClientQuickSearch/index.d.ts                                 
+npm notice 712B    dist/types/components/DataTable/Controllers/index.d.ts                                       
+npm notice 3.0kB   dist/types/components/DataTable/index.d.ts                                                   
+npm notice 154B    dist/types/components/DataTable/InputText/index.d.ts                                         
+npm notice 544B    dist/types/components/DataTable/Pagination/index.d.ts                                        
+npm notice 223B    dist/types/components/DataTable/QuickSearch/CloseIcon/index.d.ts                             
+npm notice 287B    dist/types/components/DataTable/QuickSearch/index.d.ts                                       
+npm notice 191B    dist/types/components/DataTable/QuickSearch/SearchIcon/index.d.ts                            
+npm notice 154B    dist/types/components/DataTable/SelectOneMenu/index.d.ts                                     
+npm notice 118B    dist/types/components/DataTable/Settings/ColumnVisibilityBtn/index.d.ts                      
+npm notice 122B    dist/types/components/DataTable/Settings/ColumnVisibilityBtn/ViewColumnRoundedIcon/index.d.ts
+npm notice 219B    dist/types/components/DataTable/Settings/index.d.ts                                          
+npm notice 104B    dist/types/components/DataTable/Settings/RowHeightBtn/index.d.ts                             
+npm notice 106B    dist/types/components/DataTable/Settings/RowHeightBtn/ViewComfyIcon/index.d.ts               
+npm notice 94B     dist/types/components/DataTable/Spinner/index.d.ts                                           
+npm notice 1.1kB   dist/types/components/DataTable/TBody/index.d.ts                                             
+npm notice 162B    dist/types/components/DataTable/TBody/Messages/EmptyMessage/index.d.ts                       
+npm notice 162B    dist/types/components/DataTable/TBody/Messages/ErrorMessage/index.d.ts                       
+npm notice 587B    dist/types/components/DataTable/TBody/TRow/index.d.ts                                        
+npm notice 90B     dist/types/components/DataTable/TFoot/index.d.ts                                             
+npm notice 1.4kB   dist/types/components/DataTable/THead/index.d.ts                                             
+npm notice 579B    dist/types/components/DateTimeSelector/index.d.ts                                            
+npm notice 348B    dist/types/components/ExportToExcel/index.d.ts                                               
+npm notice 6.1kB   dist/types/components/FormikCheckbox/index.d.ts                                              
+npm notice 1.7kB   dist/types/components/FormikMenuSelect/index.d.ts                                            
+npm notice 8.2kB   dist/types/components/FormikRadioGroup/index.d.ts                                            
+npm notice 6.2kB   dist/types/components/FormikSwitch/index.d.ts                                                
+npm notice 7.1kB   dist/types/components/FormikTextarea/index.d.ts                                              
+npm notice 6.2kB   dist/types/components/FormikTextField/index.d.ts                                             
+npm notice 339B    dist/types/components/Input/index.d.ts                                                       
+npm notice 462B    dist/types/components/InputlabelWrapper/index.d.ts                                           
+npm notice 204B    dist/types/components/Loader/index.d.ts                                                      
+npm notice 230B    dist/types/components/Modal/Body/index.d.ts                                                  
+npm notice 238B    dist/types/components/Modal/Header/index.d.ts                                                
+npm notice 892B    dist/types/components/Modal/index.d.ts                                                       
+npm notice 3.7kB   dist/types/components/MuiLoader/index.d.ts                                                   
+npm notice 4.2kB   dist/types/components/Pagination/index.d.ts                                                  
+npm notice 326B    dist/types/components/RippleEffect/index.d.ts                                                
+npm notice 1.3kB   dist/types/components/StandardTable/index.d.ts                                               
+npm notice 4.8kB   dist/types/components/Tabs/index.d.ts                                                        
+npm notice 363B    dist/types/components/TextArea/index.d.ts                                                    
+npm notice 4.0kB   dist/types/components/Theme/index.d.ts                                                       
+npm notice 2.0kB   dist/types/components/Tooltip/index.d.ts                                                     
+npm notice 1.9kB   dist/types/components/Typograghy/index.d.ts                                                  
+npm notice 567B    dist/types/components/UseAxios/index.d.ts                                                    
+npm notice 231B    dist/types/Icons/FirstPageIcon/index.d.ts                                                    
+npm notice 229B    dist/types/Icons/LastPageIcon/index.d.ts                                                     
+npm notice 241B    dist/types/Icons/NavigateBeforeIcon/index.d.ts                                               
+npm notice 237B    dist/types/Icons/NavigateNextIcon/index.d.ts                                                 
+npm notice 223B    dist/types/Icons/OptionsIcon/index.d.ts                                                      
+npm notice 2.5kB   dist/types/index.d.ts                                                                        
+npm notice 230B    dist/types/components/CountryFlag/flags/IQ.d.ts                                              
+npm notice 230B    dist/types/components/CountryFlag/flags/JO.d.ts                                              
+npm notice 192B    dist/types/components/CountryFlag/flags/LB.d.ts                                              
+npm notice 212B    dist/types/components/CountryFlag/flags/MA.d.ts                                              
+npm notice 230B    dist/types/components/CountryFlag/flags/MAR.d.ts                                             
+npm notice 136B    dist/types/Icons/NotFoundData/NotFoundData.d.ts                                              
+npm notice 194B    dist/types/components/CountryFlag/flags/PLC.d.ts                                             
+npm notice 192B    dist/types/components/CountryFlag/flags/PS.d.ts                                              
+npm notice 192B    dist/types/components/CountryFlag/flags/QA.d.ts                                              
+npm notice 128B    dist/types/Icons/RefreshIcon/refreshIcon.d.ts                                                
+npm notice 506B    dist/types/components/DataTable/settings.d.ts                                                
+npm notice 192B    dist/types/components/CountryFlag/flags/SG.d.ts                                              
+npm notice 0       src/types.d.ts                                                                               
+npm notice 94B     src/typings.d.ts                                                                             
+npm notice 192B    dist/types/components/CountryFlag/flags/UK.d.ts                                              
+npm notice 236B    dist/types/components/DataTable/hook/useClinetSorting.d.ts                                   
+npm notice 1.4kB   src/components/DataTable/hook/useClinetSorting.ts                                            
+npm notice 114B    dist/types/components/DataTable/Utils.d.ts                                                   
+npm notice 273B    src/components/DataTable/Utils.ts                                                            
+npm notice 657B    webpack.config.d.ts                                                                          
+npm notice 192B    dist/types/components/CountryFlag/flags/YE.d.ts                                              
+npm notice 828B    src/components/CountryFlag/flags/AE.tsx                                                      
+npm notice 1.0kB   src/components/CountryFlag/flags/BH.tsx                                                      
+npm notice 4.0kB   src/components/CountryFlag/flags/BHOP.tsx                                                    
+npm notice 1.3kB   src/components/CountryFlag/flags/CN.tsx                                                      
+npm notice 102B    src/enums/ColumnSorting.tsx                                                                  
+npm notice 118B    src/enums/ColumnTypes.tsx                                                                    
+npm notice 482B    src/components/CountryFlag/flags/DefaultFlag.tsx                                             
+npm notice 1.1kB   src/components/CountryFlag/flags/DZ.tsx                                                      
+npm notice 5.9kB   src/components/CountryFlag/flags/EG.tsx                                                      
+npm notice 4.6kB   src/components/CountryFlag/flags/EU.tsx                                                      
+npm notice 4.3kB   src/Icons/ExportToExcelIcon/ExportToExcelIcon.tsx                                            
+npm notice 778B    src/components/CountryFlag/flags/FR.tsx                                                      
+npm notice 207B    src/utilities/general.tsx                                                                    
+npm notice 812B    src/components/DataTable/utils/highlightText.tsx                                             
+npm notice 5.8kB   src/components/Alerts/index.tsx                                                              
+npm notice 5.2kB   src/components/AsyncSelectMenu/index.tsx                                                     
+npm notice 4.4kB   src/components/Backdrop/index.tsx                                                            
+npm notice 379B    src/components/BaseIconButton/index.tsx                                                      
+npm notice 1.6kB   src/components/Checkbox/index.tsx                                                            
+npm notice 2.2kB   src/components/ClinetExportToExcel/index.tsx                                                 
+npm notice 1.5kB   src/components/ColumnsController/index.tsx                                                   
+npm notice 5.6kB   src/components/ConfirmationModal/index.tsx                                                   
+npm notice 1.2kB   src/components/CountryFlag/index.tsx                                                         
+npm notice 5.4kB   src/components/CustomAccordion/index.tsx                                                     
+npm notice 6.8kB   src/components/CustomBreadcrumb/index.tsx                                                    
+npm notice 3.6kB   src/components/CustomButton/index.tsx                                                        
+npm notice 4.8kB   src/components/CustomToast/index.tsx                                                         
+npm notice 6.0kB   src/components/DataTable/ClientQuickSearch/index.tsx                                         
+npm notice 3.5kB   src/components/DataTable/Controllers/index.tsx                                               
+npm notice 14.7kB  src/components/DataTable/index.tsx                                                           
+npm notice 6.0kB   src/components/DataTable/Pagination/index.tsx                                                
+npm notice 640B    src/components/DataTable/QuickSearch/CloseIcon/index.tsx                                     
+npm notice 2.6kB   src/components/DataTable/QuickSearch/index.tsx                                               
+npm notice 613B    src/components/DataTable/QuickSearch/SearchIcon/index.tsx                                    
+npm notice 405B    src/components/DataTable/Settings/ColumnVisibilityBtn/index.tsx                              
+npm notice 564B    src/components/DataTable/Settings/ColumnVisibilityBtn/ViewColumnRoundedIcon/index.tsx        
+npm notice 586B    src/components/DataTable/Settings/index.tsx                                                  
+npm notice 430B    src/components/DataTable/Settings/RowHeightBtn/index.tsx                                     
+npm notice 328B    src/components/DataTable/Settings/RowHeightBtn/ViewComfyIcon/index.tsx                       
+npm notice 249B    src/components/DataTable/Spinner/index.tsx                                                   
+npm notice 3.5kB   src/components/DataTable/TBody/index.tsx                                                     
+npm notice 187B    src/components/DataTable/TBody/Messages/EmptyMessage/index.tsx                               
+npm notice 191B    src/components/DataTable/TBody/Messages/ErrorMessage/index.tsx                               
+npm notice 1.8kB   src/components/DataTable/TBody/TRow/index.tsx                                                
+npm notice 108B    src/components/DataTable/TFoot/index.tsx                                                     
+npm notice 13.4kB  src/components/DataTable/THead/index.tsx                                                     
+npm notice 685B    src/components/DateTimeSelector/index.tsx                                                    
+npm notice 1.8kB   src/components/ExportToExcel/index.tsx                                                       
+npm notice 7.8kB   src/components/FormikCheckbox/index.tsx                                                      
+npm notice 7.6kB   src/components/FormikMenuSelect/index.tsx                                                    
+npm notice 10.9kB  src/components/FormikRadioGroup/index.tsx                                                    
+npm notice 7.9kB   src/components/FormikSwitch/index.tsx                                                        
+npm notice 9.8kB   src/components/FormikTextarea/index.tsx                                                      
+npm notice 7.5kB   src/components/FormikTextField/index.tsx                                                     
+npm notice 608B    src/components/Input/index.tsx                                                               
+npm notice 701B    src/components/InputlabelWrapper/index.tsx                                                   
+npm notice 412B    src/components/Loader/index.tsx                                                              
+npm notice 290B    src/components/Modal/Body/index.tsx                                                          
+npm notice 503B    src/components/Modal/Header/index.tsx                                                        
+npm notice 2.8kB   src/components/Modal/index.tsx                                                               
+npm notice 4.9kB   src/components/MuiLoader/index.tsx                                                           
+npm notice 6.7kB   src/components/Pagination/index.tsx                                                          
+npm notice 384B    src/components/RippleEffect/index.tsx                                                        
+npm notice 3.1kB   src/components/StandardTable/index.tsx                                                       
+npm notice 6.6kB   src/components/Tabs/index.tsx                                                                
+npm notice 649B    src/components/TextArea/index.tsx                                                            
+npm notice 4.8kB   src/components/Theme/index.tsx                                                               
+npm notice 2.1kB   src/components/Tooltip/index.tsx                                                             
+npm notice 2.0kB   src/components/Typograghy/index.tsx                                                          
+npm notice 3.4kB   src/components/UseAxios/index.tsx                                                            
+npm notice 587B    src/Icons/FirstPageIcon/index.tsx                                                            
+npm notice 584B    src/Icons/LastPageIcon/index.tsx                                                             
+npm notice 595B    src/Icons/NavigateBeforeIcon/index.tsx                                                       
+npm notice 588B    src/Icons/NavigateNextIcon/index.tsx                                                         
+npm notice 1.8kB   src/Icons/OptionsIcon/index.tsx                                                              
+npm notice 2.5kB   src/index.tsx                                                                                
+npm notice 3.5kB   src/components/CountryFlag/flags/IQ.tsx                                                      
+npm notice 1.3kB   src/components/CountryFlag/flags/JO.tsx                                                      
+npm notice 3.5kB   src/components/CountryFlag/flags/LB.tsx                                                      
+npm notice 1.0kB   src/components/CountryFlag/flags/MA.tsx                                                      
+npm notice 1.2kB   src/components/CountryFlag/flags/MAR.tsx                                                     
+npm notice 13.3kB  src/Icons/NotFoundData/NotFoundData.tsx                                                      
+npm notice 6.5kB   src/components/CountryFlag/flags/PLC.tsx                                                     
+npm notice 968B    src/components/CountryFlag/flags/PS.tsx                                                      
+npm notice 1.0kB   src/components/CountryFlag/flags/QA.tsx                                                      
+npm notice 1.9kB   src/Icons/RefreshIcon/refreshIcon.tsx                                                        
+npm notice 480B    src/components/DataTable/settings.tsx                                                        
+npm notice 1.7kB   src/components/CountryFlag/flags/SG.tsx                                                      
+npm notice 3.3kB   src/components/CountryFlag/flags/UK.tsx                                                      
+npm notice 750B    src/components/CountryFlag/flags/YE.tsx                                                      
+npm notice 1.1kB   dist/index.js.LICENSE.txt                                                                    
+npm notice 102.9kB src/utilities/test.txt                                                                       
+npm notice 837B    .gitlab-ci.yml                                                                               
+npm notice === Tarball Details === 
+npm notice name:          @hdf/core-components                    
+npm notice version:       0.5.162                                 
+npm notice package size:  582.7 kB                                
+npm notice unpacked size: 2.1 MB                                  
+npm notice shasum:        6ca68d7f25e76ef1a32e3c0e86bbe8fcac731707
+npm notice integrity:     sha512-o6g7dur24ltCg[...]vahLTjeECrL4A==
+npm notice total files:   235                                     
+npm notice 
++ @hdf/core-components@0.5.162
+Job succeeded
