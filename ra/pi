@@ -1,3 +1,31 @@
+
+stages:
+  - build & publish
+
+build_and_publish_job:
+  stage: build & publish
+  script:
+    - npm cache clean --force
+    - npm config set strict-ssl false
+    - npm i
+    - npm run build
+    - git checkout -- .
+    - npm version patch -m "%s [skip ci]"
+    - git config user.name "$CICD_USER"
+    - git remote set-url origin "http://$CICD_USER:$CICD_PASSWORD@10.101.18.33:10080/hub-dev-factory/web-core/core-web-components"
+    - git push origin HEAD:dev
+    - echo "//10.101.18.33:8081/repository/abgroup-npm/:_auth=$(echo -n $NEXUS_USER:$NEXUS_PASSWORD | base64)" > .npmrc
+    - echo "registry=http://10.101.18.33:8081/repository/ab-npm-hosted/" >> .npmrc
+    - echo "_auth=$(echo -n $NEXUS_USER:$NEXUS_PASSWORD | base64)" >> .npmrc
+    - echo "always-auth=true" >> .npmrc
+    - npm publish
+  only:
+    - dev
+  tags:
+  - cmon02_tag #34
+
+
+
 Running with gitlab-runner 12.2.0 (a987417a)
   on cmon02 2XiWnzuN
 Using Shell executor...
