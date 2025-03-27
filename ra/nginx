@@ -1,3 +1,14 @@
+    # Combined static assets location for both apps
+    location ~ ^/_next/static/(.*)$ {
+        # Capture the requested file path (without the /_next/static/ prefix)
+        set $static_file $1;
+        # Try digital dashboard first; if not found, then try cmon dashboard.
+        try_files /data/apps/digital-dashboard/frontend/.next/static/$static_file /data/apps/cmon-dashboard/frontend/.next/static/$static_file =404;
+        expires 1d;
+        access_log off;
+    }
+
+////////////////////////////////
 server {
     listen 1991;
     server_name jo00-cmon04;
