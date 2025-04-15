@@ -1,0 +1,57 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core"
+	xmlns:f="http://xmlns.jcp.org/jsf/core">
+<ui:composition template="/WEB-INF/templates/default.xhtml">
+	<ui:define name="contents">
+		<ui:include
+			src="/WEB-INF/inc/dialogs/tooltips-dialogs/asset-info-dialog.xhtml" />
+		<ui:include
+			src="/WEB-INF/inc/dialogs/tooltips-dialogs/compliance-info-dialog.xhtml" />
+
+	 		<p:poll interval="60" update="@(.main_page)" async="false" listener="#{resetAll.reset()}"/>
+		<p:outputPanel id="main_page" styleClass="main_page">
+
+			<ui:fragment id="blackScreen"
+				rendered="#{mbBlackScreen.isBlackScreen() eq true}">
+				<div class="black-screen"></div>
+			</ui:fragment>
+
+			<ui:include src="/WEB-INF/inc/control-header.xhtml" />
+			
+			<ui:include src="/WEB-INF/inc/dialogs/showPopup.xhtml" />
+			
+			<div class="RADAR-Screen flex separate">
+				<ui:fragment
+					rendered="#{radarController.getVisibileData()['left-cards'] eq 1}">
+					<div class="RADAR-Left">
+						<ui:include src="/WEB-INF/inc/left-country-card.xhtml" />
+						<ui:include src="/WEB-INF/inc/left-cards.xhtml" />
+					</div>
+				</ui:fragment>
+				<ui:fragment rendered="#{mbMain.viewId eq 4}">
+					<ui:include src="/WEB-INF/inc/index2.xhtml" />
+				</ui:fragment>
+
+				<ui:fragment rendered="#{mbMain.viewId ne 4}">
+					<ui:fragment
+						rendered="#{radarController.getVisibileData()['main-content'] eq 1}">
+						<div class="col-8 col flex separate">
+							<ui:include src="/WEB-INF/inc/main-content.xhtml" />
+						</div>
+					</ui:fragment>
+				</ui:fragment>
+			</div>
+
+
+			<script>
+				$(document).ready(function() {
+					$("#loadingModal").hide()
+				});
+			</script>
+		</p:outputPanel>
+	</ui:define>
+</ui:composition>
+</html>

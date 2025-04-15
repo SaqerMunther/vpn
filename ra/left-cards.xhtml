@@ -1,0 +1,141 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core"
+	xmlns:f="http://xmlns.jcp.org/jsf/core">
+<f:view>
+	<ui:param name="country" value="#{mbMain.curCountry}" />
+	<div
+		class="RADAR-Country full shadow flex separate RADAR-Main-Cards-Gradient">
+		<div class="col-3q">
+			<p:dataTable   var="rowData"
+				value="#{dataMap.getLeftCardData()}"
+				rowIndexVar="index"
+				rowStyleClass="#{mbMain.isHighlighted(rowData.fullName) ? 'selected-card' : ''}">
+				<p:column style="text-align:left;" width="40%">
+					<f:facet name="header" style="font-color:#37538C;">
+						<span
+							style="display: inline-flex; font-size: 1.2vw; color:#37538C; width: 70%; margin-left: 7px;">
+
+							<h:outputText styleClass="comp_score"
+								value="#{dataMap.getCompScorePerCountry(country)}">
+								<f:convertNumber pattern="##.##" maxFractionDigits="2" />
+							</h:outputText>%
+						</span>
+					</f:facet>
+						<p:commandLink
+						    action="#{dataMap.setViewIdAll(rowData.id, rowData.fullName)}"
+						    update="@(.main_page)" 
+						    onstart="$('#loadingModal').css('display', 'inline-block');"
+						    oncomplete="$('#loadingModal').css('display', 'none');">
+						    <p:tooltip for="name" value="#{rowData.fullName}" />
+						    <h:outputText id="name" styleClass="primary" value="#{rowData.controlName}" />
+						</p:commandLink>
+
+				</p:column>
+				<p:column width="15%">
+					<f:facet name="header"
+						style="background-color:red;font-color:#D34864">
+						<span style="background-color: #D34864; color: #FFAC24"><span></span>
+						</span>
+					</f:facet>
+					<p:commandLink
+						action="#{dataMap.setViewIdAll(rowData.id ,rowData.fullName)}"
+						update="@(.main_page)"
+						onstart="$('#loadingModal').css('display', 'inline-block');"
+						oncomplete="$('#loadingModal').css('display', 'none');">
+					<div class="flexx">
+						<h:outputText id="cov_val1" styleClass="primary semi-bold"
+							value="#{rowData.covFirst}" />
+					</div>
+					</p:commandLink>
+				</p:column>
+				<p:column width="15%">
+
+					<f:facet name="header"
+						style="background-color:rgb(211, 72, 100);font-color:#D34864">
+						<span style="background-color: #D34864; color: #FFAC24"><span></span>
+						</span>
+					</f:facet>
+					<p:commandLink
+						action="#{dataMap.setViewIdAll(rowData.id ,rowData.fullName)}"
+						update="@(.main_page)"
+						onstart="$('#loadingModal').css('display', 'inline-block');"
+						oncomplete="$('#loadingModal').css('display', 'none');">
+					<div class="flexx">
+						<h:outputText id="cov_val2" styleClass="primary semi-bold"
+							value="#{rowData.covSecond}" />
+					</div>
+					</p:commandLink>
+				</p:column>
+				<p:column width="15%">
+					<f:facet name="header" style="font-color:#D34864;width: 1.1vw;">
+						<span class="compliance-circle"
+							style="background: linear-gradient(0deg, #D34864 0%, #D34864 100%, white 0%, white 100%) !important"><span></span>
+						</span>
+					</f:facet>
+					<p:commandLink
+						action="#{dataMap.setViewIdAll(rowData.id ,rowData.fullName)}"
+						update="@(.main_page)"
+						onstart="$('#loadingModal').css('display', 'inline-block');"
+						oncomplete="$('#loadingModal').css('display', 'none');">
+					<div class="flexx">
+						<h:outputText id="comp_val1" styleClass="primary semi-bold"
+							value="#{rowData.compFirst}" />
+					</div>
+					</p:commandLink>
+				</p:column>
+				<p:column width="15%">
+					<f:facet name="header" style="font-color:#D34864;width: 1.1vw;">
+						<span class="compliance-circle"
+							style="background: linear-gradient(0deg, #D34864 0%, #D34864 100%, white 0%, white 100%) !important"><span></span>
+						</span>
+					</f:facet>
+					<p:commandLink
+						action="#{dataMap.setViewIdAll(rowData.id ,rowData.fullName)}"
+						update="@(.main_page)"
+						onstart="$('#loadingModal').css('display', 'inline-block');"
+						oncomplete="$('#loadingModal').css('display', 'none');">
+					<div class="flexx">
+
+						<h:outputText id="comp_val2" styleClass="primary semi-bold"
+							value="#{rowData.compSecond}" />
+					</div>
+					</p:commandLink>
+				</p:column>
+
+			</p:dataTable>
+		</div>
+	</div>
+
+
+
+
+
+
+</f:view>
+<style>
+.left {
+	width: 80%;
+	text-align: left;
+}
+
+.flexx {
+	justify-content: center;
+}
+
+.compliance-circle {
+	border-color: red;
+	border-style: solid;
+	background-color: white;
+	color: #FFAC24;
+	border-width: 1px;
+	width: 1.1vw;
+}
+
+body .ui-datatable thead th .ui-column-title {
+	width: 100%;
+}
+</style>
+</html>
