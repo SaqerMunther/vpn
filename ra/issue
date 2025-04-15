@@ -1,39 +1,50 @@
-
-        at com.jk.db.dataaccess.core.JKDataAccessImpl.getList(JKDataAccessImpl.java:847) ~[smart-cloud-data-2.0.8.jar:na]
-        at com.arabbank.dev.atm.dashboard.dao.CMonGeneralDao.getList(CMonGeneralDao.java:160) ~[cmon-backend-lib-0.0.2-SNAPSHOT.jar:na]
-        at com.app.dev.cmon.controllers.DataAccess.getCoveragePerWeekCache(DataAccess.java:1124) ~[classes/:na]
-        at com.app.dev.cmon.cache.CacheService.lambda$null$5(CacheService.java:83) ~[classes/:na]
-        at java.util.HashMap$KeySet.forEach(HashMap.java:934) ~[na:1.8.0_402]
-        at com.app.dev.cmon.cache.CacheService.lambda$null$6(CacheService.java:80) ~[classes/:na]
-        at java.util.Arrays$ArrayList.forEach(Arrays.java:3880) ~[na:1.8.0_402]
-        at com.app.dev.cmon.cache.CacheService.lambda$refreshAllCacheData$7(CacheService.java:79) ~[classes/:na]
-        at java.util.Arrays$ArrayList.forEach(Arrays.java:3880) ~[na:1.8.0_402]
-        at com.app.dev.cmon.cache.CacheService.refreshAllCacheData(CacheService.java:78) ~[classes/:na]
-        at com.app.dev.cmon.cache.CacheService.lambda$preloadCacheBackground$14(CacheService.java:165) ~[classes/:na]
-        at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) ~[na:1.8.0_402]
-        at java.util.concurrent.FutureTask.run(FutureTask.java:266) ~[na:1.8.0_402]
-        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_402]
-        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_402]
-        at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_402]
-Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: Socket closed
-        at com.microsoft.sqlserver.jdbc.SQLServerConnection.terminate(SQLServerConnection.java:3208) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.TDSChannel.read(IOBuffer.java:2066) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.TDSReader.readPacket(IOBuffer.java:6617) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.TDSCommand.startResponse(IOBuffer.java:7803) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:600) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement$PrepStmtExecCmd.doExecute(SQLServerPreparedStatement.java:524) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7418) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:3274) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:247) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:222) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.executeQuery(SQLServerPreparedStatement.java:446) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        at com.mchange.v2.c3p0.impl.NewProxyPreparedStatement.executeQuery(NewProxyPreparedStatement.java:353) ~[c3p0-0.9.5.2.jar:0.9.5.2]
-        at com.jk.db.dataaccess.core.JKDataAccessImpl.getList(JKDataAccessImpl.java:838) ~[smart-cloud-data-2.0.8.jar:na]
-        ... 15 common frames omitted
-Caused by: java.net.SocketException: Socket closed
-        at java.net.SocketInputStream.socketRead0(Native Method) ~[na:1.8.0_402]
-        at java.net.SocketInputStream.socketRead(SocketInputStream.java:116) ~[na:1.8.0_402]
-        at java.net.SocketInputStream.read(SocketInputStream.java:171) ~[na:1.8.0_402]
-        at java.net.SocketInputStream.read(SocketInputStream.java:141) ~[na:1.8.0_402]
-        at com.microsoft.sqlserver.jdbc.TDSChannel.read(IOBuffer.java:2058) ~[mssql-jdbc-9.2.0.jre8.jar:na]
-        ... 26 common frames omitted
+VM548:3 Uncaught TypeError: Cannot read properties of undefined (reading 'innerHTML')
+    at <anonymous>:3:43
+    at m (<anonymous>:2:711)
+    at Re (<anonymous>:2:47302)
+    at w.fn.init.replaceWith (<anonymous>:2:49742)
+    at Object.updateElement (core.js.xhtml?ln=primefaces&v=7.0:3:2304)
+    at Object.doUpdate (core.js.xhtml?ln=primefaces&v=7.0:3:11960)
+    at Object.handle (core.js.xhtml?ln=primefaces&v=7.0:3:10367)
+    at Object.<anonymous> (core.js.xhtml?ln=primefaces&v=7.0:3:8236)
+    at u (<anonymous>:2:27457)
+    at Object.fireWith [as resolveWith] (<anonymous>:2:28202)
+(anonymous) @ VM548:3
+m @ VM423:2
+Re @ VM423:2
+replaceWith @ VM423:2
+updateElement @ core.js.xhtml?ln=primefaces&v=7.0:3
+doUpdate @ core.js.xhtml?ln=primefaces&v=7.0:3
+handle @ core.js.xhtml?ln=primefaces&v=7.0:3
+(anonymous) @ core.js.xhtml?ln=primefaces&v=7.0:3
+u @ VM423:2
+fireWith @ VM423:2
+k @ VM423:2
+(anonymous) @ VM423:2
+load (async)
+send @ VM423:2
+ajax @ VM423:2
+send @ core.js.xhtml?ln=primefaces&v=7.0:3
+offer @ core.js.xhtml?ln=primefaces&v=7.0:3
+handle @ core.js.xhtml?ln=primefaces&v=7.0:3
+PrimeFaces.ab @ core.js.xhtml?ln=primefaces&v=7.0:3
+fn @ (index):1195
+setInterval (async)
+start @ core.js.xhtml?ln=primefaces&v=7.0:9
+init @ core.js.xhtml?ln=primefaces&v=7.0:9
+c @ core.js.xhtml?ln=primefaces&v=7.0:6
+createWidget @ core.js.xhtml?ln=primefaces&v=7.0:1
+cw @ core.js.xhtml?ln=primefaces&v=7.0:1
+(anonymous) @ (index):1195
+l @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+c @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+setTimeout (async)
+(anonymous) @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+u @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+fireWith @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+fire @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+u @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+fireWith @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+ready @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+_ @ jquery.js.xhtml?ln=primefaces&v=7.0:2
+VM423:2          GET http://localhost:9123/RES_NOT_FOUND net::ERR_ABORTED 404
