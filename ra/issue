@@ -1,3 +1,6 @@
+Message:Cannot find component for expression "main_page" referenced from "j_idt2:form:j_idt419:0:j_idt424".
+
+
 VM548:3 Uncaught TypeError: Cannot read properties of undefined (reading 'innerHTML')
     at <anonymous>:3:43
     at m (<anonymous>:2:711)
