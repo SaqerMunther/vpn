@@ -1,53 +1,494 @@
-Message:Cannot find component for expression "main_page" referenced from "j_idt2:form:j_idt419:0:j_idt424".
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  - Copyright (c) 2021.
+  - Suhaib Irsheidat - Arab Bank - Head office +962 56 00000 - 1504
+  -->
 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core"
+	xmlns:f="http://xmlns.jcp.org/jsf/core">
 
-VM548:3 Uncaught TypeError: Cannot read properties of undefined (reading 'innerHTML')
-    at <anonymous>:3:43
-    at m (<anonymous>:2:711)
-    at Re (<anonymous>:2:47302)
-    at w.fn.init.replaceWith (<anonymous>:2:49742)
-    at Object.updateElement (core.js.xhtml?ln=primefaces&v=7.0:3:2304)
-    at Object.doUpdate (core.js.xhtml?ln=primefaces&v=7.0:3:11960)
-    at Object.handle (core.js.xhtml?ln=primefaces&v=7.0:3:10367)
-    at Object.<anonymous> (core.js.xhtml?ln=primefaces&v=7.0:3:8236)
-    at u (<anonymous>:2:27457)
-    at Object.fireWith [as resolveWith] (<anonymous>:2:28202)
-(anonymous) @ VM548:3
-m @ VM423:2
-Re @ VM423:2
-replaceWith @ VM423:2
-updateElement @ core.js.xhtml?ln=primefaces&v=7.0:3
-doUpdate @ core.js.xhtml?ln=primefaces&v=7.0:3
-handle @ core.js.xhtml?ln=primefaces&v=7.0:3
-(anonymous) @ core.js.xhtml?ln=primefaces&v=7.0:3
-u @ VM423:2
-fireWith @ VM423:2
-k @ VM423:2
-(anonymous) @ VM423:2
-load (async)
-send @ VM423:2
-ajax @ VM423:2
-send @ core.js.xhtml?ln=primefaces&v=7.0:3
-offer @ core.js.xhtml?ln=primefaces&v=7.0:3
-handle @ core.js.xhtml?ln=primefaces&v=7.0:3
-PrimeFaces.ab @ core.js.xhtml?ln=primefaces&v=7.0:3
-fn @ (index):1195
-setInterval (async)
-start @ core.js.xhtml?ln=primefaces&v=7.0:9
-init @ core.js.xhtml?ln=primefaces&v=7.0:9
-c @ core.js.xhtml?ln=primefaces&v=7.0:6
-createWidget @ core.js.xhtml?ln=primefaces&v=7.0:1
-cw @ core.js.xhtml?ln=primefaces&v=7.0:1
-(anonymous) @ (index):1195
-l @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-c @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-setTimeout (async)
-(anonymous) @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-u @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-fireWith @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-fire @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-u @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-fireWith @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-ready @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-_ @ jquery.js.xhtml?ln=primefaces&v=7.0:2
-VM423:2          GET http://localhost:9123/RES_NOT_FOUND net::ERR_ABORTED 404
+	<div class="full CMON-Gradient bold lg primary"
+		style="padding: 0.3vw 0.75vw">Coverage
+		<span style="float: right;font-size: 1vw;">Full Scan Date : #{mbMain.scanDate}</span>
+		</div>
+	<!-- Coverage Items -->
+	<div class="full flex" style="margin-top: 2vh">
+		<div class="full flex spaced" style="margin-bottom:10px;font-size: 0.6vw;">
+		<div class="flex spaced" style="flex-basis: 6%;"></div> 
+		<p:outputPanel 
+				styleClass="quarter flex spaced  rounded-corners  primary"
+				style="padding: 0.2vw 0.5vw;display: contents">
+				<div class="bold small-title" >
+				Coverage before 2 months
+				</div>
+				</p:outputPanel>
+				<p:outputPanel 
+				styleClass="quarter flex spaced  rounded-corners  primary"
+				style="padding: 0.2vw 0.5vw;display: contents">
+				<div class="bold small-title">
+				Coverage before 1 month
+				</div>
+				</p:outputPanel>
+				<p:outputPanel 
+				styleClass="quarter flex spaced  rounded-corners  primary"
+				style="padding: 0.2vw 0.5vw;">
+				<div class="bold small-title">
+				Coverage today
+				</div>
+				</p:outputPanel>
+		 </div>
+	
+		<!-- First Row -->
+		<div class="full flex spaced">
+			<!-- CELL -->
+			<ui:fragment  rendered="#{not mbMain.isManual}" >
+						<div class="col-1 lg bold" style="flex-basis: 6%;margin-top: 5px;">
+						   IT
+						</div>
+			</ui:fragment>
+					<ui:fragment rendered="#{mbMain.isManual}">
+			
+				
+
+							</ui:fragment>
+			
+			<p:tooltip for="sec_month" value="Coverage status before 2 months (Today – 60)" ></p:tooltip>
+			<p:outputPanel id="sec_month"
+				styleClass="quarter flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{radarHistory.getTripleTwoMonth().first}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>%
+				</div>
+				<div class="column-flex sm bold">
+					<div>#{radarHistory.getTripleTwoMonth().second} <span style="font-size:0.5vw;font-weight: bold">(#{radarHistory.getPairTwoMonth().first})</span></div>
+					<hr/>
+					<div>#{radarHistory.getTripleTwoMonth().third} <span style="font-size:0.5vw;font-weight: bold">(#{radarHistory.getPairTwoMonth().second})</span></div>
+					
+				</div>
+			</p:outputPanel>
+			<!-- CELL -->
+			<!-- <c:set  var="covSecondRow" value="#{mbMain.getCovUpperDataHis(1)}" ></c:set> -->
+		    <!-- <c:set  var="covSecondTotal" value="#{mbMain.getTotalAssetAndTotalCoverd(1)}" ></c:set> -->
+			
+			
+			 <p:tooltip for="one_month" value="Coverage status before 1 months (Today – 30)" ></p:tooltip>
+			<p:outputPanel id="one_month"
+				styleClass="quarter flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{radarHistory.getTripleOneMonth().first}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>%
+					
+				</div>
+				<div class="column-flex sm bold">
+					<div style="text-align: center;">#{radarHistory.getTripleOneMonth().second} <span style="font-size:0.5vw;font-weight: bold">(#{radarHistory.getPairOneMonth().first})</span></div>
+					<hr />
+					<div>#{radarHistory.getTripleOneMonth().third} <span style="font-size:0.5vw;font-weight: bold">(#{radarHistory.getPairOneMonth().second})</span></div>
+				</div>
+			</p:outputPanel>
+			<!-- CELL -->
+			<c:set  var="covThirdRow" value="#{radarUpperData.getCovUpperData(0)}" ></c:set>
+				<!-- 	   <c:set  var="covThirdTotal" value="#{mbMain.getTotalAssetAndTotalCoverd(0)}" ></c:set> -->
+			
+			 <p:tooltip for="today" value="Coverage status today" ></p:tooltip>
+			<p:outputPanel id="today"
+				styleClass="quarter flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw;background-color:#{mbMain.getCoverageTodaythreshold(covThirdRow.first)};color:#{mbMain.getCoverageTodaythreshold(covThirdRow.first) eq 'white' ? '#37538C' :'white !important'}">
+				<div class="regular">
+					<h:outputText value="#{covThirdRow.first}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>%
+				</div>
+				<div class="column-flex sm bold">
+					<div style="text-align: center;">#{covThirdRow.second}<span style="font-size:0.5vw;font-weight: bold">(#{mbMain.getPairCur().first})</span></div>
+					<hr />
+					<div>#{covThirdRow.third} <span style="font-size:0.5vw;font-weight: bold">(#{mbMain.getPairCur().second})</span></div>
+				</div>
+			</p:outputPanel>
+			<!-- CELL -->
+				
+			
+		</div>
+		<!-- ROW END -->
+		<!-- Second Row -->
+		<div class="full flex spaced" style="margin-top: 2vh ;    margin-left: -0.5vw;">
+			<!-- CELL -->
+		 <p:tooltip for="yello_circle" value="No. of uncovered assets since 3-6 months" />
+			<p:outputPanel id="yello_circle" styleClass="bg-warning circle"></p:outputPanel>
+			<!-- CELL -->
+			<div
+				class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{radarHistory.getCovBeforTwoMonth('Orange' , 'Existing') + radarHistory.getCovBeforTwoMonth('Orange' , 'New')}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>
+				</div>
+			</div>
+			<!-- CELL -->
+			<div
+				class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{radarHistory.getCovBeforOneMonth('Orange' , 'Existing') + radarHistory.getCovBeforOneMonth('Orange' , 'New')}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>
+				</div>
+			</div>
+			<!-- CELL -->
+			<div
+				class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{mbMain.getCov('Orange' , 'Existing') + mbMain.getCov('Orange' , 'New')}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>
+				</div>
+			</div>
+			<!-- CELL -->
+		</div>
+		<!-- ROW END -->
+		<!-- Third Row -->
+		<div class="full flex spaced" style="margin-top: 2vh;margin-left: -0.5vw;">
+			<!-- CELL -->
+			 <p:tooltip for="red_circle" value="No. of uncovered assets since more than 6 months" />
+			<p:outputPanel id="red_circle" styleClass="bg-fatal circle" />
+			<!-- CELL -->
+			<div
+				class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{radarHistory.getCovBeforTwoMonth('Red' , 'Existing') + radarHistory.getCovBeforTwoMonth('Red' , 'New')}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>
+				</div>
+			</div>
+			<!-- CELL -->
+			<div
+				class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{radarHistory.getCovBeforOneMonth('Red' , 'Existing') + radarHistory.getCovBeforOneMonth('Red' , 'New')}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>
+				</div>
+			</div>
+			<!-- CELL -->
+			<div
+				class="col-2 flex spaced bg-white shadow rounded-corners xl primary"
+				style="padding: 0.2vw 0.5vw">
+				<div class="regular">
+					<h:outputText value="#{mbMain.getCov('Red' , 'Existing') + mbMain.getCov('Red' , 'New')}">
+						<f:convertNumber maxFractionDigits="2" />
+					</h:outputText>
+				</div>
+			</div>
+			<!-- CELL -->
+		</div>
+		<!-- ROW END -->
+	</div>
+	<!-- ##################### -->
+	<!-- Lower Compartment -->
+	<div class="full flex" style="margin-top: 2vh">
+		<!-- EXISTING PART -->
+		<div class="full" style="flex-basis: 49%;">
+		
+			
+		<div class="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? 'full CMON-Gradient bold lg primary RADAR-Country border-left border-right  border-top' :'full CMON-Gradient bold lg primary RADAR-Country' } "
+				style="padding: 0.3vw 0.75vw ;">Existing
+				 <span style="float: right;margin: 4px;font-size: 1vw;">Total Sum : #{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? mbMain.getCov('Green' , 'Existing') + mbMain.getCov('Orange' , 'Existing') + mbMain.getCov('Red' , 'Existing') + mbMain.getCov('Orange' , 'New') + mbMain.getCov('Red' , 'New') :
+				 																		mbMain.getCov('Green' , 'Existing') + mbMain.getCov('Orange' , 'Existing') + mbMain.getCov('Red' , 'Existing')}</span>
+				
+				 </div>
+				
+			<div class="column-flex"
+				style="align-content: space-between;">
+				<!-- SUCCESS PART -->
+				<div class="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? 'flex spaced sm  border-left border-right  border-top-left-radius padding' :'flex spaced sm padding' } " style="padding-top:19.8px; min-width: 18.4vw;">
+					<div class="full CMON-Gradient bold sm primary RADAR-Country"
+						style="padding: 0.2vw 0.5vw">#{radarWeekData.getDeuration("Green-Exist","Cov")}</div>
+					<p:tooltip for="cov_3_mon" value="Total No. of covered assets that were #{radarWeekData.getDeurationAndDate('Green-Exist','Cov')}" />	
+					<p:outputPanel id="cov_3_mon" styleClass="col-5 flex center">
+						<!-- GREEN CIRCLE WITH ITS VALUE -->
+				 <h:commandLink actionListener="#{radarController.getCovData('Green-Exist' , 'Cov')}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 				
+							<div class="circle bg-success bold lg"
+								style="width: 7vw; height: 7vw">#{mbMain.getCov('Green' , 'Existing')}</div>
+								<f:actionListener binding="#{mbMain.getCircelColor('Green','Existing','Coverage')}"/>
+						</h:commandLink>
+						<!-- ########################### -->
+					</p:outputPanel>
+					<div class="col-5 flex"
+						style="justify-content: space-around; align-content: space-between;">
+						<ui:fragment rendered="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29}">
+					<ui:repeat var="item" value="#{radarWeekData.getDataPerWeek('Cov', 'Exist')}" varStatus="index" >
+						<!-- WEEK 1 -->
+						<div class="flex full">
+							<div class="pill bg-primary shadow" >#{radarWeekData.getWeekBox(item.getType() ,'Green-Exist')}</div>
+				    <h:commandLink actionListener="#{radarController.getDetailsPerWeek( 'Green-Exist', item.getType())}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}"> 					
+							<div class="pill bg-white dark shadow bold" 
+								style="margin-left: 1vh;background-color:#{item.getGreenExist() gt 0 and index.last ?'rgb(255, 170, 0)' : 'white'}">#{item.getGreenExist()}</div>
+								</h:commandLink>
+						</div>
+						</ui:repeat> 
+						</ui:fragment>
+						<!-- ################# -->
+					</div>
+				</div>
+				<!-- ##################### -->
+				<!-- WARNING PART -->
+				<div class="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? 'flex spaced sm  border-left padding' :'flex spaced sm padding' } ">
+					<div class="full CMON-Gradient bold sm primary RADAR-Country"
+						style="padding: 0.2vw 0.5vw">#{radarWeekData.getDeuration("Orange-Exist","Cov")}</div>
+					<p:tooltip for="cov_6_mon" value="Total No. of uncovered assets that were #{radarWeekData.getDeurationAndDate('Orange-Exist','Cov')}" />	
+					<p:outputPanel id="cov_6_mon" styleClass="col-5 flex center">
+						<!-- GREEN CIRCLE WITH ITS VALUE -->
+						
+					    <h:commandLink actionListener="#{radarController.getCovData('Orange-Exist' , 'Cov')}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 
+							
+						<div class="circle bg-warning bold lg"
+							style="width: 7vw; height: 7vw">
+							<div style="text-align: center;">#{mbMain.getCov('Orange' , 'Existing')}
+							<h:commandLink actionListener="#{radarExcluded.getExcludedCoverage('Orange-Exist')}" 
+										   target="_blank" update="asset_dialog_id"
+										   action ="#{mbMain.redirectToCoverageDetails()}" >  
+								<span style="font-size:1vw;font-weight: bold" >(#{radarExcluded.getExcludedCoverage('Orange-Exist').size()})</span>
+							</h:commandLink>
+							</div>
+							</div>
+							</h:commandLink>
+						<!-- ########################### -->
+					</p:outputPanel>
+					<div class="col-5 flex"
+						style="justify-content: space-around; align-content: space-between;">
+						<!-- WEEK 1 -->
+						<ui:fragment rendered="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29}">
+					 <ui:repeat var="item" value="#{radarWeekData.getDataPerWeek('cov', 'Exist')}"  varStatus="index" >
+						<div class="flex full">
+							<div class="pill bg-primary shadow">#{radarWeekData.getWeekBox(item.getType() ,'Orange-Exist')}</div>
+		 <h:commandLink actionListener="#{radarController.getDetailsPerWeek( 'Orange-Exist', item.getType())}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 						
+							<div class="pill bg-white dark shadow bold"
+								style="margin-left: 1vh;background-color:#{item.getOrangeExist() gt 0 and index.last ?'#D34864' : 'white'}">#{item.getOrangeExist()}</div>
+								</h:commandLink>
+						</div>
+						</ui:repeat> 
+						</ui:fragment>
+						<!-- ################# -->
+					</div>
+				</div>
+				<!-- ##################### -->
+				<!-- CRITICAL PART -->
+				<div class="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? 'flex spaced sm  border-left border-bottom  border-top-left-radius padding' :'flex spaced sm padding' } ">
+					<div class="full CMON-Gradient bold sm primary RADAR-Country"
+					
+						style="padding: 0.2vw 0.5vw">#{radarWeekData.getDeuration("Red-Exist","Cov")}</div>
+				<p:tooltip for="cov_all_mon" value="Total No. of uncovered assets that were #{radarWeekData.getDeurationAndDate('Red-Exist','Cov')}" style="background-color:white" ></p:tooltip>
+				
+					<p:outputPanel id="cov_all_mon" styleClass="col-5 flex center">
+						<!-- GREEN CIRCLE WITH ITS VALUE -->
+		 <h:commandLink actionListener="#{radarController.getCovData('Red-Exist' , 'Cov')}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 								
+						<div class="circle bg-fatal bold lg"
+							style="width: 7vw; height: 7vw">
+							<div  style="text-align: center;">#{mbMain.getCov('Red' , 'Existing')}
+							<f:actionListener binding="#{mbMain.getCircelColor('Red','Existing','Coverage')}"/>
+ 								<h:commandLink actionListener="#{radarExcluded.getExcludedCoverage('Red-Exist')}" 
+										   target="_blank" update="asset_dialog_id"
+										   action ="#{mbMain.redirectToCoverageDetails()}" >  
+								<span style="font-size:1vw;font-weight: bold" >(#{radarExcluded.getExcludedCoverage('Red-Exist').size()})</span>
+							</h:commandLink>
+							</div>
+							</div>
+							</h:commandLink>
+						<!-- ########################### -->
+					</p:outputPanel>
+					<div class="col-5 flex"
+						style="justify-content: space-around; align-content: space-between;">
+						<!-- WEEK 1 -->
+
+						<!-- ################# -->
+					</div>
+				</div>
+				<!-- ##################### -->
+			</div>
+		</div>
+		<!-- ##################### -->
+		<!-- NEW PART -->
+		<div class="full" style="flex-basis: 49%">
+			<div class="full CMON-Gradient bold lg primary RADAR-Country"														
+				style="padding: 0.3vw 0.75vw">New <span style="float: right;margin: 4px;font-size: 1vw;">Total Sum : #{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? mbMain.getCov('Green' , 'New') :
+				 																		mbMain.getCov('Green' , 'New') + mbMain.getCov('Orange' , 'New') + mbMain.getCov('Red' , 'New')}</span></div>
+			<div class="column-flex"
+				style=" align-content: space-between;">
+				<!-- SUCCESS PART -->
+				<div class="flex spaced sm padding" style="margin-top:20px;">
+					<div class="full CMON-Gradient bold sm primary RADAR-Country"
+						style="padding: 0.2vw 0.5vw">#{radarWeekData.getDeuration("Green-New","Cov")}</div>
+							<p:tooltip for="one_month_ex" value="Total No. of covered new assets that were #{radarWeekData.getDeurationAndDate('Green-New','Cov')}" />	
+					<p:outputPanel id="one_month_ex" styleClass="col-5 flex center">
+						<!-- GREEN CIRCLE WITH ITS VALUE -->
+		 <h:commandLink actionListener="#{radarController.getCovData('Green-New' , 'Cov')}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 							
+						<div class="circle bg-success bold lg"
+							style="width: 7vw; height: 7vw;flex-direction: column;">#{mbMain.getCov('Green' , 'New')}  </div>
+							<f:actionListener binding="#{mbMain.getCircelColor('Green','New','Coverage')}"/>
+							</h:commandLink>
+						<!-- ########################### -->
+					</p:outputPanel>
+					<div class="col-5 flex"
+						style="justify-content: space-around; align-content: space-between;">
+						<!-- WEEK 1 -->
+						<ui:fragment rendered="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29}">
+						  <ui:repeat var="item" value="#{radarWeekData.getDataPerWeek('Cov', 'New')}" varStatus="index">
+						<div class="flex full">
+							<div class="pill bg-primary shadow">#{radarWeekData.getWeekBox(item.getType(), 'Green-New')}</div>
+							 <h:commandLink actionListener="#{radarController.getDetailsPerWeek( 'Green-New', item.getType())}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 
+							<div class="pill bg-white dark shadow bold" 
+								style="margin-left: 1vh ;background-color:#{item.getGreenNew() gt 0 and index.last ? 'rgb(255, 170, 0)' : 'white'}">#{item.getGreenNew()}</div>
+								</h:commandLink>
+						</div>
+						</ui:repeat> 
+						</ui:fragment>
+					</div>
+				</div>
+				<!-- ##################### -->
+				<!-- WARNING PART -->
+				
+				<div class="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? 'flex spaced sm border-right border-top border-top-right-radius padding' :'flex spaced sm padding' } ">
+					<div class="full CMON-Gradient bold sm primary RADAR-Country"
+						style="padding: 0.2vw 0.5vw">#{radarWeekData.getDeuration("Orange-New","Cov")}</div>
+										<p:tooltip for="two_month" value="Total No. of uncovered new assets that were #{radarWeekData.getDeurationAndDate('Orange-New','Cov')}" />	
+					<p:outputPanel id="two_month" styleClass="col-5 flex center">
+						<!-- GREEN CIRCLE WITH ITS VALUE -->
+	 <h:commandLink actionListener="#{radarController.getCovData('Orange-New' , 'Cov')}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 							
+						<div class="circle bg-warning bold lg"
+							style="width: 7vw; height: 7vw">
+							<div style="text-align: center;">#{mbMain.getCov('Orange' , 'New')}
+							<h:commandLink actionListener="#{radarExcluded.getExcludedCoverage('Orange-Exist')}" 
+										   target="_blank" update="asset_dialog_id"
+										   action ="#{mbMain.redirectToCoverageDetails()}" >  
+								<span style="font-size:1vw;font-weight: bold" >(#{radarExcluded.getExcludedCoverage('Orange-Exist').size()})</span>
+							</h:commandLink>
+							</div>
+							</div>
+							<f:actionListener binding="#{mbMain.getCircelColor('Orange','New','Coverage')}"/>
+							</h:commandLink>
+						<!-- ########################### -->
+					</p:outputPanel>
+					<div class="col-5 flex"
+						style="align-content: space-evenly;">
+						<!-- WEEK 1 -->
+						<ui:fragment rendered="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29}">
+						 <ui:repeat var="item" value="#{radarWeekData.getDataPerWeek('cov', 'New')}" varStatus="index">
+						<div class="flex full">
+							<div class="pill bg-primary shadow">#{radarWeekData.getWeekBox(item.getType(), 'Orange-New')}</div>
+ 								<h:commandLink actionListener="#{radarController.getDetailsPerWeek( 'Orange-New', item.getType())}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 								
+							<div class="pill bg-white dark shadow bold"
+								style="margin-left: 1vh;background-color:#{item.getOrangeNew() gt 0 and index.last ? 'rgb(211, 72, 100)' : 'white'}">#{item.getOrangeNew()}</div>
+								</h:commandLink>
+						    </div>
+						</ui:repeat>  
+						</ui:fragment>
+					</div>
+				</div>
+				<!-- ##################### -->
+				<!-- CRITICAL PART -->
+				<div class="#{mbMain.viewId eq 27 or mbMain.viewId eq 28 or mbMain.viewId eq 29 ? 'flex spaced sm border-right border-bottom border-bottom-right-radius padding' : 'flex spaced sm padding' } ">
+					<div class="full CMON-Gradient bold sm primary RADAR-Country"
+						style="padding: 0.2vw 0.5vw">#{radarWeekData.getDeuration("Red-New","Cov")}</div>
+										<p:tooltip for="more_two_month" value="Total No. of uncovered new assets that were #{radarWeekData.getDeurationAndDate('Red-New','Cov')}" />	
+							
+					<p:outputPanel id="more_two_month" styleClass="col-5 flex center">
+						<!-- GREEN CIRCLE WITH ITS VALUE -->
+ <h:commandLink actionListener="#{radarController.getCovData('Red-New' , 'Cov')}"
+							update="asset_dialog_id" target="_blank" action="#{mbMain.redirectToCoverageDetails()}" > 									
+							<div class="circle bg-fatal bold lg"
+							style="width: 7vw; height: 7vw">
+							<f:actionListener binding="#{mbMain.getCircelColor('Red','New','Coverage')}"/>
+							<div style="text-align: center;">#{mbMain.getCov('Red' , 'New')}
+							<h:commandLink actionListener="#{radarExcluded.getExcludedCoverage('Red-New')}" 
+										   target="_blank" update="asset_dialog_id"
+										   action ="#{mbMain.redirectToCoverageDetails()}" >  
+								<span style="font-size:1vw;font-weight: bold" >(#{radarExcluded.getExcludedCoverage('Red-New').size()})</span>
+							</h:commandLink>	
+							 </div>
+							 
+							</div>
+							</h:commandLink>
+						<!-- ########################### -->
+					</p:outputPanel>
+						<div class="col-5 flex"
+						style="align-content: space-evenly;">
+						<!-- WEEK 1 -->
+
+						
+						<!-- ################# -->
+					</div>
+				</div>
+				<!-- ##################### -->
+			</div>
+		</div>
+		<!-- ##################### -->
+	</div>
+	<style>
+	li {
+	background-color:#C3ECFB !important;
+	border-radius: 10px !important;
+	border-style: solid;
+	border-color: white;
+	
+	}
+	body .ui-menu .ui-menu-list .ui-widget-header h3 {
+		font-weight: bold;
+		font-size:1vw;
+	    color: #37538C !important;
+		text-align: center;
+	}
+	body .ui-menu .ui-menu-list .ui-menuitem{
+	  	background-color: white !important;
+	    font-size:0.1vw;
+	    text-align: center;
+	    border: unset;
+	  	border-radius: 0 !important;
+	    display: flex;
+	    align-content: center;
+	    justify-content: center;
+	}
+	body .ui-menu .ui-menu-list .ui-menuitem .ui-menuitem-link{
+		margin:5px;
+		
+	display: flex !important;
+    justify-content: center;
+    align-items: center;
+	}
+	body .ui-menu.ui-menu-toggleable .ui-menu-list .ui-widget-header {
+	    border: unset;
+	    box-shadow: 0 0.25vw 0.5vw #0001;
+	    border-radius: 0 !important;
+	}
+	body .ui-menu.ui-menu-toggleable .ui-menu-list .ui-widget-header:nth-child(odd){
+		background: #DAF0FF !important;
+	} 
+	
+	body .ui-menu.ui-menu-toggleable .ui-menu-list .ui-widget-header:nth-child(even){
+		background: #E5F5FF !important;
+	} 
+	
+	</style>
+	<!-- ##################### -->
+</html>
