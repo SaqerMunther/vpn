@@ -1,52 +1,32 @@
-http://10.1.4.144:3001/fonts/opensans-semibold.f3515b8f.woff2
+/var/log/nginx/*.log {
+    # تدوير عند تجاوز الملف 100 ميغا
+    size 100M
 
+    # احتفظ بآخر 7 نسخ، ثم احذف الأقدم
+    rotate 7
 
+    # تجاهل إن لم يوجد الملف أو كان فارغًا
+    missingok
+    notifempty
 
+    # ضغط النسخ القديمة
+    compress
+    delaycompress
 
-{
-  "users": [
-    {
-      "username": "anonymous",
-      "roles": [
-        "Administrator"
-      ]
-    }
-  ],
-  "roles": [
-    {
-      "name": "Administrator",
-      "permissions": [
-        "agent:transaction",
-        "agent:error",
-        "agent:jvm",
-        "agent:incident",
-        "agent:config",
-        "admin"
-      ]
-    }
-  ],
-  "web": {
-    "port": 3001,
-    "bindAddress": "jo00-cmon04",
-    "contextPath": "/",
-    "sessionTimeoutMinutes": 30,
-    "sessionCookieName": "GLOWROOT_SESSION_ID"
-  },
-  "storage": {
-    "rollupExpirationHours": [
-      72,
-      336,
-      2160,
-      2160
-    ],
-    "traceExpirationHours": 336,
-    "fullQueryTextExpirationHours": 336,
-    "rollupCappedDatabaseSizesMb": [
-      500,
-      500,
-      500,
-      500
-    ],
-    "traceCappedDatabaseSizeMb": 500
-  }
+    # بعد التدوير، أنشئ ملف جديد بالأذونات التالية
+    create 0640 www-data adm
+
+    # نفّذ السكربت مرة واحدة لكل الملفات
+    sharedscripts
+
+    postrotate
+        # أرسل إشارة لــ Nginx ليعيد فتح ملف السجل الجديد
+        if [ -s /run/nginx.pid ]; then
+            kill -USR1 "$(cat /run/nginx.pid)"
+        fi
+    endscript
 }
+
+
+
+sudo logrotate --force /etc/logrotate.d/nginx
