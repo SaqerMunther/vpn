@@ -1,0 +1,65 @@
+public static LocalDate toLocalDateAtMidnight(Date date) {
+    return Optional.ofNullable(date)
+        .map(d -> d.toInstant()
+                   .atZone(ZoneId.systemDefault())
+                   .toLocalDate())
+        .orElse(null);
+}
+
+
+
+
+public void setDateValidations() {
+    List<RadarDashValidation> validations = da.getRadarDashValidation();
+    if (validations == null || validations.isEmpty()) {
+        this.lastValidDate = LocalDate.now();      // in java.time
+        return;
+    }
+
+    LocalDate today = LocalDate.now();
+    LocalDate maxValid = validations.stream()
+        .filter(v -> v.isComplianceMatch() && v.isCoverageMatch())
+        .map(v -> v.getInsertDate()
+                   .toInstant()
+                   .atZone(ZoneId.systemDefault())
+                   .toLocalDate())
+        .max(LocalDate::compareTo)
+        .orElse(today);
+
+    // Never set a “future” date
+    this.lastValidDate = maxValid.isAfter(today) ? today : maxValid;
+}
+
+
+
+private void refreshRadarIfStale() {
+    LocalDate today = LocalDate.now();
+    LocalDate lastValid = radarValidation.getLastValidDate(); // now a LocalDate
+    if (lastValid.isBefore(today)) {
+        radarValidation.setDateValidations();
+        radarValidation.validateCycle();
+        radar.init(); 
+    }
+    this.now = radarValidation.getLastValidDate();
+}
+
+
+
+private void refreshRadarIfStale() {
+    LocalDate today = LocalDate.now();
+    LocalDate lastValid = radarValidation.getLastValidDate(); // now a LocalDate
+    if (lastValid.isBefore(today)) {
+        radarValidation.setDateValidations();
+        radarValidation.validateCycle();
+        radar.init(); 
+    }
+    this.now = radarValidation.getLastValidDate();
+}
+
+
+
+@PostConstruct
+public void init() {
+    refreshRadarIfStale();
+    isSymantec();
+}
