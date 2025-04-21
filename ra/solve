@@ -63,3 +63,51 @@ public void init() {
     refreshRadarIfStale();
     isSymantec();
 }
+
+
+public void validateCycle() {
+    // 1. Fetch the very latest sync record
+    ServiceSyncMain lastSync = da.getLatestSyncMain().stream()
+        .max(Comparator.comparingInt(ServiceSyncMain::getSyncID))
+        .orElse(null);
+
+    if (lastSync == null) {
+        // No syncs at all → treat as issue
+        setCycleStatus(commons.CYCLEISSUE);
+        setValidateCycle(true);
+        return;
+    }
+
+    // 2. If it’s still fetching, flag as “fetching”
+    if (lastSync.isFetching()) {
+        setCycleStatus(commons.CYCLEFETCHING);
+        setValidateCycle(true);
+        return;
+    }
+
+    // 3. Compare completed date vs. lastValidDate (both as LocalDate)
+    LocalDate completedDate = lastSync.getCompletedDate()
+        .toInstant()
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate();
+
+    LocalDate lastValid = this.lastValidDate; // assume this is already a LocalDate
+
+    if (completedDate.isAfter(lastValid)) {
+        setCycleStatus(commons.CYCLEISSUE);
+        setValidateCycle(true);
+        return;
+    }
+
+    // 4. Check that the cache’s lastSyncID matches the cycleID
+    int cachedSyncId = CacheService.getInstance().getLastSyncID();
+    if (lastSync.getCycleID() != cachedSyncId) {
+        setCycleStatus(commons.CYCLEISSUE);
+        setValidateCycle(true);
+        return;
+    }
+
+    // 5. If we got here, everything is OK
+    setCycleStatus(commons.CYCLEOK);
+    setValidateCycle(false);
+}
