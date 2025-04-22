@@ -53,4 +53,5 @@ public class CacheService {
     public void setLastSyncID(long lastSyncID) {
         this.lastSyncID = lastSyncID;
     }
+
 }
