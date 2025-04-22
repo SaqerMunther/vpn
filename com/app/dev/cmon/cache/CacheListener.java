@@ -68,3 +68,8 @@ public class CacheContextListener implements ServletContextListener {
         }
     }
 }
+
+
+
+
+Type mismatch: cannot convert from Set to Enumeration<?>
