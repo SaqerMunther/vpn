@@ -12,6 +12,7 @@ import javax.servlet.annotation.WebListener;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Set;
 import java.util.Enumeration;
 
 /**
@@ -37,9 +38,8 @@ public class CacheContextListener implements ServletContextListener {
 
         // 2. Close only the C3P0 pools loaded by this webapp's classloader
         ClassLoader webappClassLoader = getClass().getClassLoader();
-        Enumeration<?> pooledDS = C3P0Registry.getPooledDataSources();
-        while (pooledDS.hasMoreElements()) {
-            Object ds = pooledDS.nextElement();
+        Set<?> pooledDataSources = C3P0Registry.getPooledDataSources();
+        for (Object ds : pooledDataSources) {
             if (ds instanceof ComboPooledDataSource) {
                 ComboPooledDataSource cpds = (ComboPooledDataSource) ds;
                 if (cpds.getClass().getClassLoader() == webappClassLoader) {
@@ -68,8 +68,3 @@ public class CacheContextListener implements ServletContextListener {
         }
     }
 }
-
-
-
-
-Type mismatch: cannot convert from Set to Enumeration<?>
