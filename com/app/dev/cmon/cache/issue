@@ -1,0 +1,46 @@
+
+
+22-Apr-2025 12:46:49.311 INFO [C3P0PooledConnectionPoolManager[identityToken->2rxdaobaodil4paq2feh|657b5a18]-HelperThread-#2] org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading Illegal access: this web application instance has been stopped already. Could not load [com.mchange.v2.resourcepool.BasicResourcePool]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+        java.lang.IllegalStateException: Illegal access: this web application instance has been stopped already. Could not load [com.mchange.v2.resourcepool.BasicResourcePool]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading(WebappClassLoaderBase.java:1440)
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForClassLoading(WebappClassLoaderBase.java:1428)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1267)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1228)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.loadClass(PackagingDataCalculator.java:204)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.bestEffortLoadClass(PackagingDataCalculator.java:222)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.computeBySTEP(PackagingDataCalculator.java:135)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.populateUncommonFrames(PackagingDataCalculator.java:111)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.populateFrames(PackagingDataCalculator.java:104)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.calculate(PackagingDataCalculator.java:58)
+                at ch.qos.logback.classic.spi.ThrowableProxy.calculatePackagingData(ThrowableProxy.java:142)
+                at ch.qos.logback.classic.spi.LoggingEvent.<init>(LoggingEvent.java:122)
+                at ch.qos.logback.classic.Logger.buildLoggingEventAndAppend(Logger.java:419)
+                at ch.qos.logback.classic.Logger.filterAndLog_0_Or3Plus(Logger.java:383)
+                at ch.qos.logback.classic.Logger.debug(Logger.java:498)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger$DebugLogger.log(Slf4jMLog.java:207)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger.log(Slf4jMLog.java:256)
+                at com.mchange.v2.resourcepool.BasicResourcePool$ScatteredAcquireTask.run(BasicResourcePool.java:1958)
+                at com.mchange.v2.async.ThreadPoolAsynchronousRunner$PoolThread.run(ThreadPoolAsynchronousRunner.java:696)
+22-Apr-2025 12:46:49.311 INFO [C3P0PooledConnectionPoolManager[identityToken->2rxdaobaodil4paq2feh|657b5a18]-HelperThread-#2] org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading Illegal access: this web application instance has been stopped already. Could not load [com.mchange.v2.resourcepool.BasicResourcePool$ScatteredAcquireTask]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+        java.lang.IllegalStateException: Illegal access: this web application instance has been stopped already. Could not load [com.mchange.v2.resourcepool.BasicResourcePool$ScatteredAcquireTask]. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading(WebappClassLoaderBase.java:1440)
+                at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForClassLoading(WebappClassLoaderBase.java:1428)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1267)
+                at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1228)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.loadClass(PackagingDataCalculator.java:204)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.bestEffortLoadClass(PackagingDataCalculator.java:222)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.computeBySTEP(PackagingDataCalculator.java:135)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.populateUncommonFrames(PackagingDataCalculator.java:111)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.populateFrames(PackagingDataCalculator.java:104)
+                at ch.qos.logback.classic.spi.PackagingDataCalculator.calculate(PackagingDataCalculator.java:58)
+                at ch.qos.logback.classic.spi.ThrowableProxy.calculatePackagingData(ThrowableProxy.java:142)
+                at ch.qos.logback.classic.spi.LoggingEvent.<init>(LoggingEvent.java:122)
+                at ch.qos.logback.classic.Logger.buildLoggingEventAndAppend(Logger.java:419)
+                at ch.qos.logback.classic.Logger.filterAndLog_0_Or3Plus(Logger.java:383)
+                at ch.qos.logback.classic.Logger.debug(Logger.java:498)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger$DebugLogger.log(Slf4jMLog.java:207)
+                at com.mchange.v2.log.slf4j.Slf4jMLog$Slf4jMLogger.log(Slf4jMLog.java:256)
+                at com.mchange.v2.resourcepool.BasicResourcePool$ScatteredAcquireTask.run(BasicResourcePool.java:1958)
+                at com.mchange.v2.async.ThreadPoolAsynchronousRunner$PoolThread.run(ThreadPoolAsynchronousRunner.java:696)
+
+
