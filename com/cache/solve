@@ -1,104 +1,41 @@
 // src/main/java/com/arabbank/hdf/digitalbackend/digital/configuration/cache/CacheConfiguration.java
 package com.arabbank.hdf.digitalbackend.digital.configuration.cache;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.cache.interceptor.KeyGenerator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 import com.arabbank.hdf.digitalbackend.digital.constant.helios.HeliosConstants;
 import com.arabbank.hdf.digitalbackend.digital.constant.mdm.MdmConstants;
 import com.arabbank.hdf.digitalbackend.digital.constant.omnify.OmnifyConstants;
 import com.arabbank.hdf.digitalbackend.digital.constant.sme.SmeConstants;
 import com.arabbank.hdf.digitalbackend.digital.repository.sqlserver.omnify.OmnifyServiceRepository;
-import lombok.RequiredArgsConstructor;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.ExpiryPolicyBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.jsr107.Eh107Configuration;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.jcache.JCacheCacheManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableAsync;
-import org.springframework.context.annotation.EnableScheduling;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import javax.cache.Caching;
-import javax.cache.spi.CachingProvider;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Configuration
 @EnableCaching
-@EnableScheduling
-@EnableAsync
+@EnableScheduling   // <— needed to enable @Scheduled
 @RequiredArgsConstructor
 public class CacheConfiguration {
-
     private final OmnifyServiceRepository omnifyServiceRepository;
 
-    /**
-     * Create and configure the JCache (Ehcache) CacheManager.
-     */
     @Bean
-    public javax.cache.CacheManager jCacheManager() {
-        CachingProvider provider = Caching.getCachingProvider();
-        javax.cache.CacheManager jcm = provider.getCacheManager(
-            provider.getDefaultURI(),
-            getClass().getClassLoader()
-        );
-
-        // one common config: heap=1_000 entries, TTL=10min
-        javax.cache.configuration.Configuration<Object,Object> jcacheConfig =
-            Eh107Configuration.fromEhcacheCacheConfiguration(
-                CacheConfigurationBuilder.newCacheConfigurationBuilder(
-                    Object.class, Object.class,
-                    ResourcePoolsBuilder.heap(1_000)
-                )
-                .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofMinutes(10)))
-                .build()
-            );
-
-        // create every cache name if missing
-        for (String name : getAllCacheNames()) {
-            if (jcm.getCache(name, Object.class, Object.class) == null) {
-                jcm.createCache(name, jcacheConfig);
-            }
-        }
-        return jcm;
+    public CacheManager cacheManager() {
+        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager();
+        cacheManager.setCacheNames(getAllCacheNames());
+        return cacheManager;
     }
 
-    /**
-     * Expose Spring's CacheManager wired to our JCacheManager.
-     */
-    @Bean
-    public org.springframework.cache.CacheManager cacheManager(javax.cache.CacheManager jcm) {
-        return new JCacheCacheManager(jcm);
-    }
-
-    /**
-     * Thread pool executor for @Async cache-refresh tasks.
-     */
-    @Bean(name = "cacheTaskExecutor")
-    public Executor cacheTaskExecutor() {
-        ThreadPoolTaskExecutor exec = new ThreadPoolTaskExecutor();
-        exec.setCorePoolSize(4);
-        exec.setMaxPoolSize(8);
-        exec.setQueueCapacity(50);
-        exec.setThreadNamePrefix("CacheRefresher-");
-        exec.initialize();
-        return exec;
-    }
-
-    @Bean
-    public KeyGenerator keyGenerator() {
-        return new TimeBasedKeyGenerator();
-    }
-
-    /**
-     * Exactly your original logic for collecting all cache names.
-     */
     private List<String> getAllCacheNames() {
         List<String> baseCacheNames = Arrays.asList(
             HeliosConstants.EAB_CHARTS_CACHE_NAME,
@@ -125,7 +62,6 @@ public class CacheConfiguration {
         allInstance.addAll(getCardWithPrefix(HeliosConstants.HELIOS_SERVER_CACHE_NAME, omnifyServiceRepository.getOmnifyCompanyNames()));
 
         allInstance.addAll(getCardWithPrefix(SmeConstants.SME_CHARTS_CACHE_NAME, SmeConstants.SME_COUNTRY_LIST));
-
         allInstance.addAll(Arrays.asList("cardsData","trxserver","serversvitals","packets","statusdialog"));
         allInstance.addAll(getCardWithPrefix("MdmChartsData", MdmConstants.COUNTRIES_LIST));
 
@@ -133,15 +69,35 @@ public class CacheConfiguration {
                      .collect(Collectors.toList());
     }
 
-    private static List<String> getCardWithPrefix(String name, List<String> list) {
+    public static List<String> getCardWithPrefix(String name, List<String> list) {
         return list.stream().map(card -> card + name).collect(Collectors.toList());
+    }
+
+    @Bean
+    public KeyGenerator keyGenerator() {
+        return new TimeBasedKeyGenerator();
     }
 }
 
 
 
 
--------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -181,7 +137,6 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -193,165 +148,191 @@ import java.util.stream.Stream;
 @Slf4j
 @RequiredArgsConstructor
 public class CachingService implements ApplicationContextAware {
-
     private final CacheManager cacheManager;
     private final OmnifyServiceRepository omnifyServiceRepository;
     private ApplicationContext applicationContext;
 
-    // === HELIOS (every 30s) ===
-    @Async("cacheTaskExecutor")
+    // ─── EAB & HELIOS (every 30s) ────────────────────────────────────────────────
     @Scheduled(cron = "0/30 * * * * *", zone = "Asia/Amman")
     public void refreshHeliosCaches() {
-        log.debug(">>> Refreshing HELIOS caches");
-        refreshServices(Stream.of(ChartServiceImpl.class, BarChartServiceImp.class));
+        log.debug("► Refreshing EAB & HELIOS caches");
+        // charts
+        refreshAllCaches();
+        // cards
         refreshNodeCaches(HeliosConstants.EAB_CARDS_LIST, ActiveUsersAndHitRegistrationsCardServiceImpl.class);
         refreshNodeCaches(HeliosConstants.EAB_REGISTRATIONS_CARD, RegistrationCardService.class);
         refreshNodeCaches(HeliosConstants.EAB_CONNECTION_CARD, ConnectionCardService.class);
+        // per-country
         refreshHeliosPerCountryCaches(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosChartsServiceImp.class);
         refreshHeliosPerCountryCaches(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosConnectionCardService.class);
         refreshHeliosPerCountryCaches(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosActiveUsersCardService.class);
     }
 
-    // === OMNIFY (every 30s) ===
-    @Async("cacheTaskExecutor")
+    // ─── OMNIFY (every 30s) ─────────────────────────────────────────────────
     @Scheduled(cron = "0/30 * * * * *", zone = "Asia/Amman")
     public void refreshOmnifyCaches() {
-        log.debug(">>> Refreshing OMNIFY caches");
-        refreshServices(Stream.of(
-            OmnifyTopCompaniesChartsServiceImp.class,
-            OmnifyProductsCardService.class
-        ));
+        log.debug("► Refreshing OMNIFY caches");
+        refreshAllOmnifyCaches();
         refreshOmnifyPerCompanyCaches(omnifyServiceRepository.getOmnifyCompanyNames(), OmnifyChartsServiceImp.class);
         refreshOmnifyPerCompanyCaches(omnifyServiceRepository.getOmnifyCompanyNames(), OmnifyConnectionCardService.class);
-        refreshOmnifyPerCompanyCaches(omnifyServiceRepository.getOmnifyCompanyNames(), OmnifyServersServiceImpl.class);
+        // your original call for servers
+        refreshHeliosPerCountryCaches(omnifyServiceRepository.getOmnifyCompanyNames(), OmnifyServersServiceImpl.class);
     }
 
-    // === MDM (every 30s) ===
-    @Async("cacheTaskExecutor")
+    // ─── MDM (every 30s) ───────────────────────────────────────────────────
     @Scheduled(cron = "0/30 * * * * *", zone = "Asia/Amman")
     public void refreshMdmCaches() {
-        log.debug(">>> Refreshing MDM caches");
-        refreshServices(Stream.of(
-            MDMCardsServiceImp.class,
-            NodeTrxServiceImp.class,
-            NodeTrxVitalsServiceImp.class,
-            MdmCherriesServiceImp.class,
-            StatusDialogServiceImp.class
-        ));
+        log.debug("► Refreshing MDM caches");
+        refreshAllMdmCaches();
         refreshMdmCountriesCaches(MdmConstants.COUNTRIES_LIST, MdmChartsServiceImp.class);
     }
 
-    // === SME (every 30s) ===
-    @Async("cacheTaskExecutor")
+    // ─── SME (every 30s) ───────────────────────────────────────────────────
     @Scheduled(cron = "0/30 * * * * *", zone = "Asia/Amman")
     public void refreshSmeCaches() {
-        log.debug(">>> Refreshing SME caches");
-        refreshServices(Stream.of(SmeServersServiceImpl.class));
+        log.debug("► Refreshing SME caches");
+        refreshAllSMECaches();
         refreshSmePerCountryCaches(SmeConstants.SME_COUNTRY_LIST, SmeChartsServiceImp.class);
     }
 
-    // —————————————————————————————————————————
-    // Common helpers
-    // —————————————————————————————————————————
-
-    private <T extends CacheableService<?, ?>> void refreshServices(Stream<Class<T>> classes) {
-        classes.map(applicationContext::getBean)
-               .forEach(this::updateSingleCache);
-    }
-
-    private <T extends CacheableService<?, ?>> void updateSingleCache(T svc) {
-        String cacheName = svc.getCacheName();
-        Object key = svc.getCacheKey();
-        if (key == null) return;
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache == null) return;
-
-        Object data = svc.findInstanceData("");
-        cache.put(key, data);
-        log.debug("Updated cache '{}' @ key={}", cacheName, key);
+    // ─── EXISTING HELPERS (unchanged) ─────────────────────────────────────────
+    @SuppressWarnings("DataFlowIssue")
+    public void refreshAllCaches() {
+        Stream<CacheableService<?, ?>> services = Stream
+            .of(ChartServiceImpl.class, BarChartServiceImp.class)
+            .map(applicationContext::getBean);
+        services.forEach(svc -> {
+            Cache c = cacheManager.getCache(svc.getCacheName());
+            if (svc.getCacheKey() != null && c != null) {
+                Object data = svc.findInstanceData("");
+                c.clear();
+                c.put(svc.getCacheKey(), data);
+                log.debug("Updated cache '{}' key={}", svc.getCacheName(), svc.getCacheKey());
+            }
+        });
     }
 
     @SuppressWarnings("DataFlowIssue")
-    private <T extends CacheableService<?, ?>> void refreshNodeCaches(
-            List<String> cards, Class<T> clazz) {
+    public void refreshAllOmnifyCaches() {
+        Stream<CacheableService<?, ?>> services = Stream
+            .of(OmnifyTopCompaniesChartsServiceImp.class, OmnifyProductsCardService.class)
+            .map(applicationContext::getBean);
+        services.forEach(svc -> {
+            Cache c = cacheManager.getCache(svc.getCacheName());
+            if (svc.getCacheKey() != null && c != null) {
+                Object data = svc.findInstanceData("");
+                c.clear();
+                c.put(svc.getCacheKey(), data);
+                log.debug("Updated cache '{}' key={}", svc.getCacheName(), svc.getCacheKey());
+            }
+        });
+    }
 
-        T svc = applicationContext.getBean(clazz);
+    @SuppressWarnings("DataFlowIssue")
+    public void refreshAllMdmCaches() {
+        Stream<CacheableService<?, ?>> services = Stream
+            .of(MDMCardsServiceImp.class, NodeTrxServiceImp.class, NodeTrxVitalsServiceImp.class, MdmCherriesServiceImp.class, StatusDialogServiceImp.class)
+            .map(applicationContext::getBean);
+        services.forEach(svc -> {
+            Cache c = cacheManager.getCache(svc.getCacheName());
+            if (svc.getCacheKey() != null && c != null) {
+                Object data = svc.findInstanceData("");
+                c.clear();
+                c.put(svc.getCacheKey(), data);
+            }
+        });
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    public void refreshAllSMECaches() {
+        Stream<CacheableService<?, ?>> services = Stream
+            .of(SmeServersServiceImpl.class)
+            .map(applicationContext::getBean);
+        services.forEach(svc -> {
+            Cache c = cacheManager.getCache(svc.getCacheName());
+            if (svc.getCacheKey() != null && c != null) {
+                Object data = svc.findInstanceData("");
+                c.clear();
+                c.put(svc.getCacheKey(), data);
+                log.debug("[SME] Updated cache '{}' key={}", svc.getCacheName(), svc.getCacheKey());
+            }
+        });
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    public void refreshNodeCaches(List<String> cards, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
         cards.forEach(card -> {
             String name = card + svc.getCacheName();
             Object key = card + svc.getCacheKey();
             Cache c = cacheManager.getCache(name);
-            if (c != null && key != null) {
+            if (key != null && c != null) {
                 Object data = svc.findInstanceData(card);
+                c.clear();
                 c.put(key, data);
-                log.debug("Updated cache '{}' @ key={}", name, key);
+                log.debug("Updated cache '{}' key={}", name, key);
             }
         });
     }
 
     @SuppressWarnings("DataFlowIssue")
-    private <T extends CacheableService<?, ?>> void refreshHeliosPerCountryCaches(
-            List<String> countries, Class<T> clazz) {
-
-        T svc = applicationContext.getBean(clazz);
+    public void refreshHeliosPerCountryCaches(List<String> countries, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
         countries.forEach(country -> {
             String name = country + svc.getCacheName();
             Object key = country + svc.getCacheKey();
             Cache c = cacheManager.getCache(name);
-            if (c != null && key != null) {
+            if (key != null && c != null) {
                 Object data = svc.findInstanceData(country);
+                c.clear();
                 c.put(key, data);
-                log.debug("Updated cache '{}' @ key={}", name, key);
+                log.debug("Updated cache '{}' key={}", name, key);
             }
         });
     }
 
     @SuppressWarnings("DataFlowIssue")
-    private <T extends CacheableService<?, ?>> void refreshOmnifyPerCompanyCaches(
-            List<String> companies, Class<T> clazz) {
-
-        T svc = applicationContext.getBean(clazz);
+    public void refreshOmnifyPerCompanyCaches(List<String> companies, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
         companies.forEach(comp -> {
             String name = comp + svc.getCacheName();
             Object key = comp + svc.getCacheKey();
             Cache c = cacheManager.getCache(name);
-            if (c != null && key != null) {
+            if (key != null && c != null) {
                 Object data = svc.findInstanceData(comp);
+                c.clear();
                 c.put(key, data);
-                log.debug("Updated cache '{}' @ key={}", name, key);
+                log.debug("Updated cache '{}' key={}", name, key);
             }
         });
     }
 
     @SuppressWarnings("DataFlowIssue")
-    private <T extends CacheableService<?, ?>> void refreshMdmCountriesCaches(
-            List<String> countries, Class<T> clazz) {
-
-        T svc = applicationContext.getBean(clazz);
+    public void refreshMdmCountriesCaches(List<String> countries, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
         countries.forEach(country -> {
             String name = country + svc.getCacheName();
             Object key = country + svc.getCacheKey();
             Cache c = cacheManager.getCache(name);
-            if (c != null && key != null) {
+            if (key != null && c != null) {
                 Object data = svc.findInstanceData(country);
+                c.clear();
                 c.put(key, data);
-                log.debug("Updated cache '{}' @ key={}", name, key);
             }
         });
     }
 
     @SuppressWarnings("DataFlowIssue")
-    private <T extends CacheableService<?, ?>> void refreshSmePerCountryCaches(
-            List<String> countries, Class<T> clazz) {
-
-        T svc = applicationContext.getBean(clazz);
+    public void refreshSmePerCountryCaches(List<String> countries, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
         countries.forEach(country -> {
             String name = country + svc.getCacheName();
             Object key = country + svc.getCacheKey();
             Cache c = cacheManager.getCache(name);
-            if (c != null && key != null) {
+            if (key != null && c != null) {
                 Object data = svc.findInstanceData(country);
+                c.clear();
                 c.put(key, data);
-                log.debug("Updated cache '{}' @ key={}", name, key);
             }
         });
     }
@@ -362,23 +343,3 @@ public class CachingService implements ApplicationContextAware {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-<dependency>
-  <groupId>org.ehcache</groupId>
-  <artifactId>ehcache</artifactId>
-  <version>3.11.9</version>
-</dependency>
-<dependency>
-  <groupId>javax.cache</groupId>
-  <artifactId>cache-api</artifactId>
-  <version>1.1.1</version>
-</dependency>
