@@ -156,3 +156,11 @@ public class CachingService implements ApplicationContextAware {
         Object get();
     }
 }
+
+
+
+
+
+
+
+The method refreshGeneric(Stream<Class<T>>) in the type CachingService is not applicable for the arguments (Stream<Class<? extends StandardCacheableService<String>>>)
