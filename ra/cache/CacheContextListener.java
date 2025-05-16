@@ -1,7 +1,8 @@
 package com.app.dev.cmon.cache;
 
 import com.mchange.v2.c3p0.C3P0Registry;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.mchange.v2.c3p0.DataSources;
+import com.mchange.v2.c3p0.PooledDataSource;
 import net.sf.ehcache.CacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +13,9 @@ import javax.servlet.annotation.WebListener;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Set;
 import java.util.Enumeration;
+import java.util.Set;
 
-/**
- * Ensures that only the resources created by this web application are shut down,
- * avoiding interference with other applications in the same servlet container.
- */
 @WebListener
 public class CacheContextListener implements ServletContextListener {
     private static final Logger logger = LoggerFactory.getLogger(CacheContextListener.class);
@@ -36,18 +33,18 @@ public class CacheContextListener implements ServletContextListener {
         CacheService.getInstance().shutdown();
         logger.info("CacheService shutdown");
 
-        // 2. Close only the C3P0 pools loaded by this webapp's classloader
+        // 2. Properly destroy each C3P0 pool (closes connections AND stops helper threads)
         ClassLoader webappClassLoader = getClass().getClassLoader();
         Set<?> pooledDataSources = C3P0Registry.getPooledDataSources();
         for (Object ds : pooledDataSources) {
-            if (ds instanceof ComboPooledDataSource) {
-                ComboPooledDataSource cpds = (ComboPooledDataSource) ds;
-                if (cpds.getClass().getClassLoader() == webappClassLoader) {
+            if (ds instanceof PooledDataSource) {
+                PooledDataSource pds = (PooledDataSource) ds;
+                if (pds.getClass().getClassLoader() == webappClassLoader) {
                     try {
-                        cpds.close();
-                        logger.info("Closed C3P0 pool: {}", cpds.getDataSourceName());
+                        DataSources.destroy(pds);
+                        logger.info("Destroyed C3P0 pool: {}", pds);
                     } catch (Exception e) {
-                        logger.warn("Error closing C3P0 pool {}", cpds.getDataSourceName(), e);
+                        logger.warn("Error destroying C3P0 pool {}", pds, e);
                     }
                 }
             }
@@ -66,6 +63,7 @@ public class CacheContextListener implements ServletContextListener {
                 }
             }
         }
+
         logger.info("Context destruction completed.");
     }
 }
