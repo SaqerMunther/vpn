@@ -2,7 +2,6 @@
 package com.arabbank.hdf.digitalbackend.digital.configuration.cache;
 
 import com.arabbank.hdf.digitalbackend.digital.configuration.cache.services.CacheableService;
-import com.arabbank.hdf.digitalbackend.digital.constant.eab.HeliosConstants;
 import com.arabbank.hdf.digitalbackend.digital.constant.helios.HeliosConstants;
 import com.arabbank.hdf.digitalbackend.digital.constant.mdm.MdmConstants;
 import com.arabbank.hdf.digitalbackend.digital.constant.omnify.OmnifyConstants;
@@ -112,7 +111,7 @@ public class CachingService implements ApplicationContextAware {
     @SuppressWarnings("DataFlowIssue")
     public void refreshAllCaches() {
         Stream<CacheableService<?, ?>> services = Stream.of(ChartServiceImpl.class, BarChartServiceImp.class)
-            .map(name -> applicationContext.getBean(name));
+            .map(service -> applicationContext.getBean(service));
         services.forEach(cacheable -> {
             Cache cache = cacheManager.getCache(cacheable.getCacheName());
             if (Objects.nonNull(cacheable.getCacheKey())) {
@@ -132,7 +131,7 @@ public class CachingService implements ApplicationContextAware {
             NodeTrxVitalsServiceImp.class,
             MdmCherriesServiceImp.class,
             StatusDialogServiceImp.class
-        ).map(name -> applicationContext.getBean(name));
+        ).map(service -> applicationContext.getBean(service));
         services.forEach(cacheable -> {
             Cache cache = cacheManager.getCache(cacheable.getCacheName());
             if (Objects.nonNull(cacheable.getCacheKey())) {
@@ -160,8 +159,70 @@ public class CachingService implements ApplicationContextAware {
         CacheableService<?, ?> svc = applicationContext.getBean(clazz);
         cards.forEach(card -> {
             Cache cache = cacheManager.getCache(card + svc.getCacheName());
-            if (Objects.nonNull(card + svc.getCacheKey())) {
+            if (svc.getCacheKey() != null) {
                 Object data = svc.findInstanceData(card);
                 cache.clear();
                 cache.put(card + svc.getCacheKey(), data);
-                log.debug("Cache updated for cache key: {} with Name: {}", svc.getCacheKey(), card);
+                log.debug("Cache updated for cache key: {} with prefix: {}", svc.getCacheKey(), card);
+            }
+        });
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    public void refreshHeliosPerCountryCaches(List<String> countries, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
+        countries.forEach(country -> {
+            Cache cache = cacheManager.getCache(country + svc.getCacheName());
+            if (svc.getCacheKey() != null) {
+                Object data = svc.findInstanceData(country);
+                cache.clear();
+                cache.put(country + svc.getCacheKey(), data);
+                log.debug("Cache updated for cache key: {} with prefix: {}", svc.getCacheKey(), country);
+            }
+        });
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    public void refreshMdmCountriesCaches(List<String> countries, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
+        countries.forEach(country -> {
+            Cache cache = cacheManager.getCache(country + svc.getCacheName());
+            if (svc.getCacheKey() != null) {
+                Object data = svc.findInstanceData(country);
+                cache.clear();
+                cache.put(svc.getCacheKey(), data);
+            }
+        });
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    public void refreshOmnifyPerCompanyCaches(List<String> companies, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
+        companies.forEach(company -> {
+            Cache cache = cacheManager.getCache(company + svc.getCacheName());
+            if (svc.getCacheKey() != null) {
+                Object data = svc.findInstanceData(company);
+                cache.clear();
+                cache.put(company + svc.getCacheKey(), data);
+            }
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    public void refreshSmePerCountryCaches(List<String> countries, Class<? extends CacheableService<?, ?>> clazz) {
+        CacheableService<?, ?> svc = applicationContext.getBean(clazz);
+        countries.forEach(country -> {
+            Cache cache = cacheManager.getCache(country + svc.getCacheName());
+            if (svc.getCacheKey() != null) {
+                Object data = svc.findInstanceData(country);
+                cache.clear();
+                cache.put(country + svc.getCacheKey(), data);
+            }
+        });
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+}
