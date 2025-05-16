@@ -1,0 +1,42 @@
+// src/main/java/com/arabbank/hdf/digitalbackend/digital/configuration/cache/AsyncSchedulingConfig.java
+package com.arabbank.hdf.digitalbackend.digital.configuration.cache;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+@Configuration
+@EnableScheduling
+@EnableAsync
+public class AsyncSchedulingConfig {
+
+    /**
+     * Scheduler for all @Scheduled tasks.
+     */
+    @Bean
+    public ThreadPoolTaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(8);
+        scheduler.setThreadNamePrefix("cache-sched-");
+        scheduler.initialize();
+        return scheduler;
+    }
+
+    /**
+     * Executor for all @Async methods.
+     */
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(16);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("cache-async-");
+        executor.initialize();
+        return executor;
+    }
+}
