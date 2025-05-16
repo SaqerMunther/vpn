@@ -56,6 +56,7 @@ public class CachingService implements ApplicationContextAware {
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshAllSMECachesAtIntervals() {
         log.debug("Refresh SME Cache started");
+        // now works even if SmeServersServiceImpl implements extra interfaces
         refreshGeneric(Stream.of(SmeServersServiceImpl.class));
         refreshPerKeyList(SmeConstants.SME_COUNTRY_LIST, SmeChartsServiceImp.class);
         for (String country : SmeConstants.SME_COUNTRY_LIST) {
@@ -114,23 +115,23 @@ public class CachingService implements ApplicationContextAware {
     }
 
     /**
-     * Generic for any services whose cacheKey="" and dataSupplier uses empty key.
+     * Now accepts any Class<? extends CacheableService<?,?>>—even with extra interfaces.
      */
-    private void refreshGeneric(Stream<Class<? extends CacheableService<?,?>>> services) {
+    private void refreshGeneric(Stream<? extends Class<? extends CacheableService<?,?>>> services) {
         services
           .map(clazz -> (CacheableService<?,?>) applicationContext.getBean(clazz))
           .forEach(svc -> updateCache(
-              svc.getCacheName(),
-              svc.getCacheKey(),
-              () -> svc.findInstanceData("")
+               svc.getCacheName(),
+               svc.getCacheKey(),
+               () -> svc.findInstanceData("")
           ));
     }
 
     private <T extends CacheableService<?,?>> void refreshPerKeyList(
         List<String> keys,
-        Class<T> serviceClass
+        Class<T> svcClass
     ) {
-        T svc = applicationContext.getBean(serviceClass);
+        T svc = applicationContext.getBean(svcClass);
         keys.forEach(key -> updateCache(
             key + svc.getCacheName(),
             key + svc.getCacheKey(),
@@ -144,7 +145,7 @@ public class CachingService implements ApplicationContextAware {
             if (cache != null) {
                 cache.clear();
                 cache.put(cacheKey, supplier.get());
-                log.debug("Cache [{}] updated for key: {}", cacheName, cacheKey);
+                log.debug("Cache [{}] updated for key {}", cacheName, cacheKey);
             }
         }
     }
@@ -157,13 +158,3 @@ public class CachingService implements ApplicationContextAware {
     @FunctionalInterface
     private interface DataSupplier { Object get(); }
 }
-
-
-
-
-
-
-
-
-
-The method refreshGeneric(Stream<Class<T>>) in the type CachingService is not applicable for the arguments (Stream<Class<? extends ChartUtility & CacheableService<String,? extends Map<String,? extends Object>>>>)
