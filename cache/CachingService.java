@@ -157,3 +157,13 @@ public class CachingService implements ApplicationContextAware {
     @FunctionalInterface
     private interface DataSupplier { Object get(); }
 }
+
+
+
+
+
+
+
+
+
+The method refreshGeneric(Stream<Class<T>>) in the type CachingService is not applicable for the arguments (Stream<Class<? extends ChartUtility & CacheableService<String,? extends Map<String,? extends Object>>>>)
