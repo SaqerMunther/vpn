@@ -14,9 +14,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class AsyncSchedulingConfig {
 
-    /**
-     * Scheduler for all @Scheduled tasks.
-     */
     @Bean
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
@@ -26,9 +23,6 @@ public class AsyncSchedulingConfig {
         return scheduler;
     }
 
-    /**
-     * Executor for all @Async methods.
-     */
     @Bean
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
