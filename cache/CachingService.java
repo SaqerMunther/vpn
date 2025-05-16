@@ -56,8 +56,8 @@ public class CachingService implements ApplicationContextAware {
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshAllSMECachesAtIntervals() {
         log.debug("Refresh SME Cache started");
-        refreshAllSMECaches();
-        refreshPerCountry(SmeConstants.SME_COUNTRY_LIST, SmeChartsServiceImp.class);
+        refreshGeneric(Stream.of(SmeServersServiceImpl.class));
+        refreshPerKeyList(SmeConstants.SME_COUNTRY_LIST, SmeChartsServiceImp.class);
         for (String country : SmeConstants.SME_COUNTRY_LIST) {
             try { smeCardsServiceImp.getTransactions(country); } catch (IOException e) { throw new RuntimeException(e); }
             try { smeCardsServiceImp.getActiveUsers(country); } catch (IOException e) { throw new RuntimeException(e); }
@@ -71,8 +71,14 @@ public class CachingService implements ApplicationContextAware {
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshAllMDMCachesAtIntervals() {
         log.debug("Refresh MDM Cache started");
-        refreshAllMdmCaches();
-        refreshPerCountry(MdmConstants.COUNTRIES_LIST, MdmChartsServiceImp.class);
+        refreshGeneric(Stream.of(
+            MDMCardsServiceImp.class,
+            NodeTrxServiceImp.class,
+            NodeTrxVitalsServiceImp.class,
+            MdmCherriesServiceImp.class,
+            StatusDialogServiceImp.class
+        ));
+        refreshPerKeyList(MdmConstants.COUNTRIES_LIST, MdmChartsServiceImp.class);
         log.debug("Refresh MDM Cache finished");
     }
 
@@ -80,9 +86,9 @@ public class CachingService implements ApplicationContextAware {
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshAllHELIOSCachesAtIntervals() {
         log.debug("Refresh HELIOS Cache started");
-        refreshPerCountry(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosChartsServiceImp.class);
-        refreshPerCountry(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosConnectionCardService.class);
-        refreshPerCountry(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosActiveUsersCardService.class);
+        refreshPerKeyList(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosChartsServiceImp.class);
+        refreshPerKeyList(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosConnectionCardService.class);
+        refreshPerKeyList(HeliosConstants.HELIOS_COUNTRY_LIST, HeliosActiveUsersCardService.class);
         log.debug("Refresh HELIOS Cache finished");
     }
 
@@ -107,32 +113,29 @@ public class CachingService implements ApplicationContextAware {
         log.debug("Refresh OMNIFY Cache finished");
     }
 
-    private <T extends CacheableService<?, ?>> void refreshGeneric(Stream<Class<T>> services) {
-        services.map(clazz -> applicationContext.getBean(clazz))
-                .forEach(svc -> updateCache(svc.getCacheName(), svc.getCacheKey(), () -> svc.findInstanceData("")));
+    /**
+     * Generic for any services whose cacheKey="" and dataSupplier uses empty key.
+     */
+    private void refreshGeneric(Stream<Class<? extends CacheableService<?,?>>> services) {
+        services
+          .map(clazz -> (CacheableService<?,?>) applicationContext.getBean(clazz))
+          .forEach(svc -> updateCache(
+              svc.getCacheName(),
+              svc.getCacheKey(),
+              () -> svc.findInstanceData("")
+          ));
     }
 
-    private <T extends CacheableService<?, ?>> void refreshAllMdmCaches() {
-        refreshGeneric(Stream.of(
-            MDMCardsServiceImp.class,
-            NodeTrxServiceImp.class,
-            NodeTrxVitalsServiceImp.class,
-            MdmCherriesServiceImp.class,
-            StatusDialogServiceImp.class
+    private <T extends CacheableService<?,?>> void refreshPerKeyList(
+        List<String> keys,
+        Class<T> serviceClass
+    ) {
+        T svc = applicationContext.getBean(serviceClass);
+        keys.forEach(key -> updateCache(
+            key + svc.getCacheName(),
+            key + svc.getCacheKey(),
+            () -> svc.findInstanceData(key)
         ));
-    }
-
-    private <T extends CacheableService<?, ?>> void refreshAllSMECaches() {
-        refreshGeneric(Stream.of(SmeServersServiceImpl.class));
-    }
-
-    private <T extends CacheableService<?, ?>> void refreshPerCountry(List<String> keys, Class<T> clazz) {
-        T svc = applicationContext.getBean(clazz);
-        keys.forEach(key -> updateCache(key + svc.getCacheName(), key + svc.getCacheKey(), () -> svc.findInstanceData(key)));
-    }
-
-    private <T extends CacheableService<?, ?>> void refreshPerKeyList(List<String> keys, Class<T> clazz) {
-        refreshPerCountry(keys, clazz);
     }
 
     private void updateCache(String cacheName, Object cacheKey, DataSupplier supplier) {
@@ -147,20 +150,10 @@ public class CachingService implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
+        this.applicationContext = ctx;
     }
 
     @FunctionalInterface
-    private interface DataSupplier {
-        Object get();
-    }
+    private interface DataSupplier { Object get(); }
 }
-
-
-
-
-
-
-
-The method refreshGeneric(Stream<Class<T>>) in the type CachingService is not applicable for the arguments (Stream<Class<? extends StandardCacheableService<String>>>)
