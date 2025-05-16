@@ -1,0 +1,14 @@
+package com.arabbank.hdf.digitalbackend.digital.configuration.cache.services.mdm;
+
+import org.springframework.cache.interceptor.KeyGenerator;
+
+import java.lang.reflect.Method;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+
+public class TimeBasedKeyGenerator implements KeyGenerator {
+    @Override
+    public Object generate(Object target, Method method, Object... params) {
+        return LocalTime.now().truncatedTo(ChronoUnit.MINUTES).toString();
+    }
+}
