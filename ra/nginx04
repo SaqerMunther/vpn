@@ -1,0 +1,241 @@
+
+server {
+    listen 1991;
+    server_name jo00-cmon04;
+	
+    access_log off;
+    # redirect all http requests to https
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    # root /var/www/html;
+    # index index.html index.htm index.nginx-debian.html;
+    server_name jo00-cmon04;
+	
+    ssl_certificate /etc/nginx/ssl/public.crt;
+    ssl_certificate_key /etc/nginx/ssl/private.key;
+    # ssl_certificate      /etc/nginx/ssl/server.crt;
+    # ssl_certificate_key  /etc/nginx/ssl/server.key;
+    ssl_session_cache shared:SSL:1m;
+    ssl_session_timeout 5m;
+    ssl_prefer_server_ciphers on;
+
+    # access_log off;
+
+    location ~ ^/(favicon\.ico|infra/favicon\.ico|digital/favicon\.ico|mon/favicon\.ico)$ {
+        alias /data/apps/cmon-dashboard/frontend/public/favicon.ico;
+        expires 1d;
+        access_log off;
+    }
+###############################################
+
+   location /nginx_status {
+       stub_status;
+       allow all;
+   }
+
+   location /_next/static/ {
+       alias /data/apps/cmon-dashboard/frontend/.next/static/;
+       expires 1d;
+       access_log off;
+   }
+
+
+    location / {
+        # Redirect root to /dashboard
+        if ($request_uri = '/') {
+            return 301 /dashboard;  # Permanent redirect
+        }
+
+        # Handle other paths
+        rewrite ^/(dashboard|one-view|database-monitoring|login|unauthorized)(.*)$ /$1$2 break;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_pass http://127.0.0.1:3009$request_uri;  # Pass the full request URI
+    }
+	
+    location /cmon-api/ {
+        proxy_pass https://127.0.0.1:9448/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+   location /cmon-api-secondary/ {
+        proxy_pass http://127.0.0.1:9441/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+
+   # Digital Dashboards
+
+   location /digital/_next/static/ {
+   	alias /data/apps/digital-dashboard/frontend/.next/static/;
+   	expires 1d;
+   	access_log off;
+   }
+
+    location /digital {
+        # Redirect root to /digital
+        if ($request_uri = '/digital') {
+            return 301 /digital/eab;  # Permanent redirect
+        }
+
+        # Handle other paths
+        rewrite ^/digital/(login|helios|eab|omnify|sme|mdm|unauthorized)(.*)$ /$1$2 break;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_pass http://127.0.0.1:3003$request_uri;  # Pass the full request URI
+    }
+
+    # digital-api route
+
+    location /dig-api/ {
+        proxy_pass http://127.0.0.1:9451/;  # dig-api backend
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Digital Solarwind
+
+    location /dig-api/api/solarwinds {
+        proxy_pass https://127.0.0.1/cmon-api/api/solarwinds;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+
+   # INFRA  Dashboards
+
+   location /infra/_next/static/ {
+   	alias /data/apps/mongo-dashboard/frontend/.next/static/;
+   	expires 1d;
+   	access_log off;
+   }
+
+    location /infra{
+        # Redirect root to /infra
+        if ($request_uri = '/infra') {
+            return 301 /infra/mongo;  # Permanent redirect
+        }
+
+        # Handle other paths
+        rewrite ^/infra/(login|mongo|oracle|dns|sybase|kafka|exchange|unauthorized)(.*)$ /$1$2 break;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_pass http://127.0.0.1:3010$request_uri;  # Pass the full request URI
+    }
+
+    # INFRA-api route
+
+    location /infra-api/ {
+        proxy_pass http://127.0.0.1:9450/;  # infra-api backend
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+
+    # DR API route
+
+    location /mon/_next/static/ {
+   	alias /data/apps/dr-dashboard/frontend/.next/static/;
+        expires 1d;
+        access_log off;
+    }
+
+    location /mon{
+        # Redirect root to /mon
+        if ($request_uri = '/mon') {
+            return 301 /mon/dr;  # Permanent redirect
+        }
+
+        # Handle other paths
+        rewrite ^/mon/(login|dr|unauthorized)(.*)$ /$1$2 break;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_pass http://127.0.0.1:3004$request_uri;  # Pass the full request URI
+    }
+
+    # DR-api route
+
+    location /dr-api/ {
+        proxy_pass http://127.0.0.1:9445/;  # DR-api backend
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # CMON AUTH
+
+    location /cmon-auth-api/ {
+        proxy_pass http://127.0.0.1:9444/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+
+    # Glow Root
+
+
+    location /glowroot {
+        proxy_pass http://10.1.4.144:3001/glowroot;  
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+ 
+    }
+
+}
