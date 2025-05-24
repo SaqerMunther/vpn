@@ -48,7 +48,14 @@ public class UserMetricsInterceptor implements HandlerInterceptor {
 
 
 
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  metrics:
+    enable:
+      all: true
 
 
 
