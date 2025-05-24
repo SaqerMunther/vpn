@@ -1,0 +1,672 @@
+package com.arabbank.hdf.cmon.service.cache;
+
+import com.arabbank.hdf.cmon.dto.header.HeaderResponseDTO;
+import com.arabbank.hdf.cmon.dto.model.*;
+import com.arabbank.hdf.cmon.dto.model.categoriesFirstLayer.CertificateExpiryCountsDTO;
+import com.arabbank.hdf.cmon.dto.model.categoriesFirstLayer.FirewallChangesCardAlertsCountDTO;
+import com.arabbank.hdf.cmon.dto.model.categoriesFirstLayer.PowerUserCountsDTO;
+import com.arabbank.hdf.cmon.dto.model.dbaDashboardDto.DBAMainCardDTO;
+import com.arabbank.hdf.cmon.dto.model.fieldSupportCardDTO.FieldSupportMainCardDTO;
+import com.arabbank.hdf.cmon.entity.bridge.CardAlertsDetailsBridge;
+import com.arabbank.hdf.cmon.entity.bridge.SystemAlertsBridge;
+import com.arabbank.hdf.cmon.entity.oracle.AlertGrouping;
+import com.arabbank.hdf.cmon.entity.oracle.CardSevMonitorAlertDetails;
+import com.arabbank.hdf.cmon.entity.oracle.CmonEqationCount;
+import com.arabbank.hdf.cmon.entity.oracle.KPIData;
+import com.arabbank.hdf.cmon.enums.CategoryData;
+import com.arabbank.hdf.cmon.service.aleart.AlertServiceImpl;
+import com.arabbank.hdf.cmon.service.alertDetails.CardService;
+import com.arabbank.hdf.cmon.service.headerTap.HeaderService;
+import com.arabbank.hdf.cmon.service.rise.categories.abnet.ABNetImp;
+import com.arabbank.hdf.cmon.service.rise.categories.cmon.CMONImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.firewallChange.FirewallChangeImpl;
+import org.springframework.cache.CacheManager;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import com.arabbank.hdf.cmon.service.activeAlerts.ActiveAlertsServiceImp;
+import com.arabbank.hdf.cmon.service.alertBlocks.AlertBlocksServiceImp;
+import com.arabbank.hdf.cmon.service.alertDetails.DepartmentService;
+import com.arabbank.hdf.cmon.service.alertDetails.SystemService;
+import com.arabbank.hdf.cmon.service.alertdepartment.AlertDepartmentServiceImp;
+import com.arabbank.hdf.cmon.service.alertsGrouping.AlertGroupingServiceImpl;
+import com.arabbank.hdf.cmon.service.cmonAlertsBridge.SharedCmonAlertBridgeService;
+import com.arabbank.hdf.cmon.service.countyAlert.CountryAlertServiceImp;
+import com.arabbank.hdf.cmon.service.mbSystemsAlerts.MBSystemAlertsImp;
+import com.arabbank.hdf.cmon.service.rise.categories.adUam.AdUAMImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.atmImage.AtmImagesImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.certDiscovery.CertDiscoveyImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.certExpiry.CertExpiryImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.csp.CSPImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.dba.DBAImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.disabledComputer.DisabledComputerImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.dlo.DLOImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.equation.EquationImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.feildSupport.FeildSupportImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.firewall.FireWallImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.powerUser.PowerUserImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.productionAccess.ProdAccessImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.security.SecurityImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.serviceAccount.ServiceAccounImpl;
+import com.arabbank.hdf.cmon.service.rise.categories.uam.UAMImpl;
+import com.arabbank.hdf.cmon.service.systemsAlerts.SystemAlertsServiceImpl;
+import com.arabbank.hdf.cmon.service.totalBlockAlerts.TotalBlockAlertsServiceImpl;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.lang.System;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+
+class TaskLog {
+    String taskName;
+    Instant startTime;
+    Instant endTime;
+
+    TaskLog(String taskName, Instant startTime, Instant endTime) {
+        this.taskName = taskName;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
+    @Override
+    public String toString() {
+        long duration = endTime.toEpochMilli() - startTime.toEpochMilli();
+        return String.format("%s start on: %s, end on: %s, take: %ds",
+                taskName, startTime, endTime, duration / 1000);
+    }
+}
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class CacheRefreshService {
+    private final CacheManager cacheManager;
+    private final ActiveAlertsServiceImp activeAlertsService;
+    private final AlertBlocksServiceImp activeBlockService;
+    private final AdUAMImpl adUAMImpl;
+    private final CSPImpl cspImpl;
+    private final CMONImpl cmonImpl;
+    private final CertDiscoveyImpl certDiscoveryImpl;
+    private final AtmImagesImpl atmImagesImpl;
+    private final CertExpiryImpl certExpiryImpl;
+    private final UAMImpl uamImpl;
+    private final EquationImpl equationImpl;
+    private final FireWallImpl firewallImpl;
+    private final FirewallChangeImpl firewallImplChange;
+    private final SecurityImpl securityImpl;
+    private final PowerUserImpl powerUserImpl;
+    private final DLOImpl dloImpl;
+    private final DisabledComputerImpl disabledComputerImpl;
+    private final ServiceAccounImpl serviceAccounImpl;
+    private final DBAImpl dbaImpl;
+    private final FeildSupportImpl feildSupportImpl;
+    private final ProdAccessImpl prodAccessImpl;
+    private final AlertDepartmentServiceImp alertDepartmentServiceImp;
+    private final DepartmentService departmentService;
+    private final CountryAlertServiceImp countryAlertServiceImp;
+    private final MBSystemAlertsImp MBSystemAlertsImp;
+    private final TotalBlockAlertsServiceImpl totalBlockAlertsServiceImpl;
+    private final SystemAlertsServiceImpl systemAlertsServiceImpl;
+    private final SystemService systemService;
+    private final SharedCmonAlertBridgeService sharedCmonAlertBridgeService;
+    private final AlertGroupingServiceImpl alertGroupingServiceImpl;
+    private final AlertServiceImpl alertServiceImpl;
+    private final HeaderService headerService;
+    private final CardService cardService;
+    private final TotalBlockAlertsServiceImpl totalBlockAlertsService;
+    private final ABNetImp abNetImp;
+
+    @Scheduled(cron = "0,15,30,45 * * * * *")
+    public void refreshOnlyCategories(){
+        try{
+            log.info(" ...");
+            List<TaskLog> taskLogs = new ArrayList<>();
+            AtomicInteger maxDuration = new AtomicInteger(0);
+
+            CompletableFuture<Map<CategoryData, Map<String, Object>>> cspFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                Map<CategoryData, Map<String, Object>> result = cspImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("cspImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+
+            CompletableFuture<Map<CategoryData, ProdAccessDTO>> prodAccessFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, ProdAccessDTO> result = prodAccessImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("prodAccessImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, Map<String, Object>>> certDisFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                Map<CategoryData, Map<String, Object>> result = certDiscoveryImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("certDiscoveryImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, Map<String, Object>>> atmImageFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                Map<CategoryData, Map<String, Object>> result = atmImagesImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("atmImagesImpl.recalculateGetCtegoryDetailsList.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, CertificateExpiryCountsDTO>> cerFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                Map<CategoryData, CertificateExpiryCountsDTO> result = certExpiryImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("certExpiryImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, UAMDTO>> uamFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, UAMDTO> result = uamImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("uamImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, CmonEqationCount>> equFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, CmonEqationCount> result = equationImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("equationImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, Map<String, Object>>> fireWallFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, Map<String, Object>> result = firewallImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("firewallImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, FirewallChangesCardAlertsCountDTO>> ffireWallchangesFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map <CategoryData, FirewallChangesCardAlertsCountDTO> result = firewallImplChange.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("firewallImplChange.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, Map<String, Map<String, Long>>>> securityFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, Map<String, Map<String, Long>>> result = securityImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("securityImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, PowerUserCountsDTO>> powerUserFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, PowerUserCountsDTO> result = powerUserImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("powerUserImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map> ABNET = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map result = abNetImp.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("abNetImp.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, DLODetailsDTO>> dloFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, DLODetailsDTO> result = dloImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("dloImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, CmonDisabledCompDTO>> disComputersFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, CmonDisabledCompDTO> result = disabledComputerImpl.createCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("disabledComputerImpl.createCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, InfoCriticalDTO>> serAccFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, InfoCriticalDTO> result = serviceAccounImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("serviceAccounImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+
+            CompletableFuture<Map<CategoryData, DBAMainCardDTO>> dbaFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, DBAMainCardDTO> result = dbaImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("dbaImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, FieldSupportMainCardDTO>> fsoFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, FieldSupportMainCardDTO> result = feildSupportImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("feildSupportImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, InfoCriticalDTO> > adUamFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, InfoCriticalDTO>  result = adUAMImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("adUAMImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Map<CategoryData, Object> > CMONFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                Map<CategoryData, Object>  result = cmonImpl.recalculateCreateCategory();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("cmonImpl.recalculateCreateCategory.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+
+                return result;
+            });
+
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(
+                    certDisFuture, atmImageFuture, cerFuture, uamFuture, equFuture,
+                    fireWallFuture, ffireWallchangesFuture, securityFuture, powerUserFuture, ABNET,
+                    dloFuture, disComputersFuture, serAccFuture, dbaFuture, fsoFuture,
+                    prodAccessFuture,cspFuture,adUamFuture,CMONFuture
+            );
+
+            allOf.join();
+
+            if (maxDuration.get() >= 10) {
+                for (TaskLog taskLog : taskLogs) {
+                    log.debug(taskLog.toString());
+                }
+            }
+            Map<CategoryData, InfoCriticalDTO> AdUam = getFutureResult(adUamFuture);
+            Map<CategoryData, Map<String, Object>> CSP = getFutureResult(cspFuture);
+            Map<CategoryData, Map<String, Object>> certDis = getFutureResult(certDisFuture);
+            Map<CategoryData, Map<String, Object>> atmImage = getFutureResult(atmImageFuture);
+            Map<CategoryData, CertificateExpiryCountsDTO> CER = getFutureResult(cerFuture);
+            Map ABNETData = getFutureResult(ABNET);
+            Map<CategoryData, UAMDTO> UAM = getFutureResult(uamFuture);
+            Map<CategoryData, CmonEqationCount> EQU = getFutureResult(equFuture);
+            Map<CategoryData, Map<String, Object>> fireWall = getFutureResult(fireWallFuture);
+            Map<CategoryData, FirewallChangesCardAlertsCountDTO> fireWallchanges = getFutureResult(ffireWallchangesFuture);
+            Map<CategoryData, Map<String, Map<String, Long>>> security = getFutureResult(securityFuture);
+            Map<CategoryData, PowerUserCountsDTO> powerUser = getFutureResult(powerUserFuture);
+            Map<CategoryData, DLODetailsDTO> DLO = getFutureResult(dloFuture);
+            Map<CategoryData, CmonDisabledCompDTO> DISCOMPUTERS = getFutureResult(disComputersFuture);
+            Map<CategoryData, InfoCriticalDTO> SERACC = getFutureResult(serAccFuture);
+            Map<CategoryData, DBAMainCardDTO> DBA = getFutureResult(dbaFuture);
+            Map<CategoryData, FieldSupportMainCardDTO> FSO = getFutureResult(fsoFuture);
+            Map<CategoryData, ProdAccessDTO> ProdAccess = getFutureResult(prodAccessFuture);
+            Map<CategoryData, Object> CMON = getFutureResult(CMONFuture);
+
+            log.debug("Updating category caches with new data...");
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheCSP")).put("createCategory", CSP);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheAdUAM")).put("createCategory", AdUam);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheDIS")).put("createCategory", certDis);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheATMI")).put("createCategory", atmImage);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheCER")).put("createCategory", CER);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheABNET")).put("createCategory", ABNETData);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheUAM")).put("createCategory", UAM);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheEQU")).put("createCategory", EQU);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheFIREWALL")).put("createCategory", fireWall);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheFIREWALLCHANGES")).put("createCategory", fireWallchanges);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheS")).put("createCategory", security);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCachePU")).put("createCategory", powerUser);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheDLO")).put("createCategory", DLO);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheDISCOMPUTERS")).put("createCategory", DISCOMPUTERS);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheSERACC")).put("createCategory", SERACC);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheDBA")).put("createCategory", DBA);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheFSO")).put("createCategory", FSO);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCachePRODUCTION_ACCESS")).put("createCategory", ProdAccess);
+            Objects.requireNonNull(cacheManager.getCache("categoriesCacheCMON")).put("createCategory", CMON);
+            log.debug("Finish Updating category caches with new data...");
+        }catch (Exception e){
+            log.error("Exception in reset category cache: {} ", e);
+
+        }
+    }
+
+    @Scheduled(cron = "0,15,30,45 * * * * *")
+    public void resetCache() {
+        try {
+            log.info("Starting cache reset...");
+            List<TaskLog> taskLogs = new ArrayList<>();
+
+            AtomicInteger maxDuration = new AtomicInteger(0);
+            CompletableFuture<List<AlertInformationDTO>> activeAlertsFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                List<AlertInformationDTO> result = activeAlertsService.recalculateGetActiveAlertsData();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("activeAlertsService.recalculateGetActiveAlertsData", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<CallDetailsDTO> callDetailsFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                CallDetailsDTO result = activeAlertsService.recalculateGetCallDetailsDataSize();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("activeAlertsService.recalculateGetCallDetailsDataSize.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<SmilyFaceDTO> smilyFaceFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                SmilyFaceDTO result = activeAlertsService.recalculateGetNoAlertsDetails();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("activeAlertsService.recalculateGetNoAlertsDetails.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<HeaderResponseDTO> headerFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                HeaderResponseDTO result = headerService.recalculateGetHeaderData("dashboard", "CMON");
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("headerService.recalculateGetHeaderData.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<List<DapermentBagsDTO>> departmentFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                List<DapermentBagsDTO> result = alertDepartmentServiceImp.recalculateFilteringDepart();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("alertDepartmentServiceImp.recalculateFilteringDepart.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<List<CountryAlertsDTO>> countryAlertsFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                List<CountryAlertsDTO> result = countryAlertServiceImp.recalculateGetAllAlertsForCountries();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("countryAlertServiceImp.recalculateGetAllAlertsForCountries.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<List<MBSystemsAlertsDTO>> mbSystemsAlertsFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                List<MBSystemsAlertsDTO> result = MBSystemAlertsImp.recalculateGetReflectAndSMEAlerts();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("MBSystemAlertsImp.recalculateGetReflectAndSMEAlerts.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<List<KPIData>> kpiDataFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                List<KPIData> result = totalBlockAlertsServiceImpl.recalculateFindKPIData();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("totalBlockAlertsServiceImpl.recalculateFindKPIData.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<List<SystemAlertsBridge>> systemAlertsFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                List<SystemAlertsBridge> result = systemAlertsServiceImpl.recalculateFindSystemAlerts();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("systemAlertsServiceImpl.recalculateFindSystemAlerts.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<List<AlertGrouping>> alertGroupingsFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                List<AlertGrouping> result = alertGroupingServiceImpl.recalculateGetAllActiveAlertsGroups();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("alertGroupingServiceImpl.recalculateGetAllActiveAlertsGroups.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<CardAlertsDetailsBridge> totalResolvedUnreachableFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                CardAlertsDetailsBridge result = cardService.recalculateGetTotalResolvedUnreachableAlerts();
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("cardService.recalculateGetTotalResolvedUnreachableAlerts.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<CardAlertsDetailsBridge> warningResolvedFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                CardAlertsDetailsBridge result = totalBlockAlertsService.recalculateFindCardAlertsDetails("warning");
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("totalBlockAlertsService.recalculateFindCardAlertsDetails with severity 'warning'.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<CardAlertsDetailsBridge> criticalResolvedFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                CardAlertsDetailsBridge result = totalBlockAlertsService.recalculateFindCardAlertsDetails("critical");
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("totalBlockAlertsService.recalculateFindCardAlertsDetails with severity 'critical'.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<CardAlertsDetailsBridge> allResolvedFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+
+                CardAlertsDetailsBridge result = totalBlockAlertsService.recalculateFindCardAlertsDetails("all");
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("totalBlockAlertsService.recalculateFindCardAlertsDetails for 'all'.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<CardSevMonitorAlertDetails> cardSevMonitorAlertDetailsAllFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                CardSevMonitorAlertDetails result = totalBlockAlertsService.recalculateFindCardSevMonitorAlertDetails("all");
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("totalBlockAlertsService.recalculateFindCardSevMonitorAlertDetails for 'all'.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<CardSevMonitorAlertDetails> cardSevMonitorAlertDetailsTodayFuture = CompletableFuture.supplyAsync(() -> {
+                Instant start = Instant.now();
+                CardSevMonitorAlertDetails result = totalBlockAlertsService.recalculateFindCardSevMonitorAlertDetails("today");
+                Instant end = Instant.now();
+                taskLogs.add(new TaskLog("totalBlockAlertsService.recalculateFindCardSevMonitorAlertDetails for 'today'.", start, end));
+                int duration = (int) ((end.toEpochMilli() - start.toEpochMilli()) / 1000);
+                maxDuration.updateAndGet(currentMax -> Math.max(currentMax, duration));
+                return result;
+            });
+
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(
+                    activeAlertsFuture, callDetailsFuture, smilyFaceFuture, headerFuture,
+                     departmentFuture, countryAlertsFuture, mbSystemsAlertsFuture,
+                    kpiDataFuture, systemAlertsFuture, alertGroupingsFuture, totalResolvedUnreachableFuture,
+                    warningResolvedFuture, criticalResolvedFuture, allResolvedFuture,
+                    cardSevMonitorAlertDetailsAllFuture, cardSevMonitorAlertDetailsTodayFuture
+            );
+
+            // Block and wait for all tasks to complete
+            allOf.join();
+
+            if (maxDuration.get() >= 10) {
+                for (TaskLog taskLog : taskLogs) {
+                    log.debug(taskLog.toString());
+                }
+            }
+
+            // Use the helper method to retrieve results safely
+            List<AlertInformationDTO> activeAlertsdata = getFutureResult(activeAlertsFuture);
+            CallDetailsDTO callDetailsDTO = getFutureResult(callDetailsFuture);
+            SmilyFaceDTO smilyFaceDTO = getFutureResult(smilyFaceFuture);
+            HeaderResponseDTO headerResponseDTO = getFutureResult(headerFuture);
+
+            List<DapermentBagsDTO> department = getFutureResult(departmentFuture);
+            List<CountryAlertsDTO> getAllAlertsForCountries = getFutureResult(countryAlertsFuture);
+            List<MBSystemsAlertsDTO> getReflectAndSMEAlerts = getFutureResult(mbSystemsAlertsFuture);
+            List<KPIData> findKPIData = getFutureResult(kpiDataFuture);
+            List<SystemAlertsBridge> findSystemAlerts = getFutureResult(systemAlertsFuture);
+            List<AlertGrouping> alertGroupings = getFutureResult(alertGroupingsFuture);
+            CardAlertsDetailsBridge totalResolvedUnreachable = getFutureResult(totalResolvedUnreachableFuture);
+            CardAlertsDetailsBridge warningResolved = getFutureResult(warningResolvedFuture);
+            CardAlertsDetailsBridge criticalResolved = getFutureResult(criticalResolvedFuture);
+            CardAlertsDetailsBridge allResolved = getFutureResult(allResolvedFuture);
+            CardSevMonitorAlertDetails cardSevMonitorAlertDetailsAll = getFutureResult(cardSevMonitorAlertDetailsAllFuture);
+            CardSevMonitorAlertDetails cardSevMonitorAlertDetailsToday = getFutureResult(cardSevMonitorAlertDetailsTodayFuture);
+
+            // Clear and update caches
+            log.debug("Clearing caches...");
+            cacheManager.getCache("headerData").clear();
+
+            log.debug("Updating caches with new data...");
+            Objects.requireNonNull(cacheManager.getCache("activeAlertsCache")).put("getActiveAlertsData", activeAlertsdata);
+            Objects.requireNonNull(cacheManager.getCache("activeAlertsCache")).put("getCallDetailsDataSize", callDetailsDTO);
+            Objects.requireNonNull(cacheManager.getCache("activeAlertsCache")).put("getNoAlertsDetails", smilyFaceDTO);
+            Objects.requireNonNull(cacheManager.getCache("headerData")).put("dashboard_CMON", headerResponseDTO);
+            Objects.requireNonNull(cacheManager.getCache("departmentsCache")).put("filteringDepart", department);
+            Objects.requireNonNull(cacheManager.getCache("countriesCache")).put("getAllAlertsForCountries", getAllAlertsForCountries);
+            Objects.requireNonNull(cacheManager.getCache("pillarsCache")).put("getReflectAndSMEAlerts", getReflectAndSMEAlerts);
+            Objects.requireNonNull(cacheManager.getCache("totalsCardCache")).put("findKPIData", findKPIData);
+            Objects.requireNonNull(cacheManager.getCache("footerCache")).put("findSystemAlerts", findSystemAlerts);
+            Objects.requireNonNull(cacheManager.getCache("activeGroupsCache")).put("getAllActiveAlertsGroups", alertGroupings);
+            Objects.requireNonNull(cacheManager.getCache("totalsCardCache")).put("getTotalResolvedUnreachableAlerts", totalResolvedUnreachable);
+            Objects.requireNonNull(cacheManager.getCache("totalsCardCache")).put("findCardAlertsDetailswarning", warningResolved);
+            Objects.requireNonNull(cacheManager.getCache("totalsCardCache")).put("findCardAlertsDetailscritical", criticalResolved);
+            Objects.requireNonNull(cacheManager.getCache("totalsCardCache")).put("findCardAlertsDetailsall", allResolved);
+            Objects.requireNonNull(cacheManager.getCache("totalsCardCache")).put("findCardSevMonitorAlertDetailsall", cardSevMonitorAlertDetailsAll);
+            Objects.requireNonNull(cacheManager.getCache("totalsCardCache")).put("findCardSevMonitorAlertDetailstoday", cardSevMonitorAlertDetailsToday);
+
+            log.info("Cache reset completed successfully.");
+
+        } catch (Exception e) {
+            log.error("Exception in reset cache: {} ", e);
+        }
+    }
+
+    // Helper method to safely get the result of a CompletableFuture
+    private <T> T  getFutureResult(CompletableFuture<T> future) {
+        try {
+            return future.get();
+        } catch (Exception e) {
+            log.error("Error retrieving result from CompletableFuture: {}", e.getMessage());
+            return null; // Return null if there was an exception
+        }
+    }
+}
