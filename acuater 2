@@ -1,61 +1,75 @@
-// src/main/java/com/example/demo/metrics/UserMetricsInterceptor.java
+// src/main/java/com/example/demo/metrics/UniqueUserInterceptor.java
 package com.example.demo.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class UserMetricsInterceptor implements HandlerInterceptor {
+public class UniqueUserInterceptor implements HandlerInterceptor {
 
+    private static final String COOKIE_NAME = "CLIENT_ID";
     private final MeterRegistry registry;
     private final Set<String> seen = ConcurrentHashMap.newKeySet();
 
-    public UserMetricsInterceptor(MeterRegistry registry) {
+    public UniqueUserInterceptor(MeterRegistry registry) {
         this.registry = registry;
     }
 
     @PostConstruct
-    public void initGauges() {
-        // gauge for current unique users so far today
+    public void initGauge() {
         Gauge.builder("app.unique.users.current", seen, Set::size)
-             .description("Current unique users seen today")
+             .description("Current distinct users seen so far today")
              .register(registry);
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest req,
-                             HttpServletResponse res,
-                             Object handler) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
-            String userId = auth.getName();
-            String key = userId + "-" + LocalDate.now();
-            // if first time seeing this user today, increment daily counter
-            if (seen.add(key)) {
-                Counter.builder("app.unique.users.daily")
-                       .description("Number of distinct authenticated users per day")
-                       .tag("date", LocalDate.now().toString())
-                       .register(registry)
-                       .increment();
+    public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler) {
+        // 1) look for CLIENT_ID cookie
+        String clientId = null;
+        Cookie[] cookies = req.getCookies();
+        if (cookies != null) {
+            for (Cookie c : cookies) {
+                if (COOKIE_NAME.equals(c.getName())) {
+                    clientId = c.getValue();
+                    break;
+                }
             }
+        }
+        // 2) if missing, generate and set a cookie
+        if (clientId == null) {
+            clientId = UUID.randomUUID().toString();
+            Cookie cookie = new Cookie(COOKIE_NAME, clientId);
+            cookie.setPath("/");
+            cookie.setHttpOnly(true);
+            cookie.setMaxAge(60 * 60 * 24 * 365); // 1 year
+            res.addCookie(cookie);
+        }
+        // use clientId as key; count once per day
+        String key = clientId + "-" + LocalDate.now();
+        if (seen.add(key)) {
+            Counter.builder("app.unique.users.daily")
+                   .description("Distinct users per day")
+                   .tag("date", LocalDate.now().toString())
+                   .register(registry)
+                   .increment();
         }
         return true;
     }
 
-    /** Clear the set at midnight so tomorrow starts fresh */
+    /** Clear at midnight so tomorrow starts fresh */
     @Scheduled(cron = "0 0 0 * * *")
     public void resetDaily() {
         seen.clear();
@@ -78,12 +92,10 @@ public class UserMetricsInterceptor implements HandlerInterceptor {
 -------------------------------------
 
 
-
 // src/main/java/com/example/demo/config/WebConfig.java
 package com.example.demo.config;
 
-import com.example.demo.metrics.UserMetricsInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.metrics.UniqueUserInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -91,22 +103,18 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final UserMetricsInterceptor userMetricsInterceptor;
+    private final UniqueUserInterceptor uniqueUserInterceptor;
 
-    @Autowired
-    public WebConfig(UserMetricsInterceptor userMetricsInterceptor) {
-        this.userMetricsInterceptor = userMetricsInterceptor;
+    public WebConfig(UniqueUserInterceptor uniqueUserInterceptor) {
+        this.uniqueUserInterceptor = uniqueUserInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(userMetricsInterceptor)
+        registry.addInterceptor(uniqueUserInterceptor)
                 .addPathPatterns("/api/**");   // adjust to your API paths
     }
 }
-
-
-
 
 
 
