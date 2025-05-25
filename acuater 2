@@ -1,4 +1,4 @@
-// UniqueUserInterceptor.java
+// src/main/java/com/example/demo/metrics/UniqueUserInterceptor.java
 package com.example.demo.metrics;
 
 import io.micrometer.core.instrument.Counter;
@@ -19,8 +19,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 1) Tracks daily uniques (ever-seen today).
- * 2) Tracks rolling uniques in the last 5 minutes.
+ * Tracks:
+ *  - daily uniques (ever seen today)
+ *  - rolling uniques in the last 1 minute
  */
 @Component
 public class UniqueUserInterceptor implements HandlerInterceptor {
@@ -28,9 +29,7 @@ public class UniqueUserInterceptor implements HandlerInterceptor {
     private static final String COOKIE_NAME = "CLIENT_ID";
 
     private final MeterRegistry registry;
-    // key = clientId + "-" + date  => for daily
     private final Set<String> dailySeen = ConcurrentHashMap.newKeySet();
-    // map clientId -> lastSeenInstant  => for rolling 5m
     private final ConcurrentHashMap<String, Instant> lastSeenMap = new ConcurrentHashMap<>();
 
     public UniqueUserInterceptor(MeterRegistry registry) {
@@ -39,19 +38,19 @@ public class UniqueUserInterceptor implements HandlerInterceptor {
 
     @PostConstruct
     public void initGauges() {
-        // gauge for "so far today"
+        // Gauge for daily so-far
         Gauge.builder("app.unique.users.current", dailySeen, Set::size)
-             .description("Current daily unique users")
+             .description("Current distinct users seen so far today")
              .register(registry);
 
-        // gauge for "in the last 5 minutes"
-        Gauge.builder("app.unique.users.last5", lastSeenMap, map -> {
-            Instant cutoff = Instant.now().minusSeconds(5 * 60);
+        // Gauge for rolling 1-minute uniques
+        Gauge.builder("app.unique.users.last1m", lastSeenMap, map -> {
+            Instant cutoff = Instant.now().minusSeconds(60);
             return map.values().stream()
                       .filter(ts -> ts.isAfter(cutoff))
                       .count();
         })
-        .description("Unique users seen in the last 5 minutes")
+        .description("Unique users seen in the last 1 minute")
         .register(registry);
     }
 
@@ -59,10 +58,11 @@ public class UniqueUserInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest req,
                              HttpServletResponse res,
                              Object handler) {
-        // 1) read or assign clientId cookie
+        // find or create clientId cookie
         String clientId = null;
-        if (req.getCookies() != null) {
-            for (Cookie c : req.getCookies()) {
+        Cookie[] cookies = req.getCookies();
+        if (cookies != null) {
+            for (Cookie c : cookies) {
                 if (COOKIE_NAME.equals(c.getName())) {
                     clientId = c.getValue();
                     break;
@@ -78,7 +78,7 @@ public class UniqueUserInterceptor implements HandlerInterceptor {
             res.addCookie(cookie);
         }
 
-        // 2) daily unique
+        // daily unique
         String dailyKey = clientId + "-" + LocalDate.now();
         if (dailySeen.add(dailyKey)) {
             Counter.builder("app.unique.users.daily")
@@ -88,25 +88,26 @@ public class UniqueUserInterceptor implements HandlerInterceptor {
                    .increment();
         }
 
-        // 3) rolling unique
+        // rolling 1-minute unique
         lastSeenMap.put(clientId, Instant.now());
 
         return true;
     }
 
-    /** purge daily set at midnight */
+    /** Clear daily set at midnight */
     @Scheduled(cron = "0 0 0 * * *")
     public void resetDaily() {
         dailySeen.clear();
     }
 
-    /** purge old entries every minute */
-    @Scheduled(fixedRate = 60_000)
+    /** Purge entries older than 1 minute every 30 seconds */
+    @Scheduled(fixedRate = 30_000)
     public void purgeRolling() {
-        Instant cutoff = Instant.now().minusSeconds(5 * 60);
+        Instant cutoff = Instant.now().minusSeconds(60);
         lastSeenMap.entrySet().removeIf(e -> e.getValue().isBefore(cutoff));
     }
 }
+
 
 
 
