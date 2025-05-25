@@ -1,4 +1,4 @@
-// src/main/java/com/example/demo/metrics/UniqueUserInterceptor.java
+// UniqueUserInterceptor.java
 package com.example.demo.metrics;
 
 import io.micrometer.core.instrument.Counter;
@@ -12,72 +12,101 @@ import javax.annotation.PostConstruct;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 1) Tracks daily uniques (ever-seen today).
+ * 2) Tracks rolling uniques in the last 5 minutes.
+ */
 @Component
 public class UniqueUserInterceptor implements HandlerInterceptor {
 
     private static final String COOKIE_NAME = "CLIENT_ID";
+
     private final MeterRegistry registry;
-    private final Set<String> seen = ConcurrentHashMap.newKeySet();
+    // key = clientId + "-" + date  => for daily
+    private final Set<String> dailySeen = ConcurrentHashMap.newKeySet();
+    // map clientId -> lastSeenInstant  => for rolling 5m
+    private final ConcurrentHashMap<String, Instant> lastSeenMap = new ConcurrentHashMap<>();
 
     public UniqueUserInterceptor(MeterRegistry registry) {
         this.registry = registry;
     }
 
     @PostConstruct
-    public void initGauge() {
-        Gauge.builder("app.unique.users.current", seen, Set::size)
-             .description("Current distinct users seen so far today")
+    public void initGauges() {
+        // gauge for "so far today"
+        Gauge.builder("app.unique.users.current", dailySeen, Set::size)
+             .description("Current daily unique users")
              .register(registry);
+
+        // gauge for "in the last 5 minutes"
+        Gauge.builder("app.unique.users.last5", lastSeenMap, map -> {
+            Instant cutoff = Instant.now().minusSeconds(5 * 60);
+            return map.values().stream()
+                      .filter(ts -> ts.isAfter(cutoff))
+                      .count();
+        })
+        .description("Unique users seen in the last 5 minutes")
+        .register(registry);
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler) {
-        // 1) look for CLIENT_ID cookie
+    public boolean preHandle(HttpServletRequest req,
+                             HttpServletResponse res,
+                             Object handler) {
+        // 1) read or assign clientId cookie
         String clientId = null;
-        Cookie[] cookies = req.getCookies();
-        if (cookies != null) {
-            for (Cookie c : cookies) {
+        if (req.getCookies() != null) {
+            for (Cookie c : req.getCookies()) {
                 if (COOKIE_NAME.equals(c.getName())) {
                     clientId = c.getValue();
                     break;
                 }
             }
         }
-        // 2) if missing, generate and set a cookie
         if (clientId == null) {
             clientId = UUID.randomUUID().toString();
             Cookie cookie = new Cookie(COOKIE_NAME, clientId);
             cookie.setPath("/");
             cookie.setHttpOnly(true);
-            cookie.setMaxAge(60 * 60 * 24 * 365); // 1 year
+            cookie.setMaxAge(60 * 60 * 24 * 365);
             res.addCookie(cookie);
         }
-        // use clientId as key; count once per day
-        String key = clientId + "-" + LocalDate.now();
-        if (seen.add(key)) {
+
+        // 2) daily unique
+        String dailyKey = clientId + "-" + LocalDate.now();
+        if (dailySeen.add(dailyKey)) {
             Counter.builder("app.unique.users.daily")
                    .description("Distinct users per day")
                    .tag("date", LocalDate.now().toString())
                    .register(registry)
                    .increment();
         }
+
+        // 3) rolling unique
+        lastSeenMap.put(clientId, Instant.now());
+
         return true;
     }
 
-    /** Clear at midnight so tomorrow starts fresh */
+    /** purge daily set at midnight */
     @Scheduled(cron = "0 0 0 * * *")
     public void resetDaily() {
-        seen.clear();
+        dailySeen.clear();
+    }
+
+    /** purge old entries every minute */
+    @Scheduled(fixedRate = 60_000)
+    public void purgeRolling() {
+        Instant cutoff = Instant.now().minusSeconds(5 * 60);
+        lastSeenMap.entrySet().removeIf(e -> e.getValue().isBefore(cutoff));
     }
 }
-
-
-
 
 
 
