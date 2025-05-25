@@ -1,0 +1,5 @@
+<Context
+    docBase="${catalina.base}/webapps/b.war"
+    path="/b"
+    unpackWARs="true"
+    reloadable="false" />
