@@ -1,0 +1,138 @@
+// src/main/java/com/example/demo/metrics/UserMetricsInterceptor.java
+package com.example.demo.metrics;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.time.LocalDate;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Component
+public class UserMetricsInterceptor implements HandlerInterceptor {
+
+    private final MeterRegistry registry;
+    private final Set<String> seen = ConcurrentHashMap.newKeySet();
+
+    public UserMetricsInterceptor(MeterRegistry registry) {
+        this.registry = registry;
+    }
+
+    @PostConstruct
+    public void initGauges() {
+        // gauge for current unique users so far today
+        Gauge.builder("app.unique.users.current", seen, Set::size)
+             .description("Current unique users seen today")
+             .register(registry);
+    }
+
+    @Override
+    public boolean preHandle(HttpServletRequest req,
+                             HttpServletResponse res,
+                             Object handler) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            String userId = auth.getName();
+            String key = userId + "-" + LocalDate.now();
+            // if first time seeing this user today, increment daily counter
+            if (seen.add(key)) {
+                Counter.builder("app.unique.users.daily")
+                       .description("Number of distinct authenticated users per day")
+                       .tag("date", LocalDate.now().toString())
+                       .register(registry)
+                       .increment();
+            }
+        }
+        return true;
+    }
+
+    /** Clear the set at midnight so tomorrow starts fresh */
+    @Scheduled(cron = "0 0 0 * * *")
+    public void resetDaily() {
+        seen.clear();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------
+
+
+
+// src/main/java/com/example/demo/config/WebConfig.java
+package com.example.demo.config;
+
+import com.example.demo.metrics.UserMetricsInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    private final UserMetricsInterceptor userMetricsInterceptor;
+
+    @Autowired
+    public WebConfig(UserMetricsInterceptor userMetricsInterceptor) {
+        this.userMetricsInterceptor = userMetricsInterceptor;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(userMetricsInterceptor)
+                .addPathPatterns("/api/**");   // adjust to your API paths
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+----------------------------
+
+
+<dependencies>
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+  </dependency>
+</dependencies>
