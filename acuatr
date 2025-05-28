@@ -1,130 +1,204 @@
-// src/main/java/com/example/demo/metrics/UserMetricsInterceptor.java
-package com.example.demo.metrics;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
+spring:
+  datasource:
+    oracle:
+      url: jdbc:oracle:thin:@10.1.15.239:1599:CONTROLDB
+      username: CHECKLIST
+      password: ab
+      driver-class-name: oracle.jdbc.driver.OracleDriver
+      hikari:
+       maximum-pool-size: 30
+       minimum-idle: 10
+       idle-timeout: 30000        # 30 seconds
+       max-lifetime: 1800000      # 30 minutes
+       connection-timeout: 30000  # 30 seconds
+       keepalive-time: 300000     # 5 minutes
+    oracle-write:
+      url: jdbc:oracle:thin:@10.1.15.239:1599:CONTROLDB
+      username: Monitor
+      password: Ahmad_1234
+      driver-class-name: oracle.jdbc.driver.OracleDriver
+    sqlserver:
+      url: jdbc:sqlserver://10.0.52.12:53414;databaseName=MONITOR
+      username: CMON
+      password: P@ssw0rd@123
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      hikari:
+       maximum-pool-size: 30
+       minimum-idle: 10
+       idle-timeout: 30000        # 30 seconds
+       max-lifetime: 1800000      # 30 minutes
+       connection-timeout: 30000  # 30 seconds
+       keepalive-time: 300000     # 5 minutes 
+    cmon-bridge-sqlserver:
+      url: jdbc:sqlserver://10.0.52.12:53414;jdbc.databaseName=Cmon_Core
+      username: core2
+      password: User@1234
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      hikari:
+       maximum-pool-size: 30
+       minimum-idle: 10
+       idle-timeout: 30000        # 30 seconds
+       max-lifetime: 1800000      # 30 minutes
+       connection-timeout: 30000  # 30 seconds
+       keepalive-time: 300000     # 5 minutes
+connection:
+  timeout:
+    oneView: 10000
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.time.LocalDate;
-import java.util.concurrent.ConcurrentHashMap;
+server:
+ port: 8070
 
-@Component
-public class UserMetricsInterceptor implements HandlerInterceptor {
-    private final MeterRegistry registry;
-    private final ConcurrentHashMap<String, Boolean> seen = new ConcurrentHashMap<>();
-
-    public UserMetricsInterceptor(MeterRegistry registry) {
-        this.registry = registry;
-    }
-
-    @Override
-    public boolean preHandle(HttpServletRequest request,
-                             HttpServletResponse response,
-                             Object handler) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
-            String userId = auth.getName();
-            String key = userId + "-" + LocalDate.now();
-            if (seen.putIfAbsent(key, Boolean.TRUE) == null) {
-                Counter.builder("app.unique.users")
-                       .description("Daily unique users")
-                       .tag("date", LocalDate.now().toString())
-                       .register(registry)
-                       .increment();
-            }
-        }
-        return true;
-    }
-}
-
-
-
-
-
-
-
+    
 management:
+  metrics:
+    enable:
+      hikari: true
+      all: true
+    jdbc:
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: health, info, metrics, prometheus
-  metrics:
-    enable:
-      all: true
+        include: '*'
+  endpoint:
+    metrics:
+      enabled: true
+
+logging:
+  level:
+    org:
+      springframework: DEBUG
 
 
 
+------------------------------
 
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.arabbank.hdf.core</groupId>
+		<artifactId>core</artifactId>
+		<version>1.3.1-SNAPSHOT</version>
+		<relativePath /> <!-- lookup parent from repository -->
+	</parent>
+	<artifactId>cmon</artifactId>
+	<version>0.1.1-SNAPSHOT</version>
+	<name>cmon</name>
+	<description>Demo project for Spring Boot</description>
+	<properties>
+		<java.version>17</java.version>
+		<smartcloud.version>6.4.0</smartcloud.version>
+		<timestamp>${maven.build.timestamp}</timestamp>
+		<maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.microsoft.sqlserver</groupId>
+			<artifactId>mssql-jdbc</artifactId>
+			<version>9.4.1.jre8</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.oracle.database.jdbc</groupId>
+			<artifactId>ojdbc8</artifactId>
+			<version>19.3.0.0</version>
+		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
 
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.13</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.glowroot/glowroot-agent -->
+		<dependency>
+			<groupId>org.glowroot</groupId>
+			<artifactId>glowroot-agent</artifactId>
+			<version>0.13.6</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+		</dependency>
+	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
-
-
-
-
-
-
-
-
-<!-- pom.xml -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
-
-    <groupId>com.example</groupId>
-    <artifactId>demo</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>demo</name>
-    <description>Demo project for Spring Boot metrics</description>
-
-    <properties>
-        <java.version>17</java.version>
-    </properties>
-
-    <dependencies>
-        <!-- Core web + security -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <!-- Actuator for health, metrics, etc. -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <!-- Micrometer + Prometheus registry -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 </project>
+
