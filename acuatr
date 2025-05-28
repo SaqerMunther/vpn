@@ -202,13 +202,56 @@ logging:
 
 </project>
 
-management:
-  metrics:
-    enable:
-      all:   true   # turn on every binder
-      hikari: true   # specifically enable Hikari binders
-      jdbc:  true   # specifically enable the JDBC/DataSource binders
-  endpoints:
-    web:
-      exposure:
-        include: "*"  # make sure /actuator/metrics is exposed
+package com.arabbank.hdf.cmon.config;
+
+import java.util.Collections;
+import javax.sql.DataSource;
+
+import io.micrometer.core.instrument.binder.MeterBinder;
+import org.springframework.boot.actuate.metrics.jdbc.DataSourcePoolMetrics;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+@Configuration
+public class MultiDataSourceMetricsConfig {
+
+    // 1st pool: the "oracle" DataSource
+    @Bean
+    public MeterBinder oracleDataSourceMetrics(
+            @Qualifier("oracleDataSource") DataSource ds) {
+        return new DataSourcePoolMetrics(
+                ds,
+                Collections.emptyList(),
+                "oracle",      // logical name → shows up as tag pool=oracle
+                Collections.emptyList()
+        );
+    }
+
+    // 2nd pool: "sqlserver"
+    @Bean
+    public MeterBinder sqlServerDataSourceMetrics(
+            @Qualifier("sqlServerDataSource") DataSource ds) {
+        return new DataSourcePoolMetrics(
+                ds,
+                Collections.emptyList(),
+                "sqlserver",
+                Collections.emptyList()
+        );
+    }
+
+    // 3rd pool: "cmonBridge"
+    @Bean
+    public MeterBinder cmonBridgeMetrics(
+            @Qualifier("cmonBridgeDataSource") DataSource ds) {
+        return new DataSourcePoolMetrics(
+                ds,
+                Collections.emptyList(),
+                "cmonBridge",
+                Collections.emptyList()
+        );
+    }
+
+    // (and so on for any other DataSource beans you have)…
+}
+
