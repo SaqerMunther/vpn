@@ -202,3 +202,13 @@ logging:
 
 </project>
 
+management:
+  metrics:
+    enable:
+      all:   true   # turn on every binder
+      hikari: true   # specifically enable Hikari binders
+      jdbc:  true   # specifically enable the JDBC/DataSource binders
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # make sure /actuator/metrics is exposed
