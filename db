@@ -250,3 +250,45 @@ public class SqlServerConfiguration {
     }
 
 }
+
+
+
+-------------------------------------------
+
+
+
+// MultiDataSourceMetricsConfig.java
+package com.arabbank.hdf.cmon.configurations;
+
+import java.util.Collections;
+import javax.sql.DataSource;
+
+import io.micrometer.core.instrument.binder.MeterBinder;
+import org.springframework.boot.actuate.metrics.jdbc.DataSourcePoolMetrics;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+@Configuration
+public class MultiDataSourceMetricsConfig {
+
+    @Bean
+    public MeterBinder oracleMetrics(@Qualifier("oracleDataSource") DataSource ds) {
+        return new DataSourcePoolMetrics(ds, Collections.emptyList(), "oracle", Collections.emptyList());
+    }
+
+    @Bean
+    public MeterBinder bridgeMetrics(@Qualifier("bridgeSqlServerDataSource") DataSource ds) {
+        return new DataSourcePoolMetrics(ds, Collections.emptyList(), "bridgeSqlServer", Collections.emptyList());
+    }
+
+    @Bean
+    public MeterBinder reportingMetrics(@Qualifier("sqlServerDataSource") DataSource ds) {
+        return new DataSourcePoolMetrics(ds, Collections.emptyList(), "sqlServer", Collections.emptyList());
+    }
+
+    @Bean
+    public MeterBinder oracleWriteMetrics(@Qualifier("oracleWriteDataSource") DataSource ds) {
+        return new DataSourcePoolMetrics(ds, Collections.emptyList(), "oracleWrite", Collections.emptyList());
+    }
+}
