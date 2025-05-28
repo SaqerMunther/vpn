@@ -1,0 +1,252 @@
+package com.arabbank.hdf.cmon.configurations;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import jakarta.persistence.EntityManagerFactory;
+import lombok.RequiredArgsConstructor;
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(entityManagerFactoryRef = "bridgeSqlServerEntityManagerFactory", basePackages = {"com.arabbank.hdf.cmon.repository.bridgeSql"}, transactionManagerRef = "bridgeSqlServerTransactionManager")
+@RequiredArgsConstructor
+public class BridgeSqlServerConfiguration {
+
+    private final Environment environment;
+
+    @Primary
+    @Bean("bridgeSqlServerDataSource")
+    public DataSource dataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setUrl(environment.getProperty("spring.datasource.cmon-bridge-sqlserver.url"));
+        dataSource.setUsername(environment.getProperty("spring.datasource.cmon-bridge-sqlserver.username"));
+        dataSource.setPassword(environment.getProperty("spring.datasource.cmon-bridge-sqlserver.password"));
+        dataSource.setDriverClassName(Objects.requireNonNull(environment.getProperty("spring.datasource.cmon-bridge-sqlserver.driver-class-name")));
+        return dataSource;
+    }
+
+    @Primary
+    @Bean("bridgeSqlServerEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean() {
+        LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
+        bean.setDataSource(dataSource());
+        JpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        bean.setJpaVendorAdapter(jpaVendorAdapter);
+        Map<String, Object> properties = new HashMap<>();
+        bean.setJpaPropertyMap(properties);
+        bean.setPackagesToScan("com.arabbank.hdf.cmon.entity.bridge");
+        return bean;
+    }
+
+    @Primary
+    @Bean("bridgeSqlServerTransactionManager")
+    public PlatformTransactionManager transactionManager(@Qualifier("bridgeSqlServerEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+
+}
+
+
+
+package com.arabbank.hdf.cmon.configurations;
+
+import jakarta.persistence.EntityManagerFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(entityManagerFactoryRef = "oracleEntityManagerFactory", basePackages = {"com.arabbank.hdf.cmon.repository.oracle"}, transactionManagerRef = "oracleTransactionManager")
+@RequiredArgsConstructor
+public class OracleConfiguration {
+
+    private final Environment environment;
+
+    @Primary
+    @Bean("oracleDataSource")
+    public DataSource dataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setUrl(environment.getProperty("spring.datasource.oracle.url"));
+        dataSource.setUsername(environment.getProperty("spring.datasource.oracle.username"));
+        dataSource.setPassword(environment.getProperty("spring.datasource.oracle.password"));
+        dataSource.setDriverClassName(Objects.requireNonNull(environment.getProperty("spring.datasource.oracle.driver-class-name")));
+        return dataSource;
+    }
+
+    @Primary
+    @Bean("oracleEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean() {
+        LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
+        bean.setDataSource(dataSource());
+        JpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        bean.setJpaVendorAdapter(jpaVendorAdapter);
+        Map<String, Object> properties = new HashMap<>();
+        bean.setJpaPropertyMap(properties);
+        bean.setPackagesToScan("com.arabbank.hdf.cmon.entity.oracle");
+        return bean;
+    }
+
+    @Primary
+    @Bean("oracleTransactionManager")
+    public PlatformTransactionManager transactionManager(@Qualifier("oracleEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+
+}
+
+
+package com.arabbank.hdf.cmon.configurations;
+
+import jakarta.persistence.EntityManagerFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(entityManagerFactoryRef = "oracleWriteEntityManagerFactory", basePackages = {"com.arabbank.hdf.cmon.repository.oracleWrite"}, transactionManagerRef = "oracleWriteTransactionManager")
+@RequiredArgsConstructor
+public class OracleWriteConfiguration {
+    private final Environment environment;
+
+    @Bean("oracleWriteDataSource")
+    public DataSource dataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setUrl(environment.getProperty("spring.datasource.oracle-write.url"));
+        dataSource.setUsername(environment.getProperty("spring.datasource.oracle-write.username"));
+        dataSource.setPassword(environment.getProperty("spring.datasource.oracle-write.password"));
+        dataSource.setDriverClassName(Objects.requireNonNull(environment.getProperty("spring.datasource.oracle-write.driver-class-name")));
+        return dataSource;
+    }
+
+    @Bean("oracleWriteEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean() {
+        LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
+        bean.setDataSource(dataSource());
+        JpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        bean.setJpaVendorAdapter(jpaVendorAdapter);
+        Map<String, Object> properties = new HashMap<>();
+        bean.setJpaPropertyMap(properties);
+        bean.setPackagesToScan("com.arabbank.hdf.cmon.entity.oracle");
+        return bean;
+    }
+
+    @Bean("oracleWriteTransactionManager")
+    public PlatformTransactionManager transactionManager(@Qualifier("oracleWriteEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+}
+
+
+package com.arabbank.hdf.cmon.configurations;
+
+import jakarta.persistence.EntityManagerFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(entityManagerFactoryRef = "sqlServerEntityManagerFactory", basePackages = {"com.arabbank.hdf.cmon.repository.sqlserver"}, transactionManagerRef = "sqlServerTransactionManager")
+@RequiredArgsConstructor
+public class SqlServerConfiguration {
+
+    private final Environment environment;
+
+    @Primary
+    @Bean("sqlServerDataSource")
+    public DataSource dataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setUrl(environment.getProperty("spring.datasource.sqlserver.url"));
+        dataSource.setUsername(environment.getProperty("spring.datasource.sqlserver.username"));
+        dataSource.setPassword(environment.getProperty("spring.datasource.sqlserver.password"));
+        dataSource.setDriverClassName(Objects.requireNonNull(environment.getProperty("spring.datasource.sqlserver.driver-class-name")));
+        return dataSource;
+    }
+
+    @Primary
+    @Bean("sqlServerEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean() {
+        LocalContainerEntityManagerFactoryBean bean = new LocalContainerEntityManagerFactoryBean();
+        bean.setDataSource(dataSource());
+        JpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        bean.setJpaVendorAdapter(jpaVendorAdapter);
+        Map<String, Object> properties = new HashMap<>();
+        bean.setJpaPropertyMap(properties);
+        bean.setPackagesToScan("com.arabbank.hdf.cmon.entity.sqlserver");
+        return bean;
+    }
+
+    @Primary
+    @Bean("sqlServerTransactionManager")
+    public PlatformTransactionManager transactionManager(@Qualifier("sqlServerEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+
+}
