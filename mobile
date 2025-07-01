@@ -53,3 +53,12 @@ java.lang.NullPointerException: Cannot invoke "org.hibernate.engine.jdbc.spi.Sql
 Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
 2025-07-01 09:42:05 - [main] - [] - ERROR o.s.boot.SpringApplication.reportFailure - Application run failed
 org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'oracleSecondEntityManagerFactory' defined in class path resource [com/arabbank/hdf/graphdatafetcher/configurat      ion/OracleSecondConfig.class]: Unable to create requested service [org.hibernate.engine.jdbc.env.spi.JdbcEnvironment] due to: Unable to determine Dialect without JDBC metadata (please set 'jakarta.p      ersistence.jdbc.url' for common cases or 'hibernate.dialect' when a custom Dialect implementation must be provided)
+
+
+
+
+spring:
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
