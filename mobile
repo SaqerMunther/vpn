@@ -271,3 +271,195 @@ spring:
     hibernate:
       ddl-auto: none        # or validate / update / create-drop as appropriate
     database-platform: org.hibernate.dialect.SQLServer2012Dialect
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------
+
+
+package com.arabbank.hdf.graphdatafetcher.configuration;
+
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.*;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.orm.jpa.*;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.Map;
+
+@Configuration
+@EnableJpaRepositories(
+    entityManagerFactoryRef   = "sqlServerEntityManagerFactory",
+    basePackages              = "com.arabbank.hdf.graphdatafetcher.repository.sqlserver",
+    transactionManagerRef     = "sqlServerTransactionManager"
+)
+public class SqlServerConfig extends OracleBaseConfig {
+
+    public SqlServerConfig(Environment environment) {
+        super(environment);
+    }
+
+    @Bean("sqlServerDataSource")
+    @Override
+    public DataSource dataSource() {
+        return buildDataSource(
+            environment.getProperty("spring.datasource.sqlserver.url"),
+            environment.getProperty("spring.datasource.sqlserver.username"),
+            environment.getProperty("spring.datasource.sqlserver.password"),
+            environment.getProperty("spring.datasource.sqlserver.driver-class-name")
+        );
+    }
+
+    @Bean("sqlServerEntityManagerFactory")
+    @Override
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean() {
+        LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
+        emf.setDataSource(dataSource());
+
+        // 1) Tell Hibernate exactly which dialect to use
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setDatabasePlatform("org.hibernate.dialect.SQLServer2012Dialect");
+        emf.setJpaVendorAdapter(vendorAdapter);
+
+        // 2) Build your common JPA properties and then expose URL + dialect
+        Map<String, Object> props = buildJpaProperties(
+            environment.getProperty("spring.datasource.sqlserver.hikari.connection-timeout"),
+            environment.getProperty("spring.datasource.sqlserver.hikari.maximum-pool-size"),
+            environment.getProperty("spring.datasource.sqlserver.schema")
+        );
+        props.put("jakarta.persistence.jdbc.url",
+                  environment.getProperty("spring.datasource.sqlserver.url"));
+        props.put("hibernate.dialect",
+                  "org.hibernate.dialect.SQLServer2012Dialect");
+
+        emf.setJpaPropertyMap(props);
+
+        emf.setPackagesToScan("com.arabbank.hdf.graphdatafetcher.model.entity.sqlserver");
+        return emf;
+    }
+
+    @Bean("sqlServerTransactionManager")
+    @Override
+    public PlatformTransactionManager transactionManager(
+            @Qualifier("sqlServerEntityManagerFactory") EntityManagerFactory emf
+    ) {
+        return new JpaTransactionManager(emf);
+    }
+
+    @Bean("sqlServerNamedParameterJdbcTemplate")
+    public NamedParameterJdbcTemplate sqlServerNamedParameterJdbcTemplate(
+            @Qualifier("sqlServerDataSource") DataSource ds
+    ) {
+        return new NamedParameterJdbcTemplate(ds);
+    }
+}
+
+
+-------------------------
+
+spring:
+  profiles:
+    default: dev
+
+  # --- CENTRALIZED JPA / HIBERNATE SETTINGS ---
+  jpa:
+    hibernate:
+      ddl-auto: none                # or: validate / update / create-drop
+    database-platform: org.hibernate.dialect.SQLServer2012Dialect
+
+  datasource:
+    oracle:
+      first:
+        url: jdbc:oracle:thin:@${oracle-db.first.ip}:${oracle-db.first.port}:${oracle-db.first.service-name}
+        username: ${oracle-db.first.username}
+        password: ${oracle-db.first.password}
+        driver-class-name: oracle.jdbc.driver.OracleDriver
+        hikari:
+          connection-timeout: 20000
+          maximum-pool-size: 5
+      second:
+        url: jdbc:oracle:thin:@${oracle-db.second.ip}:${oracle-db.second.port}:${oracle-db.second.service-name}
+        username: ${oracle-db.second.username}
+        password: ${oracle-db.second.password}
+        driver-class-name: oracle.jdbc.driver.OracleDriver
+        hibernate:
+          default_schema: ATMUSER
+        hikari:
+          connection-timeout: 20000
+          maximum-pool-size: 5
+
+    sqlserver:
+      url: jdbc:sqlserver://${sqlserver.ip}:${sqlserver.port};databaseName=${sqlserver.service-name};trustServerCertificate=true
+      username: ${sqlserver.username}
+      password: ${sqlserver.password}
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      schema: dbo
+      hikari:
+        connection-timeout: 20000
+        maximum-pool-size: 10
+
+  main:
+    allow-bean-definition-overriding: true
+
+  kafka:
+    bootstrap-servers: ${kafka.socket}
+    properties:
+      ssl:
+        truststore:
+          location: ${KAFKA_TRUSTSTORE_PATH}
+          password: ${TRUSTSTORE_PASSWORD:changeit}
+          type: JKS
+      sasl:
+        mechanism: SCRAM-SHA-512
+        jaas:
+          config: org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_USERNAME:CMON-SCRAM-USER}"  password="${KAFKA_PASSWORD:CMON1234}";
+      security:
+        protocol: SASL_SSL
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        max.block.ms: 10000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        exclude: health
+
+app:
+  kvstore:
+    file-path: ${KV_PATH:classpath:kvstore.properties}
+    keys:
+      time-fetching: time-fetching
+  utc:
+    offset: 3
+  kafka:
+    topic:
+      latency: ${LATENCY_TOPIC:cmon-mobile.latency_data}
+      transaction: ${TRANSACTION_TOPIC:cmon-mobile.transaction_data}
+      end-of-day: ${END_OF_DAY_TOPIC:cmon-mobile.end_of_day_data}
+      readiness-topic: ${KAFKA_READINESS_TOPIC:cmon-mobile.client_service.user_actions}
+      user-data: ${USER_DATA_TOPIC:cmon-mobile.user_data}
+    schedule:
+      users:
+        repeat-every-ms: 21600000
+      graph:
+        repeat-every-ms: 30000
+      fetching-before-ms: 30000
