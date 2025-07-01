@@ -224,3 +224,50 @@ Caused by: org.hibernate.HibernateException: Unable to determine Dialect without
         at org.hibernate.boot.registry.internal.StandardServiceRegistryImpl.initiateService(StandardServiceRegistryImpl.java:130)
         at org.hibernate.service.internal.AbstractServiceRegistryImpl.createService(AbstractServiceRegistryImpl.java:263)
         ... 38 common frames omitted
+
+
+
+-----------------------------------------------
+
+
+
+@Bean("sqlServerEntityManagerFactory")
+@Override
+public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean() {
+    LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
+    emf.setDataSource(dataSource());
+
+    // 1) Tell Hibernate which dialect to use
+    HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+    vendorAdapter.setDatabasePlatform("org.hibernate.dialect.SQLServer2012Dialect");
+    emf.setJpaVendorAdapter(vendorAdapter);
+
+    // 2) (Optional) explicitly expose the JDBC URL so Hibernate can 
+    //    fallback to metadata if it really wants to
+    Map<String,Object> props = buildJpaProperties(
+        environment.getProperty("spring.datasource.sqlserver.hikari.connection-timeout"),
+        environment.getProperty("spring.datasource.sqlserver.hikari.maximum-pool-size"),
+        environment.getProperty("spring.datasource.sqlserver.schema")
+    );
+    props.put("jakarta.persistence.jdbc.url", 
+              environment.getProperty("spring.datasource.sqlserver.url"));
+    props.put("hibernate.dialect", 
+              "org.hibernate.dialect.SQLServer2012Dialect");
+    emf.setJpaPropertyMap(props);
+
+    emf.setPackagesToScan("com.arabbank.hdf.graphdatafetcher.model.entity.sqlserver");
+    return emf;
+}
+
+
+
+
+
+-------------
+
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none        # or validate / update / create-drop as appropriate
+    database-platform: org.hibernate.dialect.SQLServer2012Dialect
