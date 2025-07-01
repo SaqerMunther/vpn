@@ -1,0 +1,23 @@
+oracle-db:
+  first:
+    ip: ${ORACLE_DB_FIRST_IP}
+    port: ${ORACLE_DB_FIRST_PORT}
+    username: ${ORACLE_DB_FIRST_USERNAME}
+    password: ${ORACLE_DB_FIRST_PASSWORD}
+    service-name: ${ORACLE_DB_FIRST_SERVICE_NAME}
+  second:
+    ip: ${ORACLE_DB_SECOND_IP}
+    port: ${ORACLE_DB_SECOND_PORT}
+    username: ${ORACLE_DB_SECOND_USERNAME}
+    password: ${ORACLE_DB_SECOND_PASSWORD}
+    service-name: ${ORACLE_DB_SECOND_SERVICE_NAME}
+sqlserver:
+  ip: ${SQL_DB_IP}
+  port: ${SQL_DB_PORT}
+  service-name: ${SQL_DB_SERVICE_NAME}
+  username: ${SQL_DB_USERNAME}
+  password: ${SQL_DB_PASSWORD}
+
+kafka:
+  socket: ${KAFKA_SERVERS}
+

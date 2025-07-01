@@ -1,0 +1,80 @@
+spring:
+  profiles:
+    default: dev # For production environment will be handled using '-Dspring.profiles.active=<environment-name>'
+  datasource:
+    oracle:
+      first:
+        url: jdbc:oracle:thin:@${oracle-db.first.ip}:${oracle-db.first.port}:${oracle-db.first.service-name}
+        username: ${oracle-db.first.username}
+        password: ${oracle-db.first.password}
+        driver-class-name: oracle.jdbc.driver.OracleDriver
+        hikari:
+          connection-timeout: 20000
+          maximum-pool-size: 5
+      second:
+        url: jdbc:oracle:thin:@${oracle-db.second.ip}:${oracle-db.second.port}:${oracle-db.second.service-name}
+        username: ${oracle-db.second.username}
+        password: ${oracle-db.second.password}
+        driver-class-name: oracle.jdbc.driver.OracleDriver
+        hibernate:
+          default_schema: ATMUSER
+        hikari:
+          connection-timeout: 20000
+          maximum-pool-size: 5
+    sqlserver:
+      url: jdbc:sqlserver://${sqlserver.ip}:${sqlserver.port};databaseName=${sqlserver.service-name};trustServerCertificate=true
+      username: ${sqlserver.username}
+      password: ${sqlserver.password}
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      schema: dbo
+      hikari:
+        connection-timeout: 20000
+        maximum-pool-size: 10
+
+  main:
+    allow-bean-definition-overriding: true
+
+  kafka:
+    bootstrap-servers: ${kafka.socket}
+    properties:
+      ssl:
+        truststore:
+          location: ${KAFKA_TRUSTSTORE_PATH}
+          password: ${TRUSTSTORE_PASSWORD:changeit}
+          type: JKS
+      sasl:
+        mechanism: SCRAM-SHA-512
+        jaas:
+          config: org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_USERNAME:CMON-SCRAM-USER}"  password="${KAFKA_PASSWORD:CMON1234}";
+      security:
+        protocol: SASL_SSL
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        max.block.ms: 10000 #milliseconds
+management:
+  endpoints:
+    web:
+      exposure:
+        exclude: health
+app:
+  kvstore:
+    file-path: ${KV_PATH:classpath:kvstore.properties}
+    keys:
+      time-fetching: time-fetching
+  utc:
+    offset: 3
+  kafka:
+    topic:
+      latency: ${LATENCY_TOPIC:cmon-mobile.latency_data}
+      transaction: ${TRANSACTION_TOPIC:cmon-mobile.transaction_data}
+      end-of-day: ${END_OF_DAY_TOPIC:cmon-mobile.end_of_day_data}
+      readiness-topic: ${KAFKA_READINESS_TOPIC:cmon-mobile.client_service.user_actions}
+      user-data: ${USER_DATA_TOPIC:cmon-mobile.user_data}
+    schedule:
+      users:
+        repeat-every-ms: 21600000 #6 hours in milliseconds
+      graph:
+        repeat-every-ms: 30000 #milliseconds
+      fetching-before-ms: 30000 #milliseconds

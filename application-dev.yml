@@ -1,0 +1,22 @@
+oracle-db:
+  first:
+    ip: ${ORACLE_DB_FIRST_IP:10.1.15.239}
+    port: ${ORACLE_DB_FIRST_PORT:1599}
+    username: ${ORACLE_DB_FIRST_USERNAME:CHECKLIST}
+    password: ${ORACLE_DB_FIRST_PASSWORD:ab}
+    service-name: ${ORACLE_DB_FIRST_SERVICE_NAME:CONTROLDB}
+  second:
+    ip: ${ORACLE_DB_SECOND_IP:10.1.15.239}
+    port: ${ORACLE_DB_SECOND_PORT:1599}
+    username: ${ORACLE_DB_SECOND_USERNAME:CHECKLIST}
+    password: ${ORACLE_DB_SECOND_PASSWORD:ab}
+    service-name: ${ORACLE_DB_SECOND_SERVICE_NAME:CONTROLDB}
+sqlserver:
+    ip: ${SQL_DB_IP:10.0.52.12}
+    port: ${SQL_DB_PORT:53414}
+    service-name: ${SQL_DB_SERVICE_NAME:Cmon_Core}
+    username: ${SQL_DB_USERNAME:CMON}
+    password: ${SQL_DB_PASSWORD:P@ssw0rd@123}
+
+kafka:
+  socket: ${KAFKA_SERVERS:ab-gcp-tst-kfkbrk01.arabbank.plc:9093, ab-gcp-tst-kfkbrk02.arabbank.plc:9093, ab-gcp-tst-kfkbrk03.arabbank.plc:9093}
