@@ -404,6 +404,28 @@ spring:
           connection-timeout: 20000
           maximum-pool-size: 5
 
+
+----------------
+
+Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: Login failed for user ''. ClientConnectionId:6fcb0bc0-3a10-4e1f-83b9-fda91e5ee9ff
+	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:259)
+	at com.microsoft.sqlserver.jdbc.TDSTokenHandler.onEOF(tdsparser.java:304)
+	at com.microsoft.sqlserver.jdbc.TDSParser.parse(tdsparser.java:137)
+	at com.microsoft.sqlserver.jdbc.TDSParser.parse(tdsparser.java:42)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.sendLogon(SQLServerConnection.java:6612)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.logon(SQLServerConnection.java:5154)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection$LogonCommand.doExecute(SQLServerConnection.java:5087)
+	at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7675)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:4137)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.connectHelper(SQLServerConnection.java:3583)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.login(SQLServerConnection.java:3172)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.connectInternal(SQLServerConnection.java:3014)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.connect(SQLServerConnection.java:1836)
+	at com.microsoft.sqlserver.jdbc.SQLServerDriver.connect(SQLServerDriver.java:1246)
+	at java.sql/java.sql.DriverManager.getConnection(DriverManager.java:681)
+	at java.sql/java.sql.DriverManager.getConnection(DriverManager.java:190)
+	at org.hibernate.engine.jdbc.connections.internal.DriverManagerConnectionCreator.makeConnection(DriverManagerConnectionCreator.java:36)
+	... 46 common frames omitted
     sqlserver:
       url: jdbc:sqlserver://${sqlserver.ip}:${sqlserver.port};databaseName=${sqlserver.service-name};trustServerCertificate=true
       username: ${sqlserver.username}
